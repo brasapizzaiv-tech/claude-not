@@ -69,8 +69,8 @@ export function CobrarFornecedor({
         <span className="inline-flex items-center gap-1.5"><Icone nome="zap" tamanho={16} /> Cobrar o fornecedor</span>
       </button>
       {aberto && (
-        <Janela onFechar={() => setAberto(false)} fundoFecha>
-          <div className="cartao my-8 w-full max-w-3xl p-5" role="dialog" aria-label={`Cobrar ${fornecedor}`} onClick={(e) => e.stopPropagation()}>
+        <Janela onFechar={() => setAberto(false)} fundoFecha rotulo={`Cobrar ${fornecedor}`}>
+          <div className="cartao my-8 w-full max-w-3xl p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <h2 className="font-numero text-lg font-bold text-texto">Cobrar {fornecedor}</h2>
@@ -105,7 +105,7 @@ export function CobrarFornecedor({
                 })}
                 <label className="block text-sm">
                   <span className="rotulo">Fim da mensagem</span>
-                  <textarea value={fecho} onChange={(e) => { setEditado(null); setFecho(e.target.value); }} rows={2} className="campo mt-1 w-full" />
+                  <textarea value={fecho} onChange={(e) => { setEditado(null); setFecho(e.target.value); }} rows={3} className="campo mt-1 w-full" />
                 </label>
               </div>
 
@@ -129,9 +129,9 @@ export function CobrarFornecedor({
                     {copiado ? "Copiado ✓" : "Copiar texto"}
                   </button>
                   {nada ? (
-                    <span className="btn-principal !min-h-11 flex-1 cursor-not-allowed text-sm opacity-50" aria-disabled="true">Abrir no WhatsApp</span>
+                    <span className="btn-principal !min-h-11 flex-1 cursor-not-allowed whitespace-nowrap text-sm opacity-50" aria-disabled="true">Abrir no WhatsApp</span>
                   ) : (
-                    <a href={linkWhatsWeb(whatsapp, texto)} target="_blank" rel="noopener noreferrer" className="btn-principal !min-h-11 flex-1 text-sm">
+                    <a href={linkWhatsWeb(whatsapp, texto)} target="_blank" rel="noopener noreferrer" className="btn-principal !min-h-11 flex-1 whitespace-nowrap text-sm">
                       Abrir no WhatsApp
                     </a>
                   )}
