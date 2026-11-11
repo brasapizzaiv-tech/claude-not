@@ -74,7 +74,10 @@ async function getCfg(db: Db): Promise<Cfg> {
   const hoje = agoraBR().data;
   const [{ data }, { data: excRows }, fechados] = await Promise.all([
     db.from("mkt_config").select("chave, valor"),
-    db.from("marmitas_dia_excecao").select("data, pratos, proteinas, salada").gte("data", addDias(hoje, -2)),
+    // MAR-08: o histórico (relatório, reimpressão) olha dias antigos — com só
+    // hoje−2, a exceção sumia e o dia mostrava o cardápio da rotação. São poucas
+    // (2 em 11/11/2026): carrega todas.
+    db.from("marmitas_dia_excecao").select("data, pratos, proteinas, salada").order("data", { ascending: false }).limit(1000),
     diasFechados(db as Parameters<typeof diasFechados>[0], await empresaAtualId().catch(() => null), addDias(hoje, -7), addDias(hoje, 120)),
   ]);
   const excecoes: Cfg["excecoes"] = {};
@@ -593,7 +596,13 @@ async function handle(req: NextRequest, rota: string[]) {
       const p = pedidoDoBody(body || {}, "buffet");
       const v = validaPedido(p); if (v) return erro(v);
       if (p.colaboradorId && (await jaPediu(db, data, p.colaboradorId))) return erro("Esse colaborador ja tem pedido neste dia.", 409);
-      return json(await inserePedido(db, data, p), 201);
+      try {
+        return json(await inserePedido(db, data, p), 201);
+      } catch (e) {
+        // MAR-08: dois cliques juntos — o índice único segura o segundo; antes dava "Erro interno".
+        if ((e as { code?: string }).code === "23505") return erro("Esse colaborador ja tem pedido neste dia.", 409);
+        throw e;
+      }
     }
     if (method === "PUT") {
       if (!pode(user, "pedidos_edit")) return erro("Sem permissao (editar pedidos).", 403);

@@ -16,6 +16,9 @@ const inteiro = (v: unknown) => {
 const ehData = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 const hojeBR = () =>
   new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+const agoraHHMM = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(11, 16);
+// Até que horas dá pra reservar pro MESMO dia (igual ao site).
+const LIMITE_HOJE: Record<string, string> = { "Almoço": "11:45", "Rodízio": "18:45" };
 
 // O site consulta o dia escolhido: turnos fechados e quanto já está ocupado.
 export async function GET(req: NextRequest) {
@@ -96,6 +99,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: "Escolha um dia válido." }, { status: 400 });
   if (pessoas < 1) return NextResponse.json({ erro: "Quantas pessoas vão?" }, { status: 400 });
 
+  // MAR-07: as regras do site também aqui (antes só no navegador).
+  const dow = new Date(`${data}T12:00:00Z`).getUTCDay();
+  if (dow === 0) return NextResponse.json({ erro: "Domingo não abrimos. Escolha outro dia." }, { status: 409 });
+  if (turno === "Rodízio" && dow !== 5 && dow !== 6)
+    return NextResponse.json({ erro: "O rodízio é só na sexta e no sábado." }, { status: 409 });
+  if (data === hojeBR() && agoraHHMM() > (LIMITE_HOJE[turno] ?? "23:59"))
+    return NextResponse.json(
+      { erro: `Já passou das ${LIMITE_HOJE[turno].replace(":", "h")}, o horário limite pra reservar hoje. Pode vir sem reserva: atendemos por ordem de chegada.` },
+      { status: 409 },
+    );
+
   const supabase = createAdminClient();
   const empresaId = await empresaAtualId();
   if (!empresaId) {
@@ -152,7 +166,7 @@ export async function POST(req: NextRequest) {
   const status = pessoas >= limite.grupo_grande ? "aguardando" : "nova";
   const nascimento = texto(corpo.nascimento, 10);
 
-  const { error } = await supabase.from("reservas").insert({
+  const { data: nova, error } = await supabase.from("reservas").insert({
     empresa_id: empresaId,
     nome,
     telefone,
@@ -168,8 +182,27 @@ export async function POST(req: NextRequest) {
     observacao: texto(corpo.observacao, 500) || null,
     status,
     origem: "site",
-  });
-  if (error) return NextResponse.json({ erro: "Não consegui registrar." }, { status: 500 });
+  }).select("id").single();
+  if (error || !nova) return NextResponse.json({ erro: "Não consegui registrar. Tente de novo ou nos chame no WhatsApp." }, { status: 500 });
+
+  // MAR-07: duas pessoas no último lugar ao mesmo tempo passavam as duas.
+  // Confere de novo DEPOIS de gravar; se passou do limite, desfaz a sua.
+  const { data: depois } = await supabase
+    .from("reservas")
+    .select("pessoas")
+    .eq("empresa_id", empresaId)
+    .eq("data", data)
+    .eq("turno", turno)
+    .neq("status", "cancelada");
+  const linhas = (depois as { pessoas: number }[]) ?? [];
+  const totalPessoas = linhas.reduce((s, r) => s + (Number(r.pessoas) || 0), 0);
+  if (totalPessoas > limite.max_pessoas || linhas.length > limite.max_reservas) {
+    await supabase.from("reservas").delete().eq("id", (nova as { id: string }).id);
+    return NextResponse.json(
+      { erro: "As mesas desse horário acabaram de ser tomadas. Escolha outro dia ou nos chame no WhatsApp." },
+      { status: 409 },
+    );
+  }
 
   return NextResponse.json({ ok: true, status });
 }
