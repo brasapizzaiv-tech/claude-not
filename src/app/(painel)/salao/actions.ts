@@ -23,7 +23,7 @@ import { contagemValida, valorDe, type Quantidades } from "@/lib/cofre";
 import { repartirDesconto } from "@/lib/fiscal/desconto-nota";
 import type { ItemCoberto } from "@/lib/fiscal/recebimento-nota";
 import { explicarErro } from "@/lib/erro-amigavel";
-import { moedaBR } from "@/lib/format";
+import { moedaBR, numeroBR } from "@/lib/format";
 import { saldosFiado } from "@/lib/fiado-saldo";
 
 // Só deixa mexer em comanda ABERTA (o caixa pode ter fechado enquanto a tela
@@ -46,7 +46,7 @@ export async function salvarConfigPdv(formData: FormData) {
   const linhas = [
     { chave: "nome_restaurante", valor: ((formData.get("nome_restaurante") as string) || "").trim() },
     { chave: "qtd_mesas", valor: String(Math.max(0, Math.round(valorNum(formData.get("qtd_mesas"))))) },
-    { chave: "tara_padrao", valor: String(valorNum(formData.get("tara_padrao"))) },
+    { chave: "tara_padrao", valor: String(numeroBR(String(formData.get("tara_padrao") ?? ""))) },
     { chave: "preco_kg", valor: String(valorNum(formData.get("preco_kg"))) },
     { chave: "buffet_livre", valor: String(valorNum(formData.get("buffet_livre"))) },
     { chave: "servico_percent", valor: String(valorNum(formData.get("servico_percent"))) },
@@ -579,13 +579,21 @@ export async function repesarKiosk(comandaId: string, liquidoNovo: number, taraB
 export async function criarComandaBuffet(formData: FormData) {
   await exigirAcesso("/salao");
   const supabase = await createClient();
-  const peso = valorNum(formData.get("peso"));
-  if (peso <= 0) return;
+  // CX-09: peso com ponto ("0.452") é decimal, não milhar (virava 452 kg).
+  const bruto = numeroBR(String(formData.get("peso") ?? ""));
+  if (!(bruto > 0)) return;
+  if (bruto > PESO_MAX_KG) throw new Error(`Peso de ${bruto} kg não parece um prato. Confira e digite em kg, ex.: 0,452.`);
   const cfg = await pdvCfg(supabase);
-  const tara = valorNum(formData.get("tara")) || Number(cfg.tara_padrao || 0);
+  const taraDigitada = numeroBR(String(formData.get("tara") ?? ""));
+  const tara = taraDigitada > 0 ? taraDigitada : Number(cfg.tara_padrao || 0);
+  // CX-09: o peso da comanda é SEMPRE o líquido (como no quiosque); a tara fica
+  // só de registro. Antes este formulário guardava o bruto e somar/repesar/juntar
+  // tratavam como líquido.
+  const peso = Math.round(Math.max(0, bruto - tara) * 1000) / 1000;
+  if (!(peso > 0)) throw new Error("A tara é maior que o peso. Confira os dois.");
   const mesa = ((formData.get("mesa") as string) || "Balança").trim();
   const soPorKg = formData.get("so_kg") === "1";
-  const { valor, livre } = calcBuffet(cfg, peso, tara, soPorKg);
+  const { valor, livre } = calcBuffet(cfg, peso, 0, soPorKg);
   const { data: com } = await supabase
     .from("pdv_comandas")
     .insert({ peso, tara, valor_buffet: valor, livre, mesa, so_kg: soPorKg })
@@ -653,27 +661,6 @@ export async function criarComandaMesa(formData: FormData) {
   if (com) redirect(`${garcom ? "/garcom/comanda" : "/salao/comandas"}/${com.id}`);
 }
 
-// Edita o buffet da comanda (peso/tara) e recalcula o valor (respeita marmita).
-export async function editarBuffet(formData: FormData) {
-  await exigirAcesso("/salao");
-  const supabase = await createClient();
-  const id = formData.get("id") as string;
-  const peso = valorNum(formData.get("peso"));
-  const tara = valorNum(formData.get("tara"));
-  const cfg = await pdvCfg(supabase);
-  const { data: atual } = await supabase
-    .from("pdv_comandas")
-    .select("so_kg")
-    .eq("id", id)
-    .maybeSingle();
-  const { valor, livre } = calcBuffet(cfg, peso, tara, !!atual?.so_kg);
-  await supabase
-    .from("pdv_comandas")
-    .update({ peso, tara, valor_buffet: valor, livre })
-    .eq("id", id);
-  revalidatePath(`/salao/comandas/${id}`);
-}
-
 // Caixa: troca rápida entre buffet (com teto livre) e marmita (só por kg),
 // recalculando o valor da comanda.
 export async function alternarMarmita(formData: FormData) {
@@ -688,7 +675,8 @@ export async function alternarMarmita(formData: FormData) {
   if (!com) return;
   const novo = !com.so_kg;
   const cfg = await pdvCfg(supabase);
-  const { valor, livre } = calcBuffet(cfg, Number(com.peso), Number(com.tara), novo);
+  // Peso da comanda já é o líquido (CX-09): a tara é só registro.
+  const { valor, livre } = calcBuffet(cfg, Number(com.peso), 0, novo);
   await supabase
     .from("pdv_comandas")
     .update({ so_kg: novo, valor_buffet: valor, livre })
@@ -1005,23 +993,6 @@ export async function removerBuffetComanda(comandaId: string, motivo: string) {
   return { ok: true as const };
 }
 
-// Total de uma comanda = buffet + itens + serviço (do horário).
-async function calcTotalComanda(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  comandaId: string,
-  cfg: Record<string, string>,
-) {
-  const [{ data: com }, { data: itens }] = await Promise.all([
-    supabase.from("pdv_comandas").select("numero, valor_buffet").eq("id", comandaId).single(),
-    supabase.from("pdv_comanda_itens").select("qtd, preco_unit").eq("comanda_id", comandaId),
-  ]);
-  const subtotal =
-    Number(com?.valor_buffet ?? 0) +
-    (itens ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
-  const servico = Math.round(subtotal * servicoAgora(cfg)) / 100;
-  return { numero: com?.numero as number | undefined, servico, total: subtotal + servico };
-}
-
 
 // O que ainda falta pagar de uma comanda (itens e buffet não pagos + serviço).
 // Fecha a comanda quando não sobra nada a pagar (itens + buffet quitados).
@@ -1083,105 +1054,6 @@ export async function fecharComandaPaga(formData: FormData) {
   revalidatePath("/salao");
   revalidatePath("/salao/caixa");
   revalidatePath(`/salao/comandas/${id}`);
-}
-
-// O que falta pagar de uma comanda (por item e buffet, com serviço).
-async function pendenteComanda(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  comandaId: string,
-  cfg: Record<string, string>,
-) {
-  const fator = 1 + servicoAgora(cfg) / 100;
-  const [{ data: com }, { data: itens }] = await Promise.all([
-    supabase.from("pdv_comandas").select("numero, valor_buffet, buffet_valor_pago").eq("id", comandaId).single(),
-    supabase.from("pdv_comanda_itens").select("id, qtd, preco_unit, valor_pago").eq("comanda_id", comandaId),
-  ]);
-  const itensPag: { id: string; valor: number }[] = [];
-  let restante = 0;
-  for (const i of itens ?? []) {
-    const rem = Math.round((Number(i.qtd) * Number(i.preco_unit) * fator - Number(i.valor_pago)) * 100) / 100;
-    if (rem > 0.005) {
-      itensPag.push({ id: i.id as string, valor: rem });
-      restante += rem;
-    }
-  }
-  const buffetRem =
-    Math.round((Number(com?.valor_buffet ?? 0) * fator - Number(com?.buffet_valor_pago ?? 0)) * 100) / 100;
-  if (buffetRem > 0.005) restante += buffetRem;
-  return {
-    numero: com?.numero as number | undefined,
-    restante: Math.round(restante * 100) / 100,
-    itensPag,
-    buffetRem: Math.max(0, buffetRem),
-  };
-}
-
-// Aplica um pagamento (por valor) aos itens/buffet de uma comanda. Cada item
-// acumula valor_pago; vira "pago" quando cobre o total dele. Fecha ao quitar.
-export async function pagarValores(
-  comandaId: string,
-  itensPag: { id: string; valor: number }[],
-  buffetValor: number,
-  pagamentos: { forma: string; valor: number }[],
-) {
-  const supabase = await createClient();
-  await exigirAcesso("/salao");
-  const cfg = await pdvCfg(supabase);
-  const fator = 1 + servicoAgora(cfg) / 100;
-  const caixaId = await caixaAberto(supabase);
-  if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
-
-  for (const it of itensPag) {
-    if (!(it.valor > 0)) continue;
-    const { data: row } = await supabase
-      .from("pdv_comanda_itens")
-      .select("qtd, preco_unit, valor_pago")
-      .eq("id", it.id)
-      .single();
-    if (!row) continue;
-    const payable = Number(row.qtd) * Number(row.preco_unit) * fator;
-    const novo = Math.round((Number(row.valor_pago) + it.valor) * 100) / 100;
-    await supabase
-      .from("pdv_comanda_itens")
-      .update({ valor_pago: novo, pago: novo >= payable - 0.01 })
-      .eq("id", it.id);
-  }
-  if (buffetValor > 0) {
-    const { data: c } = await supabase
-      .from("pdv_comandas")
-      .select("valor_buffet, buffet_valor_pago")
-      .eq("id", comandaId)
-      .single();
-    if (c) {
-      const payable = Number(c.valor_buffet) * fator;
-      const novo = Math.round((Number(c.buffet_valor_pago) + buffetValor) * 100) / 100;
-      await supabase
-        .from("pdv_comandas")
-        .update({ buffet_valor_pago: novo, buffet_pago: novo >= payable - 0.01 })
-        .eq("id", comandaId);
-    }
-  }
-
-  const { data: com } = await supabase.from("pdv_comandas").select("numero").eq("id", comandaId).single();
-  if (caixaId) {
-    for (const p of pagamentos) {
-      if (!(p.valor > 0)) continue;
-      await supabase.from("pdv_caixa_mov").insert({
-        caixa_id: caixaId,
-        tipo: "venda",
-        descricao: `Comanda #${com?.numero ?? ""} (dividida)`,
-        forma_pagamento: p.forma,
-        valor: p.valor,
-        comanda_id: comandaId,
-        comanda_ids: [comandaId],
-      });
-    }
-  }
-
-  const quitou = await fecharSeQuitou(supabase, comandaId);
-  revalidatePath("/salao/caixa");
-  revalidatePath("/salao");
-  return { ok: true as const, quitou };
 }
 
 // Frente de caixa (3 colunas): paga os ITENS/BUFFET selecionados de uma ou mais
@@ -2120,140 +1992,6 @@ export async function baixarFiadoSemCaixa(clienteId: string, valor: number, moti
   return { ok: true as const };
 }
 
-// Frente de caixa: recebe VÁRIAS comandas de uma vez (somadas), com uma ou mais
-// formas de pagamento (split). Cobra só o que falta, marca tudo pago e fecha.
-export async function receberComandas(
-  comandaIds: string[],
-  pagamentos: { forma: string; valor: number }[],
-) {
-  const supabase = await createClient();
-  await exigirAcesso("/salao");
-  if (comandaIds.length === 0) return { ok: false as const };
-  const cfg = await pdvCfg(supabase);
-  const caixaId = await caixaAberto(supabase);
-  if (!caixaId) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
-
-  let totalGeral = 0;
-  const numeros: number[] = [];
-  const formaUnica = pagamentos.length === 1 ? pagamentos[0].forma : "Múltiplas";
-  for (const id of comandaIds) {
-    const { restante, numero, itensPag, buffetRem } = await pendenteComanda(supabase, id, cfg);
-    totalGeral += restante;
-    if (numero != null) numeros.push(numero);
-    // Quita tudo o que falta desta comanda.
-    for (const it of itensPag) {
-      const { data: row } = await supabase
-        .from("pdv_comanda_itens")
-        .select("qtd, preco_unit")
-        .eq("id", it.id)
-        .single();
-      const payable = row ? Number(row.qtd) * Number(row.preco_unit) * (1 + servicoAgora(cfg) / 100) : it.valor;
-      await supabase
-        .from("pdv_comanda_itens")
-        .update({ valor_pago: Math.round(payable * 100) / 100, pago: true })
-        .eq("id", it.id);
-    }
-    if (buffetRem > 0.005) {
-      const { data: c } = await supabase.from("pdv_comandas").select("valor_buffet").eq("id", id).single();
-      const payable = Number(c?.valor_buffet ?? 0) * (1 + servicoAgora(cfg) / 100);
-      await supabase
-        .from("pdv_comandas")
-        .update({ buffet_valor_pago: Math.round(payable * 100) / 100, buffet_pago: true })
-        .eq("id", id);
-    }
-    const { servico } = await calcTotalComanda(supabase, id, cfg);
-    await supabase
-      .from("pdv_comandas")
-      .update({
-        status: "fechada",
-        fechada_em: new Date().toISOString(),
-        forma_pagamento: formaUnica,
-        servico,
-      })
-      .eq("id", id);
-  }
-
-  if (caixaId) {
-    const desc = `Comandas ${numeros.map((n) => `#${n}`).join(", ")}`;
-    for (const pg of pagamentos) {
-      if (!(pg.valor > 0)) continue;
-      await supabase.from("pdv_caixa_mov").insert({
-        caixa_id: caixaId,
-        tipo: "venda",
-        descricao: desc,
-        forma_pagamento: pg.forma,
-        valor: pg.valor,
-        comanda_id: comandaIds[0],
-      });
-    }
-  }
-
-  revalidatePath("/salao/caixa");
-  revalidatePath("/salao");
-  return { ok: true as const, total: totalGeral, numeros };
-}
-
-export async function fecharComanda(formData: FormData) {
-  await exigirAcesso("/salao");
-  const supabase = await createClient();
-  const comandaId = formData.get("id") as string;
-  const forma = (formData.get("forma") as string) || null;
-
-  const [{ data: com }, { data: itens }, cfg] = await Promise.all([
-    supabase.from("pdv_comandas").select("numero, valor_buffet").eq("id", comandaId).single(),
-    supabase.from("pdv_comanda_itens").select("qtd, preco_unit").eq("comanda_id", comandaId),
-    pdvCfg(supabase),
-  ]);
-  const subtotal =
-    Number(com?.valor_buffet ?? 0) +
-    (itens ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
-  const perc = servicoAgora(cfg);
-  const servico = Math.round(subtotal * perc) / 100;
-  const total = subtotal + servico;
-
-  await supabase
-    .from("pdv_comandas")
-    .update({
-      status: "fechada",
-      fechada_em: new Date().toISOString(),
-      forma_pagamento: forma,
-      servico,
-    })
-    .eq("id", comandaId);
-
-  // lança a venda no caixa aberto (se houver)
-  const caixaId = await caixaAberto(supabase);
-  if (caixaId) {
-    await supabase.from("pdv_caixa_mov").delete().eq("comanda_id", comandaId).eq("tipo", "venda");
-    await supabase.from("pdv_caixa_mov").insert({
-      caixa_id: caixaId,
-      tipo: "venda",
-      descricao: `Comanda #${com?.numero ?? ""}`,
-      forma_pagamento: forma,
-      valor: total,
-      comanda_id: comandaId,
-    });
-  }
-
-  revalidatePath(`/salao/comandas/${comandaId}`);
-  revalidatePath("/salao");
-  revalidatePath("/salao/caixa");
-}
-
-export async function reabrirComanda(formData: FormData) {
-  const supabase = await createClient();
-  await exigirAcesso("/salao");
-  const comandaId = formData.get("id") as string;
-  await supabase
-    .from("pdv_comandas")
-    .update({ status: "aberta", fechada_em: null })
-    .eq("id", comandaId);
-  // desfaz a venda lançada no caixa (se houver)
-  await supabase.from("pdv_caixa_mov").delete().eq("comanda_id", comandaId).eq("tipo", "venda");
-  revalidatePath(`/salao/comandas/${comandaId}`);
-  revalidatePath("/salao/caixa");
-}
-
 // ---------- Frente de Caixa ----------
 async function caixaAberto(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
@@ -2289,10 +2027,20 @@ export async function abrirCaixa(formData: FormData) {
   redirect("/salao/caixa");
 }
 
+// CX-11: sangria e suprimento só no caixa ABERTO. O id vem do formulário: uma
+// aba aberta antes do fechamento lançava no caixa já fechado (o Z não via).
+async function caixaDoMovimento(supabase: Awaited<ReturnType<typeof createClient>>, doForm: FormDataEntryValue | null) {
+  const id = typeof doForm === "string" ? doForm.trim() : "";
+  if (!id) return caixaAberto(supabase);
+  const { data } = await supabase.from("pdv_caixas").select("status").eq("id", id).maybeSingle();
+  if ((data as { status?: string } | null)?.status !== "aberto") throw new Error("Este caixa já foi fechado. Recarregue a tela do caixa e lance no caixa aberto.");
+  return id;
+}
+
 export async function suprimento(formData: FormData) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
-  const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
+  const caixaId = await caixaDoMovimento(supabase, formData.get("caixa_id"));
   const valor = valorNum(formData.get("valor"));
   if (!caixaId || valor <= 0) return;
   await supabase.from("pdv_caixa_mov").insert({
@@ -2308,7 +2056,7 @@ export async function suprimento(formData: FormData) {
 export async function sangria(formData: FormData) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
-  const caixaId = (formData.get("caixa_id") as string) || (await caixaAberto(supabase));
+  const caixaId = await caixaDoMovimento(supabase, formData.get("caixa_id"));
   const valor = valorNum(formData.get("valor"));
   if (!caixaId || valor <= 0) return;
   // A tela só envia com o destino escolhido. Pagamento sem categoria entraria no
@@ -2549,6 +2297,8 @@ export async function dividirItemCaixa(itemId: string, partes: number) {
   if (!it) return { ok: false as const, mensagem: "Esse item já não está mais na comanda." };
   if (it.pago || Number(it.valor_pago ?? 0) > 0.005) return { ok: false as const, mensagem: "Esse item já foi recebido (inteiro ou em parte) e não pode ser dividido." };
   const qtdParte = Math.round((Number(it.qtd) / n) * 1000) / 1000;
+  // CX-08: a última parte leva o resto (R$ 90 em 3 dava 89,91 no total).
+  const qtdUltima = Math.round((Number(it.qtd) - qtdParte * (n - 1)) * 1000) / 1000;
   const base = String(it.descricao).replace(/\s*\(\d+\/\d+\)$/, "");
   const { error: e1 } = await supabase
     .from("pdv_comanda_itens")
@@ -2558,7 +2308,7 @@ export async function dividirItemCaixa(itemId: string, partes: number) {
   const copias = [];
   for (let i = 2; i <= n; i++) {
     copias.push({
-      comanda_id: it.comanda_id, item_id: it.item_id, descricao: `${base} (${i}/${n})`, qtd: qtdParte, preco_unit: it.preco_unit,
+      comanda_id: it.comanda_id, item_id: it.item_id, descricao: `${base} (${i}/${n})`, qtd: i === n ? qtdUltima : qtdParte, preco_unit: it.preco_unit,
       lancamento_id: it.lancamento_id, criado_por: it.criado_por, criado_colab_id: it.criado_colab_id, pago: false, valor_pago: 0,
     });
   }
