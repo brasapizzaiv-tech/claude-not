@@ -188,21 +188,12 @@ export async function finalizarVendaPdv(
     })
     .eq("id", r.comandaId);
 
-  // Cashback ganho nesta venda: itens (sem os em promoção, se a config manda),
-  // tirando a parte paga com cashback.
+  // Cashback ganho nesta venda (SEC-09, migration 0312): o banco calcula pelos
+  // itens da comanda fechada (sem os em promoção, se a config manda), tirando
+  // o desconto e o cashback usado. Nada do valor vem da tela.
   let cashbackGanho = 0;
   if (clienteId && cashbackNoPdv && tipo !== "equipe" && !naoEntraNoCaixa(tipo) && total > 0) {
-    let elegivel = total;
-    if (cbCfg?.sem_promos !== false) {
-      const ids = [...new Set(itens.map((i) => i.itemId).filter(Boolean))];
-      const { data: promos } = ids.length
-        ? await supabase.from("pdv_itens").select("id").in("id", ids).gt("promo_preco", 0)
-        : { data: [] };
-      const emPromo = new Set(((promos as { id: string }[]) ?? []).map((p) => p.id));
-      elegivel = r2(itens.filter((i) => !emPromo.has(i.itemId)).reduce((s, i) => s + i.preco * i.qtd, 0));
-    }
-    const base = r2(Math.max(0, elegivel * (1 - (cashbackUsado + desconto) / total)));
-    const { data: ganho } = await supabase.rpc("cashback_creditar_venda", { p_cliente: clienteId, p_comanda: r.comandaId, p_base: base, p_forma: pagamento.forma });
+    const { data: ganho } = await supabase.rpc("cashback_creditar_venda", { p_cliente: clienteId, p_comanda: r.comandaId, p_base: null, p_forma: pagamento.forma });
     cashbackGanho = r2(Number(ganho ?? 0));
   }
 
