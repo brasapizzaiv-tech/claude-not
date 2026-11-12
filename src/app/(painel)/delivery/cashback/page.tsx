@@ -4,6 +4,7 @@ import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
 import { listarFormas } from "@/lib/formas-pagamento-server";
 import { salvarCashback } from "../actions";
+import { perfilDaSessao } from "@/lib/sessao";
 
 export const metadata = { title: "Cashback · Delivery" };
 
@@ -26,6 +27,8 @@ type Mov = {
 export default async function CashbackPage() {
   const supabase = await createClient();
   const agora = new Date().toISOString();
+  // SEC-09: percentual, limite e formas valem dinheiro — só o dono muda.
+  const souDono = (await perfilDaSessao())?.papel === "dono";
   const [{ data: cfgRow }, { data: movRows }, { data: ativos }, formasDelivery, formasApp] = await Promise.all([
     supabase.from("cashback_config").select("*").maybeSingle(),
     supabase.from("cashback_mov")
@@ -119,8 +122,10 @@ export default async function CashbackPage() {
           <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" name="sem_promos" defaultChecked={c.sem_promos} className="h-4 w-4" /> Itens com preço promocional ficam de fora da conta</label>
         </div>
 
-        <div className="flex justify-end pb-4">
-          <Enviar className="btn-principal text-sm">Salvar</Enviar>
+        <div className="flex items-center justify-end gap-3 pb-4">
+          {souDono
+            ? <Enviar className="btn-principal text-sm">Salvar</Enviar>
+            : <p className="text-sm text-texto-suave">Só o dono muda a configuração do cashback.</p>}
         </div>
       </form>
 

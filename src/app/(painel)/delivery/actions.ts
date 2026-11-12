@@ -15,6 +15,7 @@ import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-
 import { contaDoMotoboy, formasDoMotoboy, pedidosComMotoboy } from "@/lib/caixa-motoboy";
 import { FORMA_PIX_APP } from "@/lib/delivery-pix";
 import { foneDigitos } from "@/lib/telefone";
+import { perfilDaSessao } from "@/lib/sessao";
 
 export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -733,6 +734,8 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
 // Cashback (Etapa 6): configuração da empresa. Uma linha por empresa.
 export async function salvarCashback(formData: FormData) {
   await exigirAcesso("/delivery");
+  // SEC-09: só o dono (o banco também recusa, migration 0312).
+  if ((await perfilDaSessao())?.papel !== "dono") return;
   const supabase = await createClient();
   const num = (k: string) => { const v = Number(String(formData.get(k) ?? "").replace(/\./g, "").replace(",", ".")); return Number.isFinite(v) ? v : NaN; };
   const pct = num("percentual");
