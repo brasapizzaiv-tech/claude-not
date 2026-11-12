@@ -3,6 +3,7 @@ import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 import { empresaAtualId } from "@/lib/empresa";
 import { AvisoSaude } from "@/components/aviso-saude";
 import { buscarTodas } from "@/lib/supabase/todas";
+import Link from "next/link";
 
 export const metadata = { title: "Delivery" };
 
@@ -27,6 +28,15 @@ export default async function DeliveryPage() {
     supabase.from("entregadores").select("id, nome, ultima_lat, ultima_lng, ultima_pos_em").eq("ativo", true).order("nome"),
     supabase.from("delivery_config").select("origem_lat, origem_lng").maybeSingle(),
   ]);
+  // DEL-12: entregue e não recebido de DIA ANTERIOR sumia de todas as telas
+  // (a lista e a trava do fechamento só olham o dia). Fica num aviso aqui até alguém receber.
+  const hojeIni = `${new Date(agora).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}T00:00:00-03:00`;
+  const { data: velhosRaw } = await supabase
+    .from("delivery_pedidos")
+    .select("id, nome, numero_turno, forma_pagamento, entregue_em")
+    .eq("status", "entregue").eq("pago", false).lt("entregue_em", hojeIni)
+    .order("entregue_em").limit(30);
+  const semReceber = (velhosRaw as { id: string; nome: string; numero_turno: number | null; forma_pagamento: string | null; entregue_em: string }[]) ?? [];
   const cfgM = cfgMapa as { origem_lat?: number | null; origem_lng?: number | null } | null;
   const origemMapa = cfgM?.origem_lat != null && cfgM?.origem_lng != null
     ? { lat: Number(cfgM.origem_lat), lng: Number(cfgM.origem_lng) }
@@ -83,7 +93,24 @@ export default async function DeliveryPage() {
       origemMapa={origemMapa}
       googleKey={process.env.GOOGLE_MAPS_BROWSER_KEY?.trim() || null}
       turnoAtual={turnoAtual}
-      aviso={<AvisoSaude empresaId={await empresaAtualId()} />}
+      aviso={<>
+        <AvisoSaude empresaId={await empresaAtualId()} />
+        {semReceber.length > 0 && (
+          <div role="alert" className="cartao mb-3 p-4">
+            <p className="font-semibold text-urgente-texto">{semReceber.length === 1 ? "1 pedido entregue em outro dia ainda não foi recebido" : `${semReceber.length} pedidos entregues em outros dias ainda não foram recebidos`}</p>
+            <p className="mt-0.5 text-sm text-texto-suave">Abra o pedido e use &quot;Receber&quot;. Se não vai receber, cancele com o motivo.</p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {semReceber.map((v) => (
+                <li key={v.id}>
+                  <Link href={`/delivery/${v.id}`} className="pilula pilula-urgente inline-flex min-h-11 items-center">
+                    #{v.numero_turno ?? "?"} · {v.nome} · {new Date(v.entregue_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" })}{v.forma_pagamento ? ` · ${v.forma_pagamento}` : ""}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </>}
     />
   );
 }

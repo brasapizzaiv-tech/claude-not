@@ -182,7 +182,7 @@ export function FornecedoresClient({
                     CNPJ
                   </label>
                   <input
-                    name="cnpj"
+                    name="cnpj" inputMode="numeric" aria-label="CNPJ"
                     defaultValue={editando?.cnpj ?? ""}
                     className={inputCls}
                   />
@@ -202,7 +202,7 @@ export function FornecedoresClient({
                     Telefone
                   </label>
                   <input
-                    name="telefone"
+                    name="telefone" type="tel" inputMode="tel" aria-label="Telefone"
                     defaultValue={editando?.telefone ?? ""}
                     className={inputCls}
                   />
@@ -212,7 +212,7 @@ export function FornecedoresClient({
                     WhatsApp
                   </label>
                   <input
-                    name="whatsapp"
+                    name="whatsapp" type="tel" inputMode="tel" aria-label="WhatsApp"
                     defaultValue={editando?.whatsapp ?? ""}
                     className={inputCls}
                   />

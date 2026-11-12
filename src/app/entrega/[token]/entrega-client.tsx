@@ -8,7 +8,7 @@ import { Icone, type NomeIcone } from "@/components/icone";
 // com o que recebeu, meus ganhos por forma, histórico por dia, localização.
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { LeitorQr } from "@/components/leitor-qr";
-import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, registrarPosicao, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
+import { historicoEntregas, marcarEntregue, meusGanhos, minhasEntregas, pegarEntrega, sairComEntregas, type Boy, type EntregaBoy } from "./entrega-actions";
 import { SairDoAparelho } from "@/components/sair-do-aparelho";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -166,7 +166,8 @@ export function EntregaClient({ token, boy, inicial, empresa }: { token: string;
       setGps(p); setGpsErro(null); marcarPermissao(true);
       if (p.em - ultimoEnvio.current >= GPS_INTERVALO_MS) {
         ultimoEnvio.current = p.em;
-        registrarPosicao(token, p.lat, p.lng, p.precisao).catch(() => {});
+        // MSG-04: rota fixa (não quebra depois de publicar versão nova).
+        fetch("/api/entrega/posicao", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, lat: p.lat, lng: p.lng, precisao: p.precisao }), keepalive: true }).catch(() => {});
       }
     };
     // ---- app nativo: plugin de segundo plano ----

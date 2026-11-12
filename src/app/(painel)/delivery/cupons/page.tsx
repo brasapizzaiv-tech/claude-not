@@ -3,7 +3,7 @@ import { Enviar } from "@/components/enviar";
 import { FormConfirmado } from "@/components/form-confirmado";
 import { Icone } from "@/components/icone";
 import { createClient } from "@/lib/supabase/server";
-import { criarCupom, alternarCupom, excluirCupom } from "../actions";
+import { criarCupom, alternarCupom, alternarCupomUmaVez, excluirCupom } from "../actions";
 import { dataBR } from "@/lib/format";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
@@ -17,7 +17,7 @@ export default async function CuponsPage() {
   const { data } = await supabase.from("cupons").select("*").order("criado_em", { ascending: false });
   const cupons = (data as {
     id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null;
-    validade: string | null; max_usos: number | null; usos: number; ativo: boolean;
+    validade: string | null; max_usos: number | null; usos: number; ativo: boolean; uma_vez_por_cliente: boolean;
   }[]) ?? [];
   const hoje = hojeSP();
 
@@ -55,6 +55,9 @@ export default async function CuponsPage() {
           <label className="mb-1 block text-xs text-texto-suave">Limite de usos</label>
           <input name="max_usos" inputMode="numeric" placeholder="—" className={`${inputCls} w-20`} />
         </div>
+        <label className="inline-flex min-h-11 items-center gap-2 text-sm text-texto">
+          <input type="checkbox" name="uma_vez_por_cliente" value="1" className="h-5 w-5 accent-orange-600" /> Uma vez por cliente
+        </label>
         <Enviar className="btn-principal text-sm">+ Criar cupom</Enviar>
       </form>
 
@@ -85,9 +88,15 @@ export default async function CuponsPage() {
                       {c.minimo != null ? `mín. ${brl(Number(c.minimo))}` : "sem mínimo"}
                       {c.validade ? ` · até ${dataBR(c.validade)}` : ""}
                       {c.max_usos != null ? ` · máx. ${c.max_usos} usos` : ""}
+                      {c.uma_vez_por_cliente ? " · uma vez por cliente" : ""}
                     </td>
                     <td className="px-4 py-2 text-right">{c.usos}</td>
                     <td className="px-4 py-2 text-right whitespace-nowrap">
+                      <form action={alternarCupomUmaVez} className="inline">
+                        <input type="hidden" name="id" value={c.id} />
+                        <input type="hidden" name="valor" value={c.uma_vez_por_cliente ? "0" : "1"} />
+                        <Enviar className="mr-3 text-xs text-texto-fraco hover:text-orange-600">{c.uma_vez_por_cliente ? "liberar pra todo pedido" : "uma vez por cliente"}</Enviar>
+                      </form>
                       <form action={alternarCupom} className="inline">
                         <input type="hidden" name="id" value={c.id} />
                         <input type="hidden" name="ativo" value={c.ativo ? "0" : "1"} />

@@ -459,7 +459,7 @@ function FormReserva({
         </div>
         <div>
           <label className={rotulo}>Telefone</label>
-          <input value={d.telefone} onChange={(e) => set("telefone", e.target.value)} className={`${campo} w-full`} />
+          <input type="tel" inputMode="tel" value={d.telefone} onChange={(e) => set("telefone", e.target.value)} className={`${campo} w-full`} />
         </div>
         <div>
           <label className={rotulo}>Dia</label>
@@ -599,7 +599,7 @@ function NovaReserva({
         </div>
         <div className="sm:col-span-2">
           <label className={rotulo}>Telefone</label>
-          <input aria-label="(51) 90000-0000" value={d.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(51) 90000-0000" className={`${campo} w-full`} />
+          <input aria-label="Telefone (51) 90000-0000" type="tel" inputMode="tel" value={d.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(51) 90000-0000" className={`${campo} w-full`} />
         </div>
         <div>
           <label className={rotulo}>Dia</label>

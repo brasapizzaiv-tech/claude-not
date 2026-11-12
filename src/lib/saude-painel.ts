@@ -61,6 +61,7 @@ const ROTINAS: { chave: string; nome: string; atraso: number }[] = [
   { chave: "rotina:contagem", nome: "Contagens agendadas", atraso: 50 * MIN },
   { chave: "rotina:fiscal-conferir", nome: "Conferência das NFC-e na Focus", atraso: 75 * MIN },
   { chave: "rotina:whatsapp-disparos", nome: "Campanhas e gatilhos do WhatsApp", atraso: 20 * MIN },
+  { chave: "rotina:delivery-pix", nome: "Pix do app de pedidos (confere e lança no caixa)", atraso: 20 * MIN },
   { chave: "rotina:avisos-manha", nome: "Resumo da manhã no celular da equipe", atraso: 26 * HORA },
   { chave: "rotina:entrega-limpar", nome: "Limpeza das posições dos entregadores", atraso: 26 * HORA },
 ];

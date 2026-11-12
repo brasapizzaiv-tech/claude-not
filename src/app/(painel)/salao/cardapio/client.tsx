@@ -848,7 +848,7 @@ function ConfigForm({ config }: { config: Record<string, string> }) {
               placeholder="Endereço"
               className={`${inputCls} min-w-56 flex-1`}
             />
-            <input aria-label="Telefone / WhatsApp"
+            <input aria-label="Telefone / WhatsApp" type="tel" inputMode="tel"
               name="cupom_telefone"
               defaultValue={config.cupom_telefone ?? ""}
               placeholder="Telefone / WhatsApp"

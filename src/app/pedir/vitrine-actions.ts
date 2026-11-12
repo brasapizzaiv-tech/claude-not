@@ -4,6 +4,7 @@
 // carrinho largado — nada de dinheiro. Tudo filtrado pela empresa do endereço.
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
+import { foneCandidatos } from "@/lib/telefone";
 
 const SESSAO = /^[a-z0-9]{16,40}$/;
 
@@ -25,7 +26,7 @@ export async function salvarCarrinhoPublico(telefone: string, resumo: string, to
   const empresaId = await empresaAtualId();
   if (!empresaId) return;
   const admin = createAdminClient();
-  const { data: cli } = await admin.from("clientes").select("id").eq("empresa_id", empresaId).ilike("telefone", `%${fone.slice(-10)}%`).limit(1).maybeSingle();
+  const { data: cli } = await admin.from("clientes").select("id").eq("empresa_id", empresaId).in("telefone_digitos", foneCandidatos(fone)).limit(1).maybeSingle();
   await admin.from("vitrine_carrinhos").upsert({
     empresa_id: empresaId,
     telefone: fone,

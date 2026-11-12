@@ -2,7 +2,8 @@
 // app público do cliente (/pedir, via admin client). Todo preço é resolvido
 // AQUI no servidor; o navegador só manda ids.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { geocodificar, distanciaKm, temChaveMapa } from "@/lib/geo";
+import { geocodificarDetalhado, distanciaKm, temChaveMapa } from "@/lib/geo";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { areaDoPonto, aplicarPromoTele, promosPossiveisHoje, type AreaEntrega, type PromoTele } from "@/lib/delivery-areas";
 import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
@@ -45,7 +46,7 @@ export type DadosPedidoDelivery = {
 };
 
 // combo/promo: pro cashback poder deixar de fora combos e itens em promoção.
-type Linha = { descricao: string; qtd: number; preco: number; itemId: string | null; combo?: boolean; promo?: boolean };
+type Linha = { descricao: string; qtd: number; preco: number; itemId: string | null; combo?: boolean; promo?: boolean; saborSemPreco?: boolean };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -77,7 +78,8 @@ async function resolverPizza(db: Db, tamanhoId: string, saborIds: string[], bord
   }
   const preco = r2(media + bordaPreco);
   const nomes = nomesDosSabores(usados, (id) => nomeDe.get(id) || "?");
-  return { descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : ""), qtd: 1, preco, itemId: null };
+  // DEL-07: sabor sem preço neste tamanho saía da pizza calado (o garçom segue assim; o delivery recusa).
+  return { descricao: `${tam.nome} — ${nomes}` + (bordaNome ? ` · borda ${bordaNome}` : ""), qtd: 1, preco, itemId: null, saborSemPreco: usados.length < ids.length };
 }
 
 // Item com etapas: combo do delivery ou marmita com complementos (migration
@@ -153,8 +155,23 @@ export async function calcularTaxaEntrega(db: Db, endereco: {
   }
   const partes = [endereco.logradouro, endereco.numero, endereco.bairro, endereco.cidade || "Ivoti", "RS", endereco.cep]
     .map((x) => (x || "").trim()).filter(Boolean);
-  const destino = await geocodificar(partes.join(", "));
-  if (!destino) return { ok: false as const, mensagem: "Não encontrei esse endereço no mapa. Confira a rua/número." };
+  // CRN-02: endereço já calculado não vai de novo ao Google (cada chamada é paga).
+  const chave = partes.join(", ").toLowerCase().replace(/\s+/g, " ").slice(0, 300);
+  const cacheDb = createAdminClient();
+  const { data: emCache } = await cacheDb.from("geo_cache").select("lat, lng").eq("endereco", chave).maybeSingle();
+  const geo: Awaited<ReturnType<typeof geocodificarDetalhado>> = emCache
+    ? { ok: true, coord: { lat: Number((emCache as { lat: number }).lat), lng: Number((emCache as { lng: number }).lng) } }
+    : await geocodificarDetalhado(partes.join(", "));
+  if (geo.ok && !emCache) await cacheDb.from("geo_cache").upsert({ endereco: chave, lat: geo.coord.lat, lng: geo.coord.lng });
+  if (!geo.ok) {
+    return {
+      ok: false as const,
+      mensagem: geo.motivo === "falhou"
+        ? "O mapa não respondeu agora. Tente de novo em alguns segundos."
+        : "Não encontrei esse endereço no mapa. Confira a rua/número.",
+    };
+  }
+  const destino = geo.coord;
 
   const { areas, promos } = await areasEPromos(db);
   if (areas.length > 0) {
@@ -243,26 +260,30 @@ export async function reimprimirNaCozinha(db: Db, comandaId: string, lancamentoI
 
 // Resolve as linhas do pedido (item simples / pizza / combo) com preço do
 // servidor e observação por item. Usado pelo delivery E pelo garçom.
-export async function resolverLinhas(db: Db, itens: LinhaPedido[]): Promise<Linha[]> {
+// DEL-07: `falhas` (opcional) recebe o que não deu pra montar — o delivery
+// recusa o pedido dizendo o quê; o garçom continua só pulando.
+export async function resolverLinhas(db: Db, itens: LinhaPedido[], falhas?: string[]): Promise<Linha[]> {
   const linhas: Linha[] = [];
   for (const it of itens) {
     const q = Math.max(1, Math.round(Number((it as { qtd?: number }).qtd) || 1));
     const obsItem = ((it as { obs?: string }).obs || "").trim().slice(0, 200);
     const comObs = (l: Linha): Linha => (obsItem ? { ...l, descricao: `${l.descricao}\nObs: ${obsItem}` } : l);
     if (it.kind === "item") {
-      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco, por_kg").eq("id", it.itemId).single();
-      if (!prod) continue;
+      const { data: prod } = await db.from("pdv_itens").select("nome, preco, promo_preco, por_kg").eq("id", it.itemId).maybeSingle();
+      if (!prod) { falhas?.push("um item que saiu do cardápio"); continue; }
       // Vendido por kg (migration 0259): a quantidade é o peso (0,452) e a descrição leva os kg.
       const porKg = !!(prod as { por_kg?: boolean }).por_kg;
       const kg = porKg ? Math.round(Math.min(20, Math.max(0, Number((it as { qtd?: number }).qtd) || 0)) * 1000) / 1000 : 0;
-      if (porKg && kg <= 0) continue;
+      if (porKg && kg <= 0) { falhas?.push(`"${(prod as { nome: string }).nome}" (falta o peso)`); continue; }
       const nome = (prod as { nome: string }).nome;
       linhas.push(comObs({ descricao: porKg ? `${nome} (${fmtKg(kg)})` : nome, qtd: porKg ? kg : q, preco: r2(precoVenda(prod as { preco?: number; promo_preco?: number })), itemId: it.itemId, promo: Number((prod as { promo_preco?: number | null }).promo_preco ?? 0) > 0 }));
     } else if (it.kind === "pizza") {
       const l = await resolverPizza(db, it.tamanhoId, it.saborIds, it.bordaId);
-      if (l) linhas.push(comObs({ ...l, qtd: q }));
+      if (!l || l.saborSemPreco) falhas?.push(l ? `a pizza "${l.descricao}" (um sabor não tem preço nesse tamanho)` : "uma pizza (tamanho ou sabores mudaram)");
+      if (l) { const { saborSemPreco: _s, ...semMarca } = l; void _s; linhas.push(comObs({ ...semMarca, qtd: q })); }
     } else {
       const l = await resolverCombo(db, it.itemId, it.opcaoIds);
+      if (!l) falhas?.push("um combo (as escolhas mudaram ou não fecham)");
       if (l) linhas.push(comObs({ ...l, qtd: q }));
     }
   }
@@ -297,7 +318,9 @@ export async function criarPedidoDeliveryCore(
   if (validos.length === 0) return { ok: false as const, mensagem: "Pedido sem itens." };
   if (!d.nome.trim()) return { ok: false as const, mensagem: "Informe o nome do cliente." };
 
-  const linhas = await resolverLinhas(db, validos);
+  const falhas: string[] = [];
+  const linhas = await resolverLinhas(db, validos, falhas);
+  if (falhas.length) return { ok: false as const, mensagem: `Não consegui montar ${falhas.join(", ")}. Tire do carrinho e escolha de novo.` };
   if (linhas.length === 0) return { ok: false as const, mensagem: "Não consegui montar os itens." };
   if (opts.pedidoMinimo && opts.pedidoMinimo > 0) {
     const sub = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
@@ -375,7 +398,12 @@ export async function criarPedidoDeliveryCore(
     criado_por: opts.criadoPor,
     lancamento_id: lancamentoId,
   }));
-  await db.from("pdv_comanda_itens").insert(rows);
+  // DEL-08: falha ao gravar os itens não deixa comanda vazia nem "Pedido enviado!" falso.
+  const { error: erroItens } = await db.from("pdv_comanda_itens").insert(rows);
+  if (erroItens) {
+    await db.from("pdv_comandas").delete().eq("id", comandaId);
+    return { ok: false as const, mensagem: "Não consegui gravar o pedido. Confira a internet e tente de novo." };
+  }
 
   // Painel e cardápio público chamam este mesmo núcleo. Quando vem do
   // cardápio, o acesso é com a chave administrativa e não passa pelas regras
@@ -424,6 +452,12 @@ export async function criarPedidoDeliveryCore(
     })
     .select("id, numero_turno")
     .single();
+  if (!ped) {
+    // DEL-08: sem o registro do delivery, a comanda e os itens não ficam soltos.
+    await db.from("pdv_comanda_itens").delete().eq("comanda_id", comandaId);
+    await db.from("pdv_comandas").delete().eq("id", comandaId);
+    return { ok: false as const, mensagem: "Não consegui gravar o pedido. Confira a internet e tente de novo." };
+  }
 
   // Cashback usado: consome do saldo agora (o que vence antes primeiro). Se
   // outro pedido gastou no meio-tempo e veio menos, acerta o desconto.

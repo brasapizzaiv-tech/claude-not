@@ -20,26 +20,18 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
   const desde = desdeDias(dias);
   const supabase = await createClient();
 
-  const [{ data: cobs }, { data: peds }] = await Promise.all([
-    supabase
-      .from("pix_cobrancas")
-      .select("txid, valor, origem, status, descricao, criado_em, pago_em, valor_devolvido, devolucoes")
-      .gte("criado_em", desde)
-      .order("criado_em", { ascending: false })
-      .limit(300),
-    supabase
-      .from("delivery_pedidos")
-      .select("numero, total, pix_txid, pix_status, pix_criado_em")
-      .not("pix_txid", "is", null)
-      .gte("pix_criado_em", desde)
-      .order("pix_criado_em", { ascending: false })
-      .limit(300),
-  ]);
+  // DEL-03: o Pix do app de pedidos também tem linha aqui (origem "delivery"),
+  // criada junto da cobrança — antes a tela lia colunas que não existem em
+  // delivery_pedidos e omitia esses Pix sem avisar.
+  const { data: cobs } = await supabase
+    .from("pix_cobrancas")
+    .select("txid, valor, origem, status, descricao, criado_em, pago_em, valor_devolvido, devolucoes")
+    .gte("criado_em", desde)
+    .order("criado_em", { ascending: false })
+    .limit(300);
 
   type Cob = { txid: string; valor: number; origem: string; status: string; descricao: string | null; criado_em: string; pago_em: string | null; valor_devolvido: number; devolucoes: PixLinha["devolucoes"] };
-  type Ped = { numero: number; total: number; pix_txid: string; pix_status: string | null; pix_criado_em: string | null };
 
-  const jaTem = new Set(((cobs as Cob[]) ?? []).map((c) => c.txid));
   const linhas: PixLinha[] = [
     ...((cobs as Cob[]) ?? []).map((c) => ({
       txid: c.txid,
@@ -53,21 +45,6 @@ export default async function PixRecebidosPage({ searchParams }: { searchParams:
       valorDevolvido: Number(c.valor_devolvido ?? 0),
       devolucoes: (c.devolucoes ?? []).map((d) => ({ ...d, em: fmt(d.em) ?? d.em })),
     })),
-    // Pix do app de pedidos (delivery) que ainda não têm registro próprio.
-    ...((peds as Ped[]) ?? [])
-      .filter((p) => !jaTem.has(p.pix_txid))
-      .map((p) => ({
-        txid: p.pix_txid,
-        valor: Number(p.total),
-        origem: "delivery",
-        status: p.pix_status === "pago" ? "pago" : p.pix_status === "erro" ? "cancelado" : "aguardando",
-        descricao: `Pedido #${p.numero}`,
-        ordem: p.pix_criado_em ?? "",
-        criadoEm: fmt(p.pix_criado_em) ?? "—",
-        pagoEm: null,
-        valorDevolvido: 0,
-        devolucoes: [],
-      })),
   ].sort((a, b) => b.ordem.localeCompare(a.ordem));
 
   const pagos = linhas.filter((l) => l.status === "pago");

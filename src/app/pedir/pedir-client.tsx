@@ -504,7 +504,7 @@ export function PedirClient({
           <button onClick={() => setFase("menu")} className="mb-3 min-h-11 text-sm font-semibold text-texto-marca">← Voltar pro cardápio</button>
           <h1 className="mb-3 flex items-center gap-2 text-xl font-bold"><Icone nome="lista" tamanho={19} /> Meus pedidos</h1>
           <div className="mb-4 flex gap-2">
-            <input aria-label="Seu telefone com DDD" value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Seu telefone com DDD" autoComplete="tel-national" type="tel" value={histTel} onChange={(e) => setHistTel(e.target.value)} inputMode="tel" placeholder="Seu telefone com DDD" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
             <button onClick={buscarHistorico} disabled={histBuscando} className="btn-principal text-sm">{histBuscando ? "…" : "Buscar"}</button>
           </div>
           {histCashback && (
@@ -520,7 +520,7 @@ export function PedirClient({
             </div>
           )}
           {histLista !== null && (
-            histLista.length === 0 ? <p className="py-8 text-center text-sm text-texto-fraco">Nenhum pedido encontrado pra esse telefone.</p> : (
+            histLista.length === 0 ? <p className="py-8 text-center text-sm text-texto-fraco">Nenhum pedido deste telefone feito neste celular. Por segurança, seus pedidos aparecem só no aparelho de onde você pediu.</p> : (
               <div className="space-y-2">
                 {histLista.map((h) => (
                   <a key={h.id} href={`/pedir/acompanhar/${h.id}`} className="cartao block p-4">
@@ -581,8 +581,8 @@ export function PedirClient({
 
           <h2 className="mb-2 font-numero text-base font-bold text-texto">Seus dados</h2>
           <div className="mb-4 space-y-2">
-            <input aria-label="Seu nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-            <input aria-label="Telefone com DDD (51 99999-9999)" value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Seu nome" autoComplete="name" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+            <input aria-label="Telefone com DDD (51 99999-9999)" autoComplete="tel-national" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} inputMode="tel" placeholder="Telefone com DDD (51 99999-9999)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
             <label className="cartao flex cursor-pointer items-start gap-3 p-4 text-sm">
               <input type="checkbox" checked={aceitaPromo} onChange={(e) => { setAceitaPromo(e.target.checked); setPromoMexeu(true); }} className="mt-0.5 h-5 w-5" style={{ accentColor: "var(--marca-primaria)" }} />
               <span><span className="font-semibold">Quero receber promoções pelo WhatsApp</span><span className="block text-xs text-texto-suave">Pode parar quando quiser respondendo SAIR.</span></span>
@@ -590,7 +590,7 @@ export function PedirClient({
             {aceitaPromo && !temAniversario && (
               <label className="block text-sm">
                 <span className="text-xs text-texto-suave">Seu aniversário (opcional): no seu dia você ganha uma promoção</span>
-                <input type="date" value={nascimento} onChange={(e) => setNascimento(e.target.value)} className="mt-1 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco" />
+                <input type="date" autoComplete="bday" value={nascimento} onChange={(e) => setNascimento(e.target.value)} className="mt-1 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco" />
               </label>
             )}
           </div>
@@ -625,14 +625,14 @@ export function PedirClient({
             <div className="mb-4 space-y-2">
               {lembrado && <p className="text-xs text-ok-texto">{lembrado}</p>}
               <div className="grid grid-cols-3 gap-2">
-                <input aria-label="Rua" value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-                <input aria-label="Nº" value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Rua" autoComplete="address-line1" value={end.logradouro} onChange={(e) => { setEnd({ ...end, logradouro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Rua" className="col-span-2 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Nº" inputMode="numeric" autoComplete="off" value={end.numero} onChange={(e) => { setEnd({ ...end, numero: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Nº" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input aria-label="Bairro" value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
-                <input aria-label="Cidade" value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Bairro" autoComplete="address-level3" value={end.bairro} onChange={(e) => { setEnd({ ...end, bairro: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Bairro" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+                <input aria-label="Cidade" autoComplete="address-level2" value={end.cidade} onChange={(e) => { setEnd({ ...end, cidade: e.target.value }); setTaxa(null); setCalcMsg(null); }} placeholder="Cidade" className="min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               </div>
-              <input aria-label="Complemento (apto, casa...)" value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
+              <input aria-label="Complemento (apto, casa...)" autoComplete="address-line2" value={end.complemento} onChange={(e) => setEnd({ ...end, complemento: e.target.value })} placeholder="Complemento (apto, casa...)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               <input aria-label="Ponto de referência (opcional)" value={end.referencia} onChange={(e) => setEnd({ ...end, referencia: e.target.value })} placeholder="Ponto de referência (opcional)" className="w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
               <button onClick={calcularTaxa} disabled={calculando} className="btn-secundario w-full text-sm">
                 {calculando ? "Calculando..." : <span className="inline-flex items-center justify-center gap-1.5"><Icone nome="local" tamanho={14} /> Calcular entrega</span>}
@@ -658,7 +658,7 @@ export function PedirClient({
             <input aria-label="Troco para quanto? (opcional)" value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="mb-3 w-full min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco " />
           )}
           <div className="mb-3 flex gap-2">
-            <input aria-label="Cupom de desconto" value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco uppercase " />
+            <input aria-label="Cupom de desconto" autoComplete="off" autoCapitalize="characters" value={cupomCodigo} onChange={(e) => { setCupomCodigo(e.target.value.toUpperCase()); }} placeholder="Cupom de desconto" className="flex-1 min-h-11 rounded-controle border border-borda bg-painel-cartao px-3 py-2.5 text-texto placeholder:text-texto-fraco uppercase " />
             <button onClick={aplicarCupom} disabled={cupomProc || !cupomCodigo.trim()} className="btn-secundario text-sm">{cupomProc ? "..." : "Aplicar"}</button>
           </div>
           {cupomMsg && <p className="mb-3 text-sm text-texto-suave">{cupomMsg}</p>}
@@ -737,7 +737,7 @@ export function PedirClient({
         <label className="flex h-[46px] items-center gap-2.5 rounded-controle bg-painel-cartao px-4 shadow-controle">
           <Icone nome="buscar" tamanho={18} className="shrink-0 text-texto-fraco" />
           <span className="sr-only">Buscar no cardápio</span>
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pizza, lanche, bebida…" className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-texto placeholder:text-texto-fraco" />
+          <input type="search" aria-label="Buscar no cardápio" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pizza, lanche, bebida…" className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-texto placeholder:text-texto-fraco" />
         </label>
         {!busca && (
           <div ref={barraRef} className="mt-2 flex gap-1.5 overflow-x-auto pb-1">

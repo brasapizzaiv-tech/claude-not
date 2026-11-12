@@ -116,7 +116,7 @@ export function EventosClient({ eventos, hoje }: { eventos: Evento[]; hoje: stri
             </div>
             <div className="w-48">
               <label className={ROTULO} htmlFor="e-telefone">Telefone</label>
-              <input id="e-telefone" name="telefone" defaultValue={editando?.telefone ?? ""} className={CAMPO} />
+              <input id="e-telefone" type="tel" inputMode="tel" name="telefone" defaultValue={editando?.telefone ?? ""} className={CAMPO} />
             </div>
           </div>
 

@@ -209,14 +209,17 @@ export async function marcarEntregue(token: string, id: string, recebido: { form
   const ped = p as { id: string; status: string; entregador_id: string | null; comanda_id: string | null; pago: boolean } | null;
   if (!ped || ped.entregador_id !== b.id) return { ok: false as const, mensagem: "Esse pedido não está com você." };
   if (ped.status === "entregue") return { ok: true as const };
-  const forma = ["Dinheiro", "Cartão", "Pix", "Já pago"].includes(recebido.forma) ? recebido.forma : "Já pago";
+  // DEL-09: com a tela velha o boy "entregava" pedido cancelado (e o cashback creditava).
+  if (ped.status === "cancelado") return { ok: false as const, mensagem: "Este pedido foi cancelado pelo restaurante. Não entregue: ligue pra loja." };
+  const forma =["Dinheiro", "Cartão", "Pix", "Já pago"].includes(recebido.forma) ? recebido.forma : "Já pago";
   const valor = forma === "Já pago" ? 0 : Math.max(0, r2(Number(recebido.valor) || 0));
   const agora = new Date().toISOString();
-  await admin.from("delivery_pedidos").update({
+  const { data: entregou } = await admin.from("delivery_pedidos").update({
     status: "entregue", entregue_em: agora, saiu_em: ped.status === "saiu" ? undefined : agora,
     recebido_forma: forma, recebido_valor: valor,
     ...(forma !== "Já pago" && !ped.pago ? { forma_pagamento: forma } : {}),
-  }).eq("id", ped.id);
+  }).eq("id", ped.id).neq("status", "cancelado").select("id"); // cancelado no meio-tempo não vira entregue
+  if (!entregou || entregou.length === 0) return { ok: false as const, mensagem: "Este pedido foi cancelado pelo restaurante. Não entregue: ligue pra loja." };
   if (ped.comanda_id) await admin.from("pdv_comandas").update({ status: "fechada", fechada_em: agora }).eq("id", ped.comanda_id);
   await avisarPedido(ped.id, "entregue");
   return { ok: true as const };

@@ -1,7 +1,7 @@
 "use client";
 
 import { Icone, type NomeIcone } from "@/components/icone";
-import { avisar, perguntar } from "@/components/dialogo";
+import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -342,7 +342,12 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     const prox = p.status === "__cancelar" ? "cancelado" : ST[p.status]?.proximo;
     if (!prox) return;
     start(async () => {
-      const r = await definirStatusDelivery(p.id, prox, extra);
+      let r = await definirStatusDelivery(p.id, prox, extra);
+      // DEL-06: pedido já pago pede confirmação antes de cancelar.
+      if (!r.ok && "precisaConfirmar" in r && r.precisaConfirmar) {
+        if (!(await confirmar(r.mensagem, { perigo: true, okTexto: "Cancelar mesmo assim" }))) return;
+        r = await definirStatusDelivery(p.id, prox, { ...extra, cancelarPago: true });
+      }
       if (!r.ok && "mensagem" in r && r.mensagem) void avisar(r.mensagem);
       if (r.ok && "aviso" in r && r.aviso) void avisar(r.aviso);
       router.refresh();

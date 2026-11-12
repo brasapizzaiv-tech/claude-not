@@ -32,6 +32,10 @@
       "schedule": "0 11 * * *"
     },
     {
+      "path": "/api/delivery/pix",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/fiscal/conferir",
       "schedule": "10,40 * * * *"
     }

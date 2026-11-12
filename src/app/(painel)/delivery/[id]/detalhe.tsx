@@ -1,7 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { avisar, perguntar } from "@/components/dialogo";
+import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -127,7 +127,14 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
             </button>
           )}
           {!cancelado && p.status !== "entregue" && (
-            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", "", { perigo: true, okTexto: "Cancelar o pedido", obrigatorio: true }); if (m && m.trim()) act(() => definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() })); }} disabled={proc} className="btn-secundario text-sm !text-urgente-texto">Cancelar</button>
+            <button onClick={async () => { const m = await perguntar("Motivo do cancelamento (o cliente vai ver):", "", { perigo: true, okTexto: "Cancelar o pedido", obrigatorio: true }); if (m && m.trim()) act(async () => {
+              // DEL-06: pedido já pago pede confirmação antes de cancelar.
+              const r = await definirStatusDelivery(p.id, "cancelado", { motivo: m.trim() });
+              if (!r.ok && "precisaConfirmar" in r && r.precisaConfirmar) {
+                return (await confirmar(r.mensagem, { perigo: true, okTexto: "Cancelar mesmo assim" })) ? definirStatusDelivery(p.id, "cancelado", { motivo: m.trim(), cancelarPago: true }) : { ok: true };
+              }
+              return r;
+            }); }} disabled={proc} className="btn-secundario text-sm !text-urgente-texto">Cancelar</button>
           )}
         </div>
       </div>

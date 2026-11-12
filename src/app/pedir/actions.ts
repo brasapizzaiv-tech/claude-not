@@ -4,15 +4,19 @@
 // servidor (padrão dos apps por token). TODO preço/taxa é recalculado aqui —
 // nada do que vem do navegador é confiado.
 import { createAdminClient } from "@/lib/supabase/admin";
-import { empresaAtualId } from "@/lib/empresa";
+import { headers } from "next/headers";
+import { empresaAtual, empresaAtualId } from "@/lib/empresa";
 import { calcularTaxaEntrega, criarPedidoDeliveryCore, type LinhaPedido } from "@/lib/delivery-core";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
 import { lerConfigPizzas, pizzasAgora } from "@/lib/pizzas-horario";
-import { pixConfigurado, criarCobrancaPix, consultarCobrancaPix, gerarTxid } from "@/lib/pix";
+import { pixConfigurado, criarCobrancaPix, cancelarCobrancaPix, gerarTxid } from "@/lib/pix";
+import { confirmarPixApp, registrarCobrancaApp } from "@/lib/delivery-pix";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { avisarPedido } from "@/lib/whatsapp";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { semCuringa } from "@/lib/format";
+import { foneCandidatos } from "@/lib/telefone";
+import { aparelhoReconhece, lembrarAparelho } from "@/lib/pedir-aparelho";
 
 export type { LinhaPedido } from "@/lib/delivery-core";
 
@@ -21,6 +25,14 @@ export async function calcularEntregaPublico(endereco: {
   logradouro?: string; numero?: string; bairro?: string; cidade?: string; cep?: string;
 }) {
   const admin = createAdminClient();
+  // CRN-02: no máximo 30 cálculos por IP em 10 min (cada um pode ser uma chamada paga ao Google).
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "?";
+  const { count } = await admin.from("geo_consultas").select("id", { count: "exact", head: true })
+    .eq("ip", ip).gte("em", new Date(Date.now() - 10 * 60_000).toISOString());
+  if ((count ?? 0) >= 30) return { ok: false as const, mensagem: "Muitas consultas seguidas. Espere uns minutos e tente de novo, ou peça pelo WhatsApp." };
+  await admin.from("geo_consultas").insert({ ip });
+  if (Math.random() < 0.05) await admin.from("geo_consultas").delete().lt("em", new Date(Date.now() - 86400_000).toISOString());
   return calcularTaxaEntrega(admin, endereco);
 }
 
@@ -29,10 +41,15 @@ export async function calcularEntregaPublico(endereco: {
 export async function dadosClientePublico(telefone: string) {
   const fone = (telefone || "").replace(/\D/g, "");
   if (fone.length < 10) return null;
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return null;
   const admin = createAdminClient();
+  // SEC-08/DEL-13: só no aparelho que já pediu com este telefone.
+  if (!(await aparelhoReconhece(admin, empresaId, fone))) return null;
   const { data } = await admin
     .from("delivery_pedidos")
     .select("nome, tipo, logradouro, numero, complemento, bairro, cidade, referencia, cep")
+    .eq("empresa_id", empresaId)
     .eq("telefone", fone)
     .neq("status", "cancelado")
     .order("criado_em", { ascending: false })
@@ -51,10 +68,15 @@ export async function dadosClientePublico(telefone: string) {
 export async function meusPedidos(telefone: string) {
   const fone = (telefone || "").replace(/\D/g, "");
   if (fone.length < 10) return [];
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return [];
   const admin = createAdminClient();
+  // SEC-08/DEL-13: os pedidos (com o link de acompanhar) só aparecem no aparelho que pediu.
+  if (!(await aparelhoReconhece(admin, empresaId, fone))) return [];
   const { data } = await admin
     .from("delivery_pedidos")
     .select("id, criado_em, status, tipo, taxa_entrega, desconto, comanda_id, numero_turno, pdv_comandas(numero)")
+    .eq("empresa_id", empresaId)
     .eq("telefone", fone)
     .order("criado_em", { ascending: false })
     .limit(10);
@@ -96,7 +118,9 @@ export async function saldoCashbackPublico(telefone: string) {
   const { data: cfg } = await admin.from("cashback_config").select("ativo, percentual, max_resgate, canais").eq("empresa_id", empresaId).maybeSingle();
   const c = cfg as { ativo: boolean; percentual: number; max_resgate: number | null; canais: string[] } | null;
   if (!c?.ativo || !(c.canais ?? []).includes("app")) return null;
-  const { data: cli } = await admin.from("clientes").select("id").eq("empresa_id", empresaId).ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
+  // SEC-08: saldo de outra pessoa não aparece (nem pode ser usado) noutro aparelho.
+  if (!(await aparelhoReconhece(admin, empresaId, fone))) return null;
+  const { data: cli } = await admin.from("clientes").select("id").eq("empresa_id", empresaId).in("telefone_digitos", foneCandidatos(fone)).limit(1).maybeSingle();
   const base = { percentual: Number(c.percentual), maxResgate: c.max_resgate != null ? Number(c.max_resgate) : null };
   if (!cli?.id) return { ...base, saldo: 0, venceEm: null as string | null, venceValor: 0 };
   const { data: saldo } = await admin.rpc("cashback_saldo", { p_cliente: cli.id });
@@ -118,15 +142,16 @@ export async function preferenciasPublico(telefone: string) {
   const empresaId = await empresaAtualId();
   if (!empresaId) return null;
   const admin = createAdminClient();
+  if (!(await aparelhoReconhece(admin, empresaId, fone))) return null; // SEC-08
   const { data } = await admin.from("clientes").select("aceita_promocoes, nascimento, aceita_aniversario")
-    .eq("empresa_id", empresaId).ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
+    .eq("empresa_id", empresaId).in("telefone_digitos", foneCandidatos(fone)).limit(1).maybeSingle();
   const c = data as { aceita_promocoes: boolean | null; nascimento: string | null; aceita_aniversario: boolean } | null;
   if (!c) return null;
   return { aceita: c.aceita_promocoes === true, temAniversario: !!c.nascimento && c.aceita_aniversario };
 }
 
 // Valida um cupom e devolve os dados pra prévia do desconto no carrinho.
-type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean };
+type CupomRow = { id: string; codigo: string; tipo: "percent" | "valor"; valor: number; minimo: number | null; validade: string | null; max_usos: number | null; usos: number; ativo: boolean; uma_vez_por_cliente: boolean };
 async function buscarCupomValido(admin: ReturnType<typeof createAdminClient>, codigo: string, empresaId: string) {
   const cod = (codigo || "").trim().toUpperCase();
   if (!cod) return { ok: false as const, mensagem: "Digite o código do cupom." };
@@ -266,15 +291,19 @@ export async function enviarPedidoPublico(d: {
   }
 
   let clienteId: string | null = null;
+  // SEC-08: de um aparelho que nunca pediu com este telefone, o pedido sai,
+  // mas não usa o cashback da pessoa nem troca o cadastro dela (endereço só
+  // preenche o que estava vazio; aceite de promoções não muda).
+  const reconhecido = await aparelhoReconhece(admin, empresaId, fone);
   const { data: cli } = await admin
-    .from("clientes").select("id")
+    .from("clientes").select("id, logradouro")
     .eq("empresa_id", empresaId)
-    .ilike("telefone", `%${fone}%`).limit(1).maybeSingle();
+    .in("telefone_digitos", foneCandidatos(fone)).limit(1).maybeSingle();
   if (cli?.id) {
     clienteId = cli.id as string;
-    if (Object.keys(prefs).length) await admin.from("clientes").update(prefs).eq("id", clienteId);
+    if (reconhecido && Object.keys(prefs).length) await admin.from("clientes").update(prefs).eq("id", clienteId);
     // Guarda o endereço mais recente no cadastro do cliente (hoje 0 de 3.269 têm).
-    if (d.tipo === "entrega" && (d.endereco?.logradouro || "").trim()) {
+    if (d.tipo === "entrega" && (d.endereco?.logradouro || "").trim() && (reconhecido || !(cli as { logradouro: string | null }).logradouro)) {
       await admin.from("clientes").update({
         logradouro: d.endereco?.logradouro ?? null, numero: d.endereco?.numero ?? null, complemento: d.endereco?.complemento ?? null,
         bairro: d.endereco?.bairro ?? null, municipio: d.endereco?.cidade ?? null, cep: d.endereco?.cep ?? null,
@@ -309,6 +338,18 @@ export async function enviarPedidoPublico(d: {
     if (!rc.ok) return { ok: false as const, mensagem: rc.mensagem };
     cupom = { codigo: rc.cupom.codigo, tipo: rc.cupom.tipo, valor: Number(rc.cupom.valor), minimo: rc.cupom.minimo != null ? Number(rc.cupom.minimo) : null };
     cupomId = rc.cupom.id;
+    // DEL-11: "uma vez por cliente" (pelo telefone), sem contar pedido cancelado.
+    if (rc.cupom.uma_vez_por_cliente) {
+      const { count } = await admin.from("delivery_pedidos").select("id", { count: "exact", head: true })
+        // O telefone do pedido fica só em números, com ou sem o 55 e o 9: confere todas as formas.
+        .eq("empresa_id", empresaId).eq("cupom_id", cupomId).neq("status", "cancelado")
+        .in("telefone", foneCandidatos(fone).flatMap((t) => [t, `55${t}`]));
+      if ((count ?? 0) > 0) return { ok: false as const, mensagem: `Você já usou o cupom ${rc.cupom.codigo}. Ele vale uma vez por cliente.` };
+    }
+    // DEL-11: o uso é somado no banco ANTES do pedido, conferindo o limite —
+    // dois pedidos ao mesmo tempo não passam mais do "máx. de usos".
+    const { data: reservou } = await admin.rpc("cupom_usar", { p_cupom: cupomId });
+    if (reservou !== true) return { ok: false as const, mensagem: "Esse cupom esgotou." };
   }
 
   const r = await criarPedidoDeliveryCore(
@@ -331,18 +372,20 @@ export async function enviarPedidoPublico(d: {
       agendadoPara,
       areaId, areaNome,
     },
-    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo, empresaId, usarCashback: !!d.usarCashback },
+    { status: "pendente", atendenteId: null, criadoPor: null, cupom, pedidoMinimo: hcfg.pedidoMinimo, empresaId, usarCashback: !!d.usarCashback && reconhecido },
   );
-  if (!r.ok) return r;
+  if (!r.ok) {
+    if (cupomId) await admin.rpc("cupom_devolver", { p_cupom: cupomId });
+    return r;
+  }
+  if (cupomId) await admin.from("delivery_pedidos").update({ cupom_id: cupomId }).eq("id", r.id);
+  // SEC-08: o aparelho que fez o pedido passa a ver os dados deste telefone.
+  await lembrarAparelho(admin, empresaId, fone, r.id);
   await avisarPedido(r.id, "recebido");
   // Veio pelo link de uma campanha: marca o pedido (resultado da campanha).
   if (d.campanhaId && /^[0-9a-f-]{36}$/i.test(d.campanhaId)) {
     const { data: camp } = await admin.from("wpp_campanhas").select("id").eq("id", d.campanhaId).eq("empresa_id", empresaId).maybeSingle();
     if (camp) await admin.from("delivery_pedidos").update({ campanha_id: d.campanhaId }).eq("id", r.id);
-  }
-  if (cupomId) {
-    const { data: cAtual } = await admin.from("cupons").select("usos").eq("id", cupomId).single();
-    await admin.from("cupons").update({ usos: Number((cAtual as { usos: number } | null)?.usos ?? 0) + 1 }).eq("id", cupomId);
   }
 
   // Pix online: cria a cobrança e devolve o copia-e-cola pro QR na tela.
@@ -356,8 +399,16 @@ export async function enviarPedidoPublico(d: {
         txid: gerarTxid(),
         valor: r.total!,
         nomeDevedor: nome,
-        descricao: `Pedido Brasa #${r.numero ?? ""}`.trim(),
+        descricao: `Pedido ${(await empresaAtual())?.nome ?? ""} #${r.numero ?? ""}`.replace(/\s+/g, " ").trim(),
       });
+      // DEL-03: a cobrança do app fica junto das do caixa (lista de Pix e estorno).
+      // Sem esse registro o Pix pago nunca acharia o valor pro caixa: cancela a
+      // cobrança no banco e o pedido segue como Pix na entrega.
+      const registrou = await registrarCobrancaApp(admin, { empresaId, txid: cob.txid, valor: r.total!, copiaECola: cob.copiaECola, descricao: `Delivery #${r.numero ?? "?"} · ${nome} (app)` });
+      if (!registrou) {
+        try { await cancelarCobrancaPix(cob.txid); } catch { /* fica sem QR na tela de qualquer jeito */ }
+        throw new Error("cobrança sem registro");
+      }
       await admin.from("delivery_pedidos").update({
         pix_txid: cob.txid,
         pix_copia_cola: cob.copiaECola,
@@ -375,25 +426,12 @@ export async function enviarPedidoPublico(d: {
 }
 
 // Confere se o Pix do pedido caiu (o app do cliente consulta a cada poucos
-// segundos na tela do QR). Quando cai, o pedido vira PAGO sozinho.
+// segundos na tela do QR; a rotina /api/delivery/pix faz o mesmo de 5 em 5 min).
+// Quando cai, o pedido vira PAGO e a venda entra no caixa (src/lib/delivery-pix.ts).
 export async function verificarPixPedido(pedidoId: string) {
-  const admin = createAdminClient();
-  const { data: ped } = await admin
-    .from("delivery_pedidos")
-    .select("id, pix_txid, pix_status, pago")
-    .eq("id", (pedidoId || "").trim())
-    .maybeSingle();
-  const p = ped as { id: string; pix_txid: string | null; pix_status: string | null; pago: boolean } | null;
-  if (!p?.pix_txid) return { ok: false as const };
-  if (p.pago || p.pix_status === "pago") return { ok: true as const, pago: true };
-  try {
-    const c = await consultarCobrancaPix(p.pix_txid);
-    if (c.pago) {
-      await admin.from("delivery_pedidos").update({ pago: true, pix_status: "pago", forma_pagamento: "Pix (app)" }).eq("id", p.id);
-      return { ok: true as const, pago: true };
-    }
-    return { ok: true as const, pago: false };
-  } catch {
-    return { ok: true as const, pago: false };
-  }
+  const id = (pedidoId || "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false as const };
+  const r = await confirmarPixApp(createAdminClient(), id);
+  if (!r.ok) return { ok: false as const };
+  return { ok: true as const, pago: r.pago };
 }

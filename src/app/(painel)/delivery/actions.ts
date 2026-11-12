@@ -13,6 +13,8 @@ import { geocodificar } from "@/lib/geo";
 import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
 import { contaDoMotoboy, formasDoMotoboy, pedidosComMotoboy } from "@/lib/caixa-motoboy";
+import { FORMA_PIX_APP } from "@/lib/delivery-pix";
+import { foneDigitos } from "@/lib/telefone";
 
 export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -34,21 +36,54 @@ const CARIMBO: Record<string, string> = {
 
 // extra.tempoMin: ao ACEITAR, o tempo prometido (a previsão vira agora + tempo;
 // pedido agendado mantém o horário marcado). extra.motivo: ao CANCELAR.
-export async function definirStatusDelivery(id: string, status: string, extra?: { tempoMin?: number; motivo?: string }) {
+export async function definirStatusDelivery(id: string, status: string, extra?: { tempoMin?: number; motivo?: string; cancelarPago?: boolean }) {
+  await exigirAcesso("/delivery");
   const supabase = await createClient();
   if (!(status in CARIMBO) && status !== "pendente") return { ok: false as const };
-  const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status, agendado_para, pago, forma_pagamento").eq("id", id).single();
+  const { data: ped } = await supabase.from("delivery_pedidos").select("entregador_id, comanda_id, status, agendado_para, pago, forma_pagamento, cupom_id").eq("id", id).single();
   // Motoboy não é mais obrigatório pra despachar (14/10/2026): convênio como o
   // Kern é levado por quem a casa mandar, sem entregador cadastrado.
   if (status === "cancelado" && !(extra?.motivo || "").trim()) return { ok: false as const, mensagem: "Informe o motivo do cancelamento." };
+  // DEL-06: cancelar pedido JÁ RECEBIDO não devolve o dinheiro nem tira a venda
+  // do caixa (nem o fiado/compra da equipe). Antes cancelava calado; agora a
+  // tela pergunta e só segue com "Cancelar mesmo assim".
+  if (status === "cancelado" && ped?.pago && !extra?.cancelarPago) {
+    const pixApp = ped.forma_pagamento === FORMA_PIX_APP;
+    return {
+      ok: false as const,
+      precisaConfirmar: true as const,
+      mensagem: pixApp
+        ? "Este pedido foi pago com Pix pelo app. Cancelar não devolve o dinheiro: devolva em Caixa → Pix → Estornar."
+        : `Este pedido já foi recebido${ped.forma_pagamento ? ` (${ped.forma_pagamento})` : ""}. Cancelar não devolve o dinheiro ao cliente nem tira a venda do caixa ou do fiado.`,
+    };
+  }
 
   const patch: Record<string, unknown> = { status };
   if (status in CARIMBO) patch[CARIMBO[status]] = new Date().toISOString();
   if (status === "aceito" && extra?.tempoMin && extra.tempoMin > 0 && !ped?.agendado_para) {
     patch.previsao_em = new Date(Date.now() + Math.round(extra.tempoMin) * 60000).toISOString();
   }
-  if (status === "cancelado") patch.cancelado_motivo = (extra?.motivo || "").trim().slice(0, 200);
-  await supabase.from("delivery_pedidos").update(patch).eq("id", id);
+  if (status === "cancelado") {
+    const jaPago = ped?.pago ? ` (já estava pago${ped.forma_pagamento ? `: ${ped.forma_pagamento}` : ""})` : "";
+    patch.cancelado_motivo = `${(extra?.motivo || "").trim().slice(0, 160)}${jaPago}`;
+  }
+  if (status === "cancelado") {
+    // Cancelamento conferido no próprio update: se o Pix do app (ou o caixa)
+    // marcou pago entre a leitura e aqui, não cancela sem a pergunta; e dois
+    // cliques juntos não devolvem o cupom duas vezes.
+    let q = supabase.from("delivery_pedidos").update(patch).eq("id", id).neq("status", "cancelado");
+    if (!extra?.cancelarPago) q = q.eq("pago", false);
+    const { data: cancelou } = await q.select("id");
+    if (!cancelou || cancelou.length === 0) {
+      const { data: agora } = await supabase.from("delivery_pedidos").select("status, pago").eq("id", id).maybeSingle();
+      if ((agora as { status: string } | null)?.status === "cancelado") return { ok: true as const };
+      return { ok: false as const, precisaConfirmar: true as const, mensagem: "Este pedido acabou de ser pago. Cancelar não devolve o dinheiro." };
+    }
+    // DEL-11: cancelou → o uso do cupom volta.
+    if (ped?.cupom_id) await createAdminClient().rpc("cupom_devolver", { p_cupom: ped.cupom_id });
+  } else {
+    await supabase.from("delivery_pedidos").update(patch).eq("id", id);
+  }
 
   // Pedido do app: ao ACEITAR (saindo de pendente), imprime na cozinha.
   // Agendado: imprime só quando vai pra "em preparo" (senão o papel fica
@@ -274,6 +309,7 @@ export async function criarCupom(formData: FormData) {
     minimo: num("minimo"),
     validade: String(formData.get("validade") ?? "").trim() || null,
     max_usos: num("max_usos") ? Math.round(num("max_usos")!) : null,
+    uma_vez_por_cliente: formData.get("uma_vez_por_cliente") === "1",
   });
   revalidatePath("/delivery/cupons");
 }
@@ -284,6 +320,16 @@ export async function alternarCupom(formData: FormData) {
   const id = formData.get("id") as string;
   const ativo = formData.get("ativo") === "1";
   await supabase.from("cupons").update({ ativo }).eq("id", id);
+  revalidatePath("/delivery/cupons");
+}
+
+// DEL-11: liga/desliga "uma vez por cliente" num cupom que já existe.
+export async function alternarCupomUmaVez(formData: FormData) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+  await supabase.from("cupons").update({ uma_vez_por_cliente: formData.get("valor") === "1" }).eq("id", id);
   revalidatePath("/delivery/cupons");
 }
 
@@ -432,12 +478,13 @@ export async function salvarFatias(formData: FormData) {
 export async function buscarClientePorTelefone(termo: string) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
-  const t = (termo || "").replace(/\D/g, "");
+  // DEL-05: busca nos números (telefone_digitos), não no texto formatado.
+  const t = foneDigitos(termo);
   if (t.length < 4) return [];
   const { data } = await supabase
     .from("clientes")
     .select("id, nome, telefone, logradouro, numero, complemento, bairro, municipio, cep")
-    .ilike("telefone", `%${t}%`)
+    .like("telefone_digitos", `%${t}%`)
     .limit(6);
   return (data ?? []) as {
     id: string; nome: string; telefone: string | null;
@@ -625,22 +672,11 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
   if (!cx?.id) return { ok: false as const, mensagem: "O caixa está fechado. Abra o caixa antes de receber." };
 
   const tipo = tipoDe(forma, await formasParaTipo());
-  if (tipo === "equipe" || tipo === "saldo") {
-    const esp = await lancarFormasEspeciais(supabase, {
-      pagamentos: [{ forma, valor: total, colaboradorId: dados.colaboradorId ?? null }],
-      clienteId: p.cliente_id,
-      rotulo: `delivery #${numero ?? "?"} · ${p.nome}`,
-      comandaId: p.comanda_id,
-      caixaId: cx.id,
-    });
-    if (!esp.ok) return { ok: false as const, mensagem: esp.mensagem };
-  }
-
-  for (const i of itens) {
-    if (i.pago) continue;
-    await supabase.from("pdv_comanda_itens").update({ valor_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), base_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), pago: true }).eq("id", i.id);
-  }
-  const { data: mov } = await supabase.from("pdv_caixa_mov").insert({
+  // DEL-08: o movimento do caixa vem PRIMEIRO; se não gravar, nada é marcado
+  // como pago (antes os itens e a comanda fechavam como pagos sem a venda no caixa).
+  // O fiado / compra da equipe vem DEPOIS dele: se o caixa falhar, tentar de
+  // novo não lança a conta da pessoa duas vezes.
+  const { data: mov, error: erroMov } = await supabase.from("pdv_caixa_mov").insert({
     caixa_id: cx.id,
     tipo: "venda",
     descricao: `Delivery #${numero ?? "?"} · ${p.nome}`,
@@ -650,6 +686,26 @@ export async function receberDelivery(id: string, dados: { forma: string; colabo
     ...(pedeCodigo && codigo ? { observacao: `${pedeCodigo}: ${codigo}` } : {}),
     ...camposTefDoMov(tef),
   }).select("id").maybeSingle();
+  if (erroMov || !mov) {
+    return { ok: false as const, mensagem: `Não consegui lançar no caixa${tef ? " (a maquininha já cobrou: anote o NSU)" : ""}. Confira a internet e tente de novo.` };
+  }
+  if (tipo === "equipe" || tipo === "saldo") {
+    const esp = await lancarFormasEspeciais(supabase, {
+      pagamentos: [{ forma, valor: total, colaboradorId: dados.colaboradorId ?? null }],
+      clienteId: p.cliente_id,
+      rotulo: `delivery #${numero ?? "?"} · ${p.nome}`,
+      comandaId: p.comanda_id,
+      caixaId: cx.id,
+    });
+    if (!esp.ok) {
+      await supabase.from("pdv_caixa_mov").delete().eq("id", (mov as { id: string }).id);
+      return { ok: false as const, mensagem: esp.mensagem };
+    }
+  }
+  for (const i of itens) {
+    if (i.pago) continue;
+    await supabase.from("pdv_comanda_itens").update({ valor_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), base_pago: r2(Number(i.qtd) * Number(i.preco_unit || 0)), pago: true }).eq("id", i.id);
+  }
   const tefTransacaoId = tef
     ? await registrarTefDaVenda(supabase, { caixaId: cx.id, movId: (mov as { id?: string } | null)?.id ?? null, comandaIds: p.comanda_id ? [p.comanda_id] : [], valor: total, tef })
     : null;

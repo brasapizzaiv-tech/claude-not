@@ -76,7 +76,7 @@ export default async function EntregadoresPage() {
         <form action={criarEntregador} className="cartao flex flex-col gap-2 p-4">
           <div className="rotulo">Eventual · só no delivery</div>
           <input aria-label="Nome" name="nome" required placeholder="Nome" className="campo" />
-          <input aria-label="Telefone (opcional)" name="telefone" placeholder="Telefone (opcional)" className="campo" />
+          <input aria-label="Telefone (opcional)" type="tel" inputMode="tel" name="telefone" placeholder="Telefone (opcional)" className="campo" />
           <Turnos />
           <Enviar className="btn-secundario">Adicionar eventual</Enviar>
         </form>

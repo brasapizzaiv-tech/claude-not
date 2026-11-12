@@ -510,7 +510,7 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-texto-suave">WhatsApp</label>
-            <input aria-label="(51) 99999-9999" name="whatsapp" placeholder="(51) 99999-9999" defaultValue={editando?.whatsapp ?? ""} className={inputCls} />
+            <input aria-label="WhatsApp (51) 99999-9999" type="tel" inputMode="tel" name="whatsapp" placeholder="(51) 99999-9999" defaultValue={editando?.whatsapp ?? ""} className={inputCls} />
           </div>
 
           {/* Quadro / pagamento */}

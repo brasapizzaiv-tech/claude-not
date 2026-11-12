@@ -143,26 +143,10 @@ export async function estornarPix(txid: string, valor: number, motivo: string) {
   const { data: userData } = await supabase.auth.getUser();
 
   type Cob = { txid: string; valor: number; status: string; e2eid: string | null; valor_devolvido: number; devolucoes: unknown[] };
-  let cob = (await supabase.from("pix_cobrancas").select("txid, valor, status, e2eid, valor_devolvido, devolucoes").eq("txid", txid).maybeSingle()).data as Cob | null;
+  const cob = (await supabase.from("pix_cobrancas").select("txid, valor, status, e2eid, valor_devolvido, devolucoes").eq("txid", txid).maybeSingle()).data as Cob | null;
 
-  // Pix do app de pedidos: cria o registro aqui pra guardar a devolução.
-  if (!cob) {
-    const { data: ped } = await supabase
-      .from("delivery_pedidos")
-      .select("numero, total, pix_status, pix_copia_cola, pix_criado_em")
-      .eq("pix_txid", txid)
-      .maybeSingle();
-    const pd = ped as { numero: number; total: number; pix_status: string | null; pix_copia_cola: string | null; pix_criado_em: string | null } | null;
-    if (!pd) return { ok: false as const, erro: "Cobrança não encontrada." };
-    if (pd.pix_status !== "pago") return { ok: false as const, erro: "Esse Pix não consta como pago." };
-    const { data: novo } = await supabase
-      .from("pix_cobrancas")
-      .insert({ txid, valor: pd.total, descricao: `Pedido #${pd.numero}`, origem: "delivery", status: "pago", copia_cola: pd.pix_copia_cola, banco: pixBanco(), criado_em: pd.pix_criado_em ?? new Date().toISOString(), pago_em: new Date().toISOString() })
-      .select("txid, valor, status, e2eid, valor_devolvido, devolucoes")
-      .single();
-    cob = novo as Cob | null;
-    if (!cob) return { ok: false as const, erro: "Não consegui registrar a cobrança." };
-  }
+  // DEL-03: o Pix do app de pedidos nasce com linha em pix_cobrancas (src/lib/delivery-pix.ts).
+  if (!cob) return { ok: false as const, erro: "Cobrança não encontrada." };
   if (cob.status !== "pago") return { ok: false as const, erro: "Só dá pra estornar Pix que foi pago." };
   const resta = Math.round((Number(cob.valor) - Number(cob.valor_devolvido ?? 0)) * 100) / 100;
   if (v > resta + 0.005) return { ok: false as const, erro: `Só dá pra devolver até ${moedaBR(resta)}.` };
