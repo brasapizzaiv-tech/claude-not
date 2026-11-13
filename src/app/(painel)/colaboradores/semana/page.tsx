@@ -86,6 +86,17 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       .filter((p) => p.turno === "noite" && noites10.has(String(p.data).slice(0, 10)) && !ativos.has(p.colaborador_id))
       .map((p) => p.colaborador_id),
   )];
+  // A divisão do 10% congela no 1º acerto da semana (EQP-02). Quem foi
+  // CADASTRADO depois disso não estava lá pra entrar — esqueceram de pôr e
+  // cadastraram depois (Lidiane, noites 06–07/11). Esses entram com a
+  // configuração de hoje; quem já existia segue com a congelada.
+  const { data: primeiroAcerto } = await supabase.from("semana_pagamentos").select("criado_em")
+    .eq("segunda", segunda).order("criado_em").limit(1).maybeSingle();
+  const congeladoEm = (primeiroAcerto as { criado_em?: string } | null)?.criado_em ?? null;
+  const { data: novosRows } = congeladoEm
+    ? await supabase.from("colaboradores").select("id").eq("recebe_10", true).gt("criado_em", congeladoEm)
+    : { data: [] as { id: string }[] };
+  const novos10 = ((novosRows ?? []) as { id: string }[]).map((r) => r.id);
   const { data: inativos } = idsInativos.length
     ? await supabase.from("colaboradores").select("id, peso_10").in("id", idsInativos).eq("recebe_10", true)
     : { data: [] as { id: string; peso_10: number | null }[] };
@@ -141,6 +152,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
       extrasIniciais={(extras ?? []) as { colaborador_id: string; valor: number; motivo: string | null; turno: "dia" | "noite"; desconto: number; desconto_motivo: string | null }[]}
       adiantamentos={(adiantamentos ?? []) as { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null }[]}
       inativos10={(inativos ?? []) as { id: string; peso_10: number | null }[]}
+      novos10={novos10}
       batidasPonto={batidasPonto}
       pontoSemPessoa={[...semPessoa.values()]}
     />

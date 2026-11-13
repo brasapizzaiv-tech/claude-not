@@ -65,7 +65,7 @@ type Pago = { colaborador_id: string; valor: number; lancamento_id: string | nul
 type Adiantamento = { id: string; colaborador_id: string; nome: string; valor: number; data: string; motivo: string | null };
 
 export function SemanaClient({
-  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], batidasPonto = [], pontoSemPessoa = [], cofreSaldo = null, pagosParaCofre = [],
+  segunda, dias, pessoas, presencasIniciais, dezIniciais, servicoCaixa = {}, descontoDezPadrao = 0, pagos, fiadoPor, extrasIniciais, adiantamentos, inativos10 = [], novos10 = [], batidasPonto = [], pontoSemPessoa = [], cofreSaldo = null, pagosParaCofre = [],
 }: {
   /** Já pagos em dinheiro nesta semana sem ter saído do cofre (dá pra tirar agora). */
   pagosParaCofre?: string[];
@@ -77,6 +77,8 @@ export function SemanaClient({
   pontoSemPessoa?: { nome: string | null; cpf: string; n: number }[];
   /** Desativados que trabalharam nas noites de 10%: entram só na divisão. */
   inativos10?: { id: string; peso_10: number | null }[];
+  /** Cadastrados (com 10%) depois que a divisão da semana congelou: entram com a configuração de hoje. */
+  novos10?: string[];
   segunda: string;
   dias: string[];
   pessoas: Pessoa[];
@@ -255,6 +257,7 @@ export function SemanaClient({
   // acerto desta semana as noites com pagar_em = esta segunda (em geral, a
   // semana passada). As diárias são só dos dias desta semana.
   const calc = useMemo(() => {
+    const novosSet = new Set(novos10);
     const porNoite = dez.map((e) => {
       // Do arrecadado sai a parte da casa pros custos de nota e cartão (migration 0256); o resto é dividido.
       const arrecadado = numBRtxt(e.valor);
@@ -264,9 +267,15 @@ export function SemanaClient({
       // Mudar "recebe 10%" ou o peso depois não mexe mais nela; a presença sim.
       const congelada = e.divisao && typeof e.divisao === "object" ? e.divisao : null;
       const presentes: { id: string; peso: number }[] = congelada
-        ? Object.entries(congelada)
-            .filter(([id]) => marcadas.has(chave(id, e.data, "noite")))
-            .map(([id, peso]) => ({ id, peso: Number(peso) || 1 }))
+        ? [
+            ...Object.entries(congelada)
+              .filter(([id]) => marcadas.has(chave(id, e.data, "noite")))
+              .map(([id, peso]) => ({ id, peso: Number(peso) || 1 })),
+            // Cadastrado depois do congelamento: não tinha como estar na lista.
+            ...pessoas
+              .filter((p) => p.recebe_10 && novosSet.has(p.id) && !(p.id in congelada) && marcadas.has(chave(p.id, e.data, "noite")))
+              .map((p) => ({ id: p.id, peso: Number(p.peso_10) || 1 })),
+          ]
         : [
             ...pessoas.filter((p) => p.recebe_10),
             ...inativos10, // desativados depois: a parte deles já foi paga, não sobra pros outros
@@ -335,7 +344,7 @@ export function SemanaClient({
       extras: porPessoa.reduce((s, x) => s + x.extraNoite, 0),
     };
     return { porNoite, noitesPagas, porPessoa, totalPool, totalArrecadado, totalCusto, totalDiarias, totalDez, totalExtras, totalDescontosSem, turnoDia, turnoNoite };
-  }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem, inativos10]);
+  }, [dias, dez, naGrade, pessoas, marcadas, segunda, extrasSem, inativos10, novos10]);
 
   function toggle(p: Pessoa, d: string, turno: Turno) {
     const k = chave(p.id, d, turno);
