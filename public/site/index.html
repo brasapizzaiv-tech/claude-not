@@ -47,6 +47,26 @@
   ]
 }
 </script>
+<script>
+/* Google Ads — conversões do site.
+   "id" é o código da conta (AW-...); os outros são o rótulo de cada conversão
+   criada em Google Ads > Metas > Conversões. Com "id" vazio nada é carregado. */
+window.BRASA_ADS={id:"AW-17126100068",reserva:"z7OACPvSiLgdEOSYruY_",whatsapp:"",telefone:"",delivery:""};
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+(function(){
+  var c=window.BRASA_ADS; if(!c.id) return;
+  var s=document.createElement("script"); s.async=true;
+  s.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(c.id);
+  document.head.appendChild(s);
+  gtag("js",new Date()); gtag("config",c.id);
+})();
+/* Avisa o Google Ads de uma conversão. Nunca manda dado do cliente, só o tipo. */
+window.brasaConversao=function(tipo){
+  var c=window.BRASA_ADS; if(!c||!c.id||!c[tipo]) return;
+  try{ gtag("event","conversion",{send_to:c.id+"/"+c[tipo]}); }catch(e){}
+};
+</script>
 <style>
 
 :root{
@@ -993,6 +1013,7 @@ footer{padding:54px 0 70px}
       aviso.textContent = res.corpo.status==="aguardando"
         ? "Pedido enviado. Como é um grupo maior, vamos conferir as mesas e confirmar com você pelo WhatsApp."
         : "Reserva enviada. Vamos confirmar com você pelo WhatsApp.";
+      if(window.brasaConversao) window.brasaConversao("reserva");
       irParaWhatsApp();
     }).catch(function(){
       aviso.textContent="Não consegui registrar aqui. Vamos pelo WhatsApp.";
@@ -1000,6 +1021,19 @@ footer{padding:54px 0 70px}
     });
   });
 })();
+</script>
+
+<script>
+/* Conversões de contato: clique em WhatsApp, telefone e delivery, em qualquer
+   lugar da página (inclui os botões montados depois, como os do cardápio). */
+document.addEventListener("click",function(e){
+  var a=e.target&&e.target.closest?e.target.closest("a[href]"):null;
+  if(!a||!window.brasaConversao) return;
+  var h=a.getAttribute("href")||"";
+  if(h.indexOf("wa.me")>-1||h.indexOf("mandarpedido.com/whatsapp")>-1) window.brasaConversao("whatsapp");
+  else if(h.indexOf("tel:")===0) window.brasaConversao("telefone");
+  else if(h.indexOf("mandarpedido.com")>-1) window.brasaConversao("delivery");
+},true);
 </script>
 
 </body>
