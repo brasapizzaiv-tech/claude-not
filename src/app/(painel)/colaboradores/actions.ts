@@ -29,6 +29,7 @@ export async function salvarColaborador(formData: FormData) {
   const fazGarcom = formData.get("faz_garcom") === "on";
   const fazCardapio = formData.get("faz_cardapio") === "on";
   const fazCofre = formData.get("faz_cofre") === "on";
+  const fazRecepcao = formData.get("faz_recepcao") === "on";
   const checklistSetores = formData.getAll("checklist_setor").map(String).filter(Boolean);
   const temFolga = formData.get("tem_folga") === "on";
 
@@ -70,7 +71,7 @@ export async function salvarColaborador(formData: FormData) {
   if (id) {
     const { error } = await supabase
       .from("colaboradores")
-      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, checklist_setores: checklistSetores, ...quadro })
+      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, faz_recepcao: fazRecepcao, checklist_setores: checklistSetores, ...quadro })
       .eq("id", id);
     if (error) return { erro: `Não salvou: ${error.message}` };
     // O token não é lido pela sessão (SEC-04): pelo servidor, já com a permissão conferida.
@@ -83,7 +84,7 @@ export async function salvarColaborador(formData: FormData) {
     token = novoToken();
     const { data, error } = await supabase
       .from("colaboradores")
-      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, checklist_setores: checklistSetores, ...quadro })
+      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, faz_recepcao: fazRecepcao, checklist_setores: checklistSetores, ...quadro })
       .select("id")
       .single();
     if (error) return { erro: `Não salvou: ${error.message}` };

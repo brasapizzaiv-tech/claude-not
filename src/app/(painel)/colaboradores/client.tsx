@@ -242,6 +242,7 @@ function resumoQuadro(c: Colaborador): string {
   if (c.faz_garcom) partes.push("garçom");
   if (c.faz_cardapio) partes.push("cardápio");
   if (c.faz_cofre) partes.push("cofre");
+  if (c.faz_recepcao) partes.push("recepção");
   if (((c.checklist_setores as string[] | null) ?? []).length > 0) partes.push("checklists");
   return partes.join(" · ");
 }
@@ -412,6 +413,7 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
                           {c.faz_contas && <span className="inline-flex items-center gap-1"><Icone nome="dinheiro" tamanho={12} /> contas</span>}
                           {c.faz_cardapio && <span className="inline-flex items-center gap-1"><Icone nome="salao" tamanho={12} /> cardápio</span>}
                           {c.faz_cofre && <span className="inline-flex items-center gap-1"><Icone nome="cofre" tamanho={12} /> cofre</span>}
+                          {c.faz_recepcao && <span className="inline-flex items-center gap-1"><Icone nome="agenda" tamanho={12} /> recepção</span>}
                         </div>
                     </td>
                     <td className="px-4 py-3">
@@ -678,6 +680,9 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_cofre" defaultChecked={editando ? !!editando.faz_cofre : false} /> <Icone nome="cofre" tamanho={14} /> Cofre (ver o saldo, guardar dinheiro e pagar contas pelo app)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="faz_recepcao" defaultChecked={editando ? !!editando.faz_recepcao : false} /> <Icone nome="agenda" tamanho={14} /> Recepção (&quot;Reservas de hoje&quot; no app: marcar quem chegou e a mesa)
           </label>
           {setoresChecklist.length > 0 && (
             <div className="cartao p-3">

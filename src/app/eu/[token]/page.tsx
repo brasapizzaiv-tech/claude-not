@@ -137,7 +137,7 @@ export default async function AppColaboradorPage({
   const admin = createAdminClient();
   const [{ data: folgaProf }, { data: colab }] = await Promise.all([
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
-    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio, faz_cofre, checklist_setores, bate_ponto, empresa_id").eq("token", token).maybeSingle(),
+    admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio, faz_cofre, faz_recepcao, checklist_setores, bate_ponto, empresa_id").eq("token", token).maybeSingle(),
   ]);
   const temFolga = !!folgaProf;
   const fazContagem = colab?.faz_contagem ?? true;
@@ -146,6 +146,7 @@ export default async function AppColaboradorPage({
   const fazGarcom = !!colab?.faz_garcom;
   const fazCardapio = !!colab?.faz_cardapio;
   const fazCofre = !!colab?.faz_cofre;
+  const fazRecepcao = !!colab?.faz_recepcao;
   const fazChecklist = ((colab?.checklist_setores as string[] | null) ?? []).length > 0;
 
   // Contas abertas (só pra quem tem a função gerencial).
@@ -255,6 +256,15 @@ export default async function AppColaboradorPage({
           <span className="inline-flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-controle bg-destaque text-texto-marca-pilula"><Icone nome="garcom" tamanho={18} /></span> Modo garçom</span>
           <span className="text-xs font-normal text-texto-suave">mesas, pedidos, conta →</span>
         </a>
+      )}
+      {fazRecepcao && (
+        <Link
+          href={`/eu/${token}/reservas`}
+          className="cartao mb-3 flex min-h-[64px] items-center justify-between gap-3 p-4 font-semibold text-texto transition hover:bg-superficie-suave"
+        >
+          <span className="inline-flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-controle bg-destaque text-texto-marca-pilula"><Icone nome="agenda" tamanho={18} /></span> Reservas de hoje</span>
+          <span className="text-xs font-normal text-texto-suave">quem chegou, mesa →</span>
+        </Link>
       )}
       {fazChecklist && (
         <Link
