@@ -56,6 +56,11 @@ window.dataLayer=window.dataLayer||[];
 function gtag(){dataLayer.push(arguments);}
 (function(){
   var c=window.BRASA_ADS; if(!c.id) return;
+  /* Cookies de publicidade só depois do "Aceitar" do aviso; sem isso o Google
+     recebe a conversão sem cookie (modo de consentimento). */
+  var ok=false; try{ ok=localStorage.getItem("brasa_cookies")==="sim"; }catch(e){}
+  var v=ok?"granted":"denied";
+  gtag("consent","default",{ad_storage:v,ad_user_data:v,ad_personalization:v,analytics_storage:v});
   var s=document.createElement("script"); s.async=true;
   s.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(c.id);
   document.head.appendChild(s);
@@ -65,6 +70,11 @@ function gtag(){dataLayer.push(arguments);}
 window.brasaConversao=function(tipo){
   var c=window.BRASA_ADS; if(!c||!c.id||!c[tipo]) return;
   try{ gtag("event","conversion",{send_to:c.id+"/"+c[tipo]}); }catch(e){}
+};
+/* Guarda a escolha do aviso de cookies e, no "Aceitar", libera os cookies. */
+window.brasaCookies=function(aceitou){
+  try{ localStorage.setItem("brasa_cookies",aceitou?"sim":"nao"); }catch(e){}
+  if(aceitou){ try{ gtag("consent","update",{ad_storage:"granted",ad_user_data:"granted",ad_personalization:"granted",analytics_storage:"granted"}); }catch(e){} }
 };
 </script>
 <style>
@@ -188,6 +198,16 @@ h1 span{color:var(--laranja)}
 .lupa .proxima{right:22px;top:50%;transform:translateY(-50%)}
 
 /* botão flutuante do WhatsApp */
+/* aviso de cookies */
+.aviso-cookies{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--escuro-2);border-top:1px solid var(--linha);
+  box-shadow:0 -12px 30px rgba(0,0,0,.45);padding:16px 20px}
+.aviso-cookies[hidden]{display:none}
+.aviso-cookies .dentro{max-width:var(--max);margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px}
+.aviso-cookies p{flex:1 1 300px;font-size:16px;line-height:1.5;color:var(--texto)}
+.aviso-cookies .botoes{display:flex;gap:10px;flex-wrap:wrap}
+.aviso-cookies button{min-height:46px;padding:0 22px;font-family:'Bitter',Georgia,serif;font-weight:600;font-size:16px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.4);background:transparent;color:var(--texto)}
+.aviso-cookies button.sim{background:var(--laranja);border-color:var(--laranja);color:#1B120C}
 .zap-flutua{position:fixed;right:20px;bottom:20px;z-index:70;display:flex;align-items:center;gap:10px;
   background:#25D366;color:#0B2E19;text-decoration:none;padding:14px 20px 14px 16px;border-radius:999px;
   font-weight:700;font-size:16px;box-shadow:0 12px 30px rgba(0,0,0,.45);
@@ -1019,6 +1039,29 @@ footer{padding:54px 0 70px}
       aviso.textContent="Não consegui registrar aqui. Vamos pelo WhatsApp.";
       irParaWhatsApp();
     });
+  });
+})();
+</script>
+
+<div class="aviso-cookies" id="aviso-cookies" role="region" aria-label="Aviso de cookies" hidden>
+  <div class="dentro">
+    <p>Usamos cookies para saber se os nossos anúncios trazem reservas e pedidos. Você pode aceitar ou recusar; o site funciona igual nos dois casos.</p>
+    <div class="botoes">
+      <button type="button" data-cookies="nao">Recusar</button>
+      <button type="button" class="sim" data-cookies="sim">Aceitar</button>
+    </div>
+  </div>
+</div>
+<script>
+/* Aviso de cookies: aparece só para quem ainda não escolheu. */
+(function(){
+  var caixa=document.getElementById("aviso-cookies"); if(!caixa) return;
+  var escolha=null; try{ escolha=localStorage.getItem("brasa_cookies"); }catch(e){}
+  if(escolha!=="sim"&&escolha!=="nao") caixa.hidden=false;
+  caixa.addEventListener("click",function(e){
+    var b=e.target&&e.target.closest?e.target.closest("button[data-cookies]"):null; if(!b) return;
+    if(window.brasaCookies) window.brasaCookies(b.getAttribute("data-cookies")==="sim");
+    caixa.hidden=true;
   });
 })();
 </script>
