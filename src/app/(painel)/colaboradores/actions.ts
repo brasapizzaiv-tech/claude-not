@@ -181,16 +181,25 @@ export async function gerarCodigoColaborador(formData: FormData) {
 export async function codigoParaMensagem(id: string): Promise<string | null> {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
-  const { data: c } = await supabase.from("colaboradores").select("codigo, codigo_ate").eq("id", id).maybeSingle();
+  // `codigo` não é legível pela sessão (grant por coluna): lê pelo admin, preso à empresa.
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return null;
+  const { data: c } = await createAdminClient()
+    .from("colaboradores")
+    .select("codigo, codigo_ate")
+    .eq("id", id)
+    .eq("empresa_id", empresaId)
+    .maybeSingle();
   if (!c) return null;
   if (c.codigo && c.codigo_ate && new Date(c.codigo_ate).getTime() > Date.now() + 86400000) return c.codigo as string;
   const { data: codigo } = await supabase.rpc("gerar_codigo_colaborador");
   if (typeof codigo !== "string") return null;
-  const { error } = await supabase
+  const { data: gravou, error } = await supabase
     .from("colaboradores")
     .update({ codigo, codigo_ate: new Date(Date.now() + 7 * 86400000).toISOString() })
-    .eq("id", id);
-  if (error) return null;
+    .eq("id", id)
+    .select("id");
+  if (error || !gravou?.length) return null;
   revalidatePath("/colaboradores");
   return codigo;
 }
