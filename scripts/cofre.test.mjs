@@ -114,12 +114,29 @@ test("vários envelopes: ajuste à mão de um vale e desconta do resto", () => {
   assert.deepEqual(envelopes.b, { "10000": 1 });
 });
 
-import { valorDoEnvelope } from "../src/lib/cofre.ts";
-test("envelope do acerto: arredonda pra cima até o real inteiro", () => {
-  assert.equal(valorDoEnvelope(32.44), 33);
+import { valorDoEnvelope, tetoDoEnvelope, envelopeAceito } from "../src/lib/cofre.ts";
+test("envelope do acerto: arredonda pra cima até a moeda de 5 centavos", () => {
+  assert.equal(valorDoEnvelope(781.16), 781.2);
+  assert.equal(valorDoEnvelope(32.44), 32.45);
+  assert.equal(valorDoEnvelope(32.45), 32.45);
   assert.equal(valorDoEnvelope(32), 32);
   assert.equal(valorDoEnvelope(32.0000001), 32);
-  assert.equal(valorDoEnvelope(0.01), 1);
+  assert.equal(valorDoEnvelope(0.01), 0.05);
   assert.equal(valorDoEnvelope(0), 0);
   assert.equal(valorDoEnvelope(-5), 0);
+  assert.equal(tetoDoEnvelope(781.16), 782);
+});
+test("envelope aceito: de 5 em 5 centavos, entre a moeda e o real de cima", () => {
+  assert.ok(envelopeAceito(781.16, 781.2));
+  assert.ok(envelopeAceito(781.16, 781.5));
+  assert.ok(envelopeAceito(781.16, 782));
+  assert.ok(!envelopeAceito(781.16, 781.15));
+  assert.ok(!envelopeAceito(781.16, 781.22));
+  assert.ok(!envelopeAceito(781.16, 783));
+});
+test("sem moeda pequena no cofre, sobe de 5 em 5 até fechar", () => {
+  // 781,20 precisa de 0,20 em moedas; sem 0,10/0,05 e com uma de 0,50, fecha 781,50.
+  const saldo = { "10000": 7, "5000": 1, "2000": 1, "1000": 1, "100": 3, "50": 1 };
+  const { envelopes } = montarEnvelopes([{ id: "g", centavos: 78120, ate: 78200 }], saldo);
+  assert.equal(valorDe(envelopes.g), 781.5);
 });

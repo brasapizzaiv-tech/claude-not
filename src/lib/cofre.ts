@@ -165,13 +165,31 @@ export const TIPOS: Record<string, { rotulo: string; sentido: 1 | -1 | 0 }> = {
 };
 
 /**
- * Valor que vai no envelope do cofre: o em mãos arredondado PRA CIMA até o real
- * inteiro (decisão do Rafael, 09/11/2026: R$ 32,44 → R$ 33). A diferença a casa
- * paga e fica anotada na conta da pessoa.
+ * Menor valor que pode ir no envelope do cofre: o em mãos arredondado PRA CIMA
+ * até a menor moeda (R$ 0,05). Rafael, 16/11/2026: "arredondar pra cima pro
+ * número que conseguimos encaixar nas moedas que trabalhamos" (antes, 09/11,
+ * era sempre até o real: R$ 781,16 → R$ 782). A diferença a casa paga e fica
+ * anotada na conta da pessoa.
  */
 export function valorDoEnvelope(emMaos: number): number {
   const v = Math.round(Number(emMaos) * 100) / 100;
+  return v <= 0 ? 0 : Math.ceil(Math.round(v * 100) / 5 - 1e-9) * 5 / 100;
+}
+
+/** Maior valor aceito no envelope: o em mãos arredondado pra cima até o real. */
+export function tetoDoEnvelope(emMaos: number): number {
+  const v = Math.round(Number(emMaos) * 100) / 100;
   return v <= 0 ? 0 : Math.ceil(v - 1e-9);
+}
+
+/**
+ * Envelope aceito: múltiplo de R$ 0,05, entre o em mãos arredondado até a moeda
+ * e o arredondado até o real. Quando falta moeda pequena no cofre, o sistema
+ * sobe de 5 em 5 centavos até achar um valor que fecha (no máximo o real).
+ */
+export function envelopeAceito(emMaos: number, valor: number): boolean {
+  const c = Math.round(Number(valor) * 100);
+  return c % 5 === 0 && c >= Math.round(valorDoEnvelope(emMaos) * 100) && c <= Math.round(tetoDoEnvelope(emMaos) * 100);
 }
 
 /**
@@ -216,11 +234,17 @@ export function montarEnvelope(centavos: number, saldo: Quantidades): Quantidade
 }
 
 /** Vários envelopes em seguida: cada um tira do que sobrou dos anteriores. */
-export function montarEnvelopes(pedidos: { id: string; centavos: number; fixo?: Quantidades | null }[], saldo: Quantidades) {
+// `ate` (opcional): se `centavos` não fecha com o que sobrou no cofre, tenta os
+// valores seguintes de 5 em 5 centavos até `ate` (o real de cima).
+export function montarEnvelopes(pedidos: { id: string; centavos: number; ate?: number; fixo?: Quantidades | null }[], saldo: Quantidades) {
   const resto: Quantidades = { ...saldo };
   const out: Record<string, Quantidades | null> = {};
   for (const p of pedidos) {
-    const env = p.fixo ?? montarEnvelope(p.centavos, resto);
+    let env = p.fixo ?? null;
+    if (!env) {
+      const fim = Math.max(p.centavos, Math.round(p.ate ?? p.centavos));
+      for (let c = p.centavos; c <= fim && !env; c += 5) env = montarEnvelope(c, resto);
+    }
     out[p.id] = env;
     if (env) for (const [k, q] of Object.entries(env)) resto[k] = (resto[k] ?? 0) - q;
   }

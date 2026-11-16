@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
 import { EnvelopeCofre } from "./envelope-cofre";
-import { descreverQuantidades, montarEnvelope, montarEnvelopes, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
+import { descreverQuantidades, envelopeAceito, montarEnvelope, montarEnvelopes, tetoDoEnvelope, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, tirarDoCofrePagos, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 import { repartirDez } from "@/lib/dez-repartir";
 
@@ -110,7 +110,7 @@ export function SemanaClient({
   const [adiantAberto, setAdiantAberto] = useState(false);
   const [semCofre, setSemCofre] = useState<Set<string>>(new Set());
   const [envFixo, setEnvFixo] = useState<Record<string, Quantidades>>({});
-  const [ajustando, setAjustando] = useState<{ id: string; nome: string; alvo: number } | null>(null);
+  const [ajustando, setAjustando] = useState<{ id: string; nome: string; alvo: number; ate?: number } | null>(null);
   const [adiantPessoa, setAdiantPessoa] = useState("");
   const [adiantValor, setAdiantValor] = useState("");
   const [adiantData, setAdiantData] = useState(() => {
@@ -455,21 +455,29 @@ export function SemanaClient({
   // monta cada envelope com o menor número de notas, só com o que tem no cofre,
   // um depois do outro. "ajustar" troca as notas de alguém.
   const emMaosDe = (id: string, total: number) => Math.round((total - descontoDe(id, total)) * 100) / 100;
-  // No envelope vai o em mãos arredondado pra cima até o real (decisão do Rafael).
-  const envelopeDe = (id: string, total: number) => valorDoEnvelope(emMaosDe(id, total));
+  // No envelope vai o em mãos arredondado pra cima até a moeda (R$ 0,05); se o
+  // cofre não tem moeda pra fechar, sobe de 5 em 5 centavos até o real (Rafael, 16/11).
+  const envelopeMin = (id: string, total: number) => valorDoEnvelope(emMaosDe(id, total));
   const doCofre = (id: string) => !!cofreSaldo && !semCofre.has(id);
   const envelopes = useMemo(() => {
     if (!cofreSaldo) return {} as Record<string, Quantidades | null>;
     const pedidos = aLancar
       .filter((x) => doCofre(x.p.id))
       .map((x) => {
-        const alvo = envelopeDe(x.p.id, x.total);
+        const emMaos = emMaosDe(x.p.id, x.total);
         const fixo = envFixo[x.p.id];
-        return { id: x.p.id, centavos: Math.round(alvo * 100), fixo: fixo && Math.abs(valorDe(fixo) - alvo) < 0.005 ? fixo : null };
+        return {
+          id: x.p.id,
+          centavos: Math.round(valorDoEnvelope(emMaos) * 100),
+          ate: Math.round(tetoDoEnvelope(emMaos) * 100),
+          fixo: fixo && envelopeAceito(emMaos, valorDe(fixo)) ? fixo : null,
+        };
       });
     return montarEnvelopes(pedidos, cofreSaldo).envelopes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cofreSaldo, aLancar, semCofre, envFixo, descontarAdiant, descontar, descontarValor]);
+  // Valor que de fato vai no envelope (o que o cofre conseguiu fechar).
+  const envelopeDe = (id: string, total: number) => (envelopes[id] ? valorDe(envelopes[id]!) : envelopeMin(id, total));
   const totalCofre = aLancar.filter((x) => doCofre(x.p.id)).reduce((s, x) => s + envelopeDe(x.p.id, x.total), 0);
 
   // Semana já paga em dinheiro, antes da caixinha existir: tirar do cofre agora.
@@ -479,21 +487,27 @@ export function SemanaClient({
     if (!cofreSaldo) return {} as Record<string, Quantidades | null>;
     return montarEnvelopes(
       retroIds.map((id) => {
-        const alvo = valorDoEnvelope(pagosMaos(id));
+        const emMaos = pagosMaos(id);
         const fixo = envFixo[id];
-        return { id, centavos: Math.round(alvo * 100), fixo: fixo && Math.abs(valorDe(fixo) - alvo) < 0.005 ? fixo : null };
+        return {
+          id,
+          centavos: Math.round(valorDoEnvelope(emMaos) * 100),
+          ate: Math.round(tetoDoEnvelope(emMaos) * 100),
+          fixo: fixo && envelopeAceito(emMaos, valorDe(fixo)) ? fixo : null,
+        };
       }),
       cofreSaldo,
     ).envelopes;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cofreSaldo, pagosParaCofre, semCofre, envFixo, pagos]);
-  const totalRetro = retroIds.reduce((s, id) => s + valorDoEnvelope(pagosMaos(id)), 0);
+  const envelopeRetroDe = (id: string) => (envelopesRetro[id] ? valorDe(envelopesRetro[id]!) : valorDoEnvelope(pagosMaos(id)));
+  const totalRetro = retroIds.reduce((s, id) => s + envelopeRetroDe(id), 0);
   async function tirarRetro() {
     const falta = retroIds.filter((id) => !envelopesRetro[id]);
     const nome = (id: string) => pessoas.find((p) => p.id === id)?.nome ?? id;
     if (falta.length) { setErro(`O cofre não tem notas pro envelope de ${falta.map(nome).join(", ")}. Ajuste ou desmarque.`); return; }
     if (!(await confirmar(`Tirar do cofre ${brl(totalRetro)} dos ${retroIds.length} pagamento(s) em dinheiro desta semana?`, {
-      detalhe: "Esses pagamentos já foram lançados e feitos. Aqui só registra a saída do dinheiro no cofre (cada envelope arredondado pra cima até o real; a diferença entra na conta).",
+      detalhe: "Esses pagamentos já foram lançados e feitos. Aqui só registra a saída do dinheiro no cofre (cada envelope arredondado pra cima até a moeda que fecha; a diferença entra na conta).",
       okTexto: "Tirar do cofre",
     }))) return;
     start(async () => {
@@ -591,7 +605,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     const ok = await confirmar(
       `Lançar ${aLancar.length} pagamento(s) somando ${brl(totalALancar)} no Contas a pagar (CMO Eventual / Diaristas)${jaPago ? ", já marcados como pagos" : ""}?` +
         (totalDesconto > 0 ? `\n\nFiado descontado: ${brl(totalDesconto)} (sai em mãos ${brl(totalALancar - totalDesconto)}). As compras internas dessas pessoas serão marcadas como pagas.` : ""),
-      nCofre ? { detalhe: `Sai do cofre: ${brl(totalCofre)} em ${nCofre} envelope(s), cada um arredondado pra cima até o real. Essas contas já entram pagas, em Dinheiro.`, okTexto: "Lançar e tirar do cofre" } : undefined,
+      nCofre ? { detalhe: `Sai do cofre: ${brl(totalCofre)} em ${nCofre} envelope(s), cada um arredondado pra cima até a moeda que fecha. Essas contas já entram pagas, em Dinheiro.`, okTexto: "Lançar e tirar do cofre" } : undefined,
     );
     if (!ok) return;
     start(async () => {
@@ -635,6 +649,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         <EnvelopeCofre
           titulo={ajustando.id === "__adiant" ? "Adiantamento" : ajustando.nome}
           alvo={ajustando.alvo}
+          ate={ajustando.ate}
           inicial={ajusteInicial}
           saldo={cofreSaldo}
           aoFechar={() => setAjustando(null)}
@@ -1279,8 +1294,8 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             />
                             tirar do cofre
                           </label>
-                          {!semCofre.has(p.id) && valorDoEnvelope(pagosMaos(p.id)) - pagosMaos(p.id) > 0.005 && (
-                            <span className="text-texto-suave">no envelope {brl(valorDoEnvelope(pagosMaos(p.id)))}</span>
+                          {!semCofre.has(p.id) && envelopeRetroDe(p.id) - pagosMaos(p.id) > 0.005 && (
+                            <span className="text-texto-suave">no envelope {brl(envelopeRetroDe(p.id))}</span>
                           )}
                           {!semCofre.has(p.id) && (envelopesRetro[p.id] ? (
                             <span className="max-w-[220px] text-right text-texto-fraco">{descreverQuantidades(envelopesRetro[p.id]!)}</span>
@@ -1288,7 +1303,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             <span className="text-urgente-texto">faltam notas no cofre</span>
                           ))}
                           {!semCofre.has(p.id) && (
-                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: valorDoEnvelope(pagosMaos(p.id)) })} className="text-texto-marca hover:underline">
+                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: valorDoEnvelope(pagosMaos(p.id)), ate: tetoDoEnvelope(pagosMaos(p.id)) })} className="text-texto-marca hover:underline">
                               ajustar notas
                             </button>
                           )}
@@ -1313,7 +1328,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                             <span className="text-urgente-texto">faltam notas no cofre</span>
                           ))}
                           {doCofre(p.id) && emMaosDe(p.id, total) > 0.005 && (
-                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: envelopeDe(p.id, total) })} className="text-texto-marca hover:underline">
+                            <button type="button" onClick={() => setAjustando({ id: p.id, nome: p.nome, alvo: envelopeMin(p.id, total), ate: tetoDoEnvelope(emMaosDe(p.id, total)) })} className="text-texto-marca hover:underline">
                               ajustar notas
                             </button>
                           )}

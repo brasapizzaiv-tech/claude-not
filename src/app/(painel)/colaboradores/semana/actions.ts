@@ -7,7 +7,7 @@ import { deYmd, diasDaSemana, rotuloSemana, segundaDe, somarDias } from "@/lib/e
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { TURNO } from "@/lib/folgas";
 import { cofreIniciado, saldoAtual, sairDoCofre, type Ctx as CtxCofre } from "@/lib/cofre-core";
-import { valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
+import { envelopeAceito, tetoDoEnvelope, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 import { explicarErro } from "@/lib/erro-amigavel";
 
 // Contexto do cofre pra quem está lançando (empresa e nome de quem fez).
@@ -222,8 +222,7 @@ export async function lancarPagamentosSemana(
     for (const it of comCofre) {
       const emMaos = await emMaosDe(supabase, it);
       const env = valorDe(it.cofre!);
-      const esperado = valorDoEnvelope(emMaos);
-      if (Math.abs(env - esperado) > 0.009) return { erro: `O envelope de ${it.nome} (${moedaBR(env)}) não fecha com o valor em mãos arredondado (${moedaBR(esperado)}). Atualize a tela e confira.` };
+      if (!envelopeAceito(emMaos, env)) return { erro: `O envelope de ${it.nome} (${moedaBR(env)}) tem que ficar entre ${moedaBR(valorDoEnvelope(emMaos))} e ${moedaBR(tetoDoEnvelope(emMaos))}. Atualize a tela e confira.` };
     }
     const saldo = await saldoAtual(ctxCofre);
     const total = somaEnvelopes(comCofre.map((i) => i.cofre!));
@@ -281,10 +280,10 @@ export async function lancarPagamentosSemana(
       descAdiant > 0 ? `adiantamento descontado ${descAdiant.toFixed(2).replace(".", ",")}` : "",
       descFiado > 0 ? `fiado descontado ${descFiado.toFixed(2).replace(".", ",")}` : "",
     ].filter(Boolean);
-    // Dinheiro do cofre: o envelope é o em mãos arredondado pra cima até o real;
-    // a diferença (até R$ 0,99) é paga pela casa e entra na conta (o financeiro
-    // bate com o que saiu do cofre).
-    const arred = it.cofre ? Math.round((valorDoEnvelope(emMaos) - emMaos) * 100) / 100 : 0;
+    // Dinheiro do cofre: o envelope é o em mãos arredondado pra cima até a moeda
+    // que fecha (de R$ 0,05 até o real); a diferença é paga pela casa e entra na
+    // conta (o financeiro bate com o que saiu do cofre).
+    const arred = it.cofre ? Math.max(0, Math.round((valorDe(it.cofre) - emMaos) * 100) / 100) : 0;
     const sufixo = (desconto > 0 ? ` · ${partes.join(", ")} → em mãos ${emMaos.toFixed(2).replace(".", ",")}` : "")
       + (arred > 0 ? ` · arredondado +${arred.toFixed(2).replace(".", ",")} no dinheiro do cofre` : "");
 
@@ -399,7 +398,7 @@ export async function excluirAdiantamento(id: string) {
 // Semana JÁ lançada e paga em dinheiro, sem ter saído do cofre no sistema (o
 // acerto de 02/11 foi pago antes de existir a caixinha): registra agora a saída
 // do cofre, ligada à conta que já existe. Mesma regra do lançamento: envelope =
-// em mãos arredondado pra cima até o real; a diferença entra na conta.
+// em mãos arredondado pra cima até a moeda que fecha; a diferença entra na conta.
 export async function tirarDoCofrePagos(segunda: string, itens: { colaboradorId: string; nome: string; cofre: Quantidades }[]) {
   await exigirAcesso("/colaboradores");
   const supabase = await createClient();
@@ -421,10 +420,10 @@ export async function tirarDoCofrePagos(segunda: string, itens: { colaboradorId:
     const { data: ja } = await supabase.from("cofre_movimentos").select("id").in("lancamento_id", ids).limit(1);
     if (ja?.length) return { erro: `O pagamento de ${it.nome} já saiu do cofre.` };
     const emMaos = Math.round(linhas.reduce((s, x) => s + Number(x.valor) - Number(x.desconto || 0), 0) * 100) / 100;
-    const esperado = valorDoEnvelope(emMaos);
-    if (Math.abs(valorDe(it.cofre) - esperado) > 0.009) return { erro: `O envelope de ${it.nome} não fecha com o em mãos arredondado (${moedaBR(esperado)}). Atualize a tela.` };
+    const env = valorDe(it.cofre);
+    if (!envelopeAceito(emMaos, env)) return { erro: `O envelope de ${it.nome} tem que ficar entre ${moedaBR(valorDoEnvelope(emMaos))} e ${moedaBR(tetoDoEnvelope(emMaos))}. Atualize a tela.` };
     const primeiro = lancs.find((l) => l.id === ids[0]) ?? lancs[0];
-    planos.push({ it, lancId: primeiro.id, valor: Number(primeiro.valor), descricao: primeiro.descricao ?? "", arred: Math.round((esperado - emMaos) * 100) / 100 });
+    planos.push({ it, lancId: primeiro.id, valor: Number(primeiro.valor), descricao: primeiro.descricao ?? "", arred: Math.max(0, Math.round((env - emMaos) * 100) / 100) });
   }
   const saldo = await saldoAtual(ctxCofre);
   const total = somaEnvelopes(itens.map((i) => i.cofre));
