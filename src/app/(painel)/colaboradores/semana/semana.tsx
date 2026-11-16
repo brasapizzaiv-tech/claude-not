@@ -230,6 +230,15 @@ export function SemanaClient({
   const [buscaExtra, setBuscaExtra] = useState("");
   const [modo, setModo] = useState<"grade" | "resumo">("grade");
   const [turnoFiltro, setTurnoFiltro] = useState<"todos" | "dia" | "noite">("todos");
+  // Ordem da tabela do Resumo: por nome (igual ao relatório impresso) ou pelo
+  // maior valor. Fica lembrada neste computador.
+  const [ordemResumo, setOrdemResumoState] = useState<"nome" | "valor">(() => {
+    try { return typeof window !== "undefined" && localStorage.getItem("semana_ordem_resumo") === "valor" ? "valor" : "nome"; } catch { return "nome"; }
+  });
+  const setOrdemResumo = (o: "nome" | "valor") => {
+    setOrdemResumoState(o);
+    try { localStorage.setItem("semana_ordem_resumo", o); } catch {}
+  };
   // Pessoas puxadas pro Resumo só pra receber um extra (ex.: CLT que fez algo a mais, sem contar como dia).
   const [soExtra, setSoExtra] = useState<Set<string>>(new Set());
   const [escolhendoExtra, setEscolhendoExtra] = useState("");
@@ -722,6 +731,18 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
             </button>
           ))}
         </div>
+        {modo !== "grade" && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-texto-suave">Ordem:</span>
+            <div className="flex overflow-hidden rounded-controle border border-borda-forte" role="group" aria-label="Ordem da lista">
+              {([["nome", "Nome (A–Z)"], ["valor", "Maior valor"]] as const).map(([k, rot]) => (
+                <button key={k} type="button" aria-pressed={ordemResumo === k} onClick={() => setOrdemResumo(k)} className={`px-3 py-1.5 ${ordemResumo === k ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900" : ""}`}>
+                  {rot}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {pending && <span className="text-xs text-texto-fraco">salvando…</span>}
         {erro && <span role="alert" className="text-xs text-urgente-texto">{erro}</span>}
       </div>
@@ -1132,7 +1153,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                 }))
                 .map((x) => ({ ...x, totalM: turnoFiltro === "todos" ? x.total : x.diariasM + x.dezM + x.extraM }))
                 .filter((x) => x.presM > 0 || x.dezM > 0.005 || x.extraM > 0.005 || (turnoFiltro === "todos" && (pagoDe.has(x.p.id) || soExtra.has(x.p.id) || !!extrasSem[x.p.id]?.motivo || x.descontoSem > 0)))
-                .sort((a, b) => b.totalM - a.totalM)
+                .sort((a, b) => (ordemResumo === "nome" ? a.p.nome.localeCompare(b.p.nome, "pt-BR") : b.totalM - a.totalM))
                 .map(({ p, nDias, nNoites, diariasM, dezM, extraM, totalM, total, rotuloVinculo }) => (
                   <tr key={p.id} className={`bg-painel-cartao ${pagoDe.has(p.id) ? "opacity-70" : ""}`}>
                     {turnoFiltro === "todos" && <td className="px-3 py-2 text-center">
