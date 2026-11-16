@@ -20,11 +20,14 @@ const config: CapacitorConfig = {
     // cliente — e `allowNavigation` é o que deixa a ponte nativa (GPS, câmera)
     // continuar valendo lá.
     //
-    // A lista é aberta porque os domínios dos clientes não existem na hora do
-    // build. Quem fecha a porta é a tela de entrada: ela só aceita https e só
-    // navega depois que o endereço responde `/api/entrega/identidade` dizendo
-    // que ali roda um sistema nosso.
-    allowNavigation: ["*"],
+    // A tela de entrada ainda confere `/api/entrega/identidade` antes de abrir.
+    // MSG-03 (auditoria): só os NOSSOS domínios abrem dentro do app, com a
+    // ponte nativa (GPS, câmera, avisos). Qualquer outro endereço — Google
+    // Maps, WhatsApp, site de fora — abre fora, no app do celular. Empresa
+    // nova entra por subdomínio de motelli.com.br (decisão do multiempresa);
+    // domínio próprio de cliente exige incluir aqui e publicar versão nova.
+    // A MESMA lista está em www/index.html (DOMINIOS).
+    allowNavigation: ["brasarestaurante.com.br", "*.brasarestaurante.com.br", "motelli.com.br", "*.motelli.com.br"],
     cleartext: false,
     androidScheme: "https",
   },

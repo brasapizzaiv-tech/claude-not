@@ -118,6 +118,14 @@
   }
 
   function irPara(url) { window.location.replace(url); }
+  // MSG-03: só os nossos domínios (a MESMA lista do capacitor.config.ts).
+  // Endereço de fora abriria fora do app e a entrada nunca terminaria.
+  var DOMINIOS = ["brasarestaurante.com.br", "motelli.com.br"];
+  function dominioNosso(host) {
+    var h = String(host || "").toLowerCase().replace(/:\d+$/, "");
+    return DOMINIOS.some(function (d) { return h === d || h.slice(-(d.length + 1)) === "." + d; });
+  }
+
 
   // "Sair deste aparelho" (botão dentro do app) volta pra cá com ?sair=1:
   // esquece o endereço e mostra a entrada de novo.
@@ -128,7 +136,8 @@
     // Já entrou antes neste aparelho: vai direto, sem perguntar nada.
     try {
       var guardado = localStorage.getItem(CHAVE);
-      if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado); return; }
+      var hostGuardado = (String(guardado || "").match(/^https:\/\/([^/]+)/) || [])[1];
+      if (guardado && hostGuardado && dominioNosso(hostGuardado)) { irPara(guardado); return; }
     } catch (e) { /* aparelho sem armazenamento: segue pedindo */ }
   }
 
@@ -158,6 +167,7 @@
   function abrirLink(texto) {
     var alvo = separar(texto);
     if (!alvo) { diz("Esse link não parece o certo. Precisa ser o endereço inteiro, do https até o código do fim.", true); return; }
+    if (!dominioNosso(alvo.host)) { diz("Esse endereço não é de um sistema Motelli. Peça o link certo pro restaurante.", true); return; }
     ocupado = true;
     diz("Conferindo o endereço…", false);
     conferir(alvo.host).then(function (id) {
