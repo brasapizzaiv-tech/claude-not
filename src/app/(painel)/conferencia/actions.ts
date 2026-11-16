@@ -218,6 +218,14 @@ async function lancarPedidoNoFinanceiro(
     .maybeSingle();
   if (!ped) return;
 
+  // Pedido com nota do fornecedor ligada: a conta a pagar é a da NOTA. A
+  // conferência não lança outra (antes duplicava: 12 contas, R$ 7.031, 11/11/2026).
+  const { data: notaLigada } = await supabase.from("notas_fiscais").select("id").eq("pedido_id", pedidoId).limit(1).maybeSingle();
+  if (notaLigada) {
+    await supabase.from("lancamentos").delete().eq("pedido_id", pedidoId).eq("origem", "pedido");
+    return;
+  }
+
   type PI = {
     qtd: number;
     preco_unit: number | null;
@@ -251,7 +259,7 @@ async function lancarPedidoNoFinanceiro(
   }
 
   // Refaz (evita duplicar ao reconfirmar).
-  await supabase.from("lancamentos").delete().eq("pedido_id", pedidoId);
+  await supabase.from("lancamentos").delete().eq("pedido_id", pedidoId).eq("origem", "pedido");
 
   const novos = [...porConta.entries()]
     .filter(([, valor]) => valor > 0)
