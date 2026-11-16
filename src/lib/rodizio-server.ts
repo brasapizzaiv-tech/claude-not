@@ -10,14 +10,19 @@ import { empresaAtualId } from "@/lib/empresa";
 import type { Evento } from "@/lib/eventos";
 
 // Fila do rodízio pra TV (cliente administrativo: a TV não tem login).
-// Pendentes e no forno de qualquer hora + prontos recentes (a TV mostra por 90 s).
+// Pendentes e no forno das últimas 10 h + prontos recentes (a TV mostra por 90 s).
+// Pedido esquecido de outra noite (ninguém marcou "Pronto") não prende mais a
+// TV na tela das pizzas: some sozinho depois de 10 h (sábado 22h13 → segunda
+// de manhã ainda na tela, 16/11/2026). O tablet da cozinha continua mostrando.
+export const PEDIDO_ABERTO_MAX_H = 10;
 export async function filaTv(): Promise<PedidoRodizio[]> {
   const admin = createAdminClient();
   const desde = new Date(Date.now() - (PRONTO_SOME_SEG + 30) * 1000).toISOString();
+  const abertoDesde = new Date(Date.now() - PEDIDO_ABERTO_MAX_H * 3600 * 1000).toISOString();
   const { data, error } = await admin
     .from("pedidos_rodizio")
     .select("id, mesa, sabor, tipo, fracao, quantidade, observacao, status, criado_em, forno_em, pronto_em, garcom")
-    .or(`status.in.(pendente,forno),and(status.eq.pronto,pronto_em.gte.${desde})`)
+    .or(`and(status.in.(pendente,forno),criado_em.gte.${abertoDesde}),and(status.eq.pronto,pronto_em.gte.${desde})`)
     .order("criado_em", { ascending: true })
     .limit(200);
   if (error) throw new Error(error.message);
