@@ -103,15 +103,17 @@ function CodigoApp({ c, link }: { c: Colaborador; link: string }) {
 }
 
 const APP_EQUIPE_PLAY = "https://play.google.com/store/apps/details?id=br.com.motelli.equipe";
+// App Store "não listado" (aprovado 13/11/2026, no ar 16/11): só abre por este link.
+const APP_EQUIPE_IOS = "https://apps.apple.com/us/app/motelli-equipe/id6822387480";
 
-// No iPhone segue o link pessoal: o app ainda não saiu na App Store.
 function mensagemApp(c: Colaborador, link: string) {
   const cod = codigoValido(c, Date.now());
   return encodeURIComponent(
-    `Oi ${c.nome}! Esse é o seu app da Brasa.\n\n` +
-      `No Android, baixe o Motelli Equipe na Play Store:\n${APP_EQUIPE_PLAY}` +
-      (cod ? `\nDepois de instalar, entre com o código ${codigoFmt(cod)} (vale uma vez, por 7 dias).` : "") +
-      `\n\nNo iPhone, abra este link e use "Adicionar à Tela de Início":\n${link}`,
+    `Oi ${c.nome}! Baixe o app da equipe, o Motelli Equipe:\n\n` +
+      `Android (Play Store):\n${APP_EQUIPE_PLAY}\n\n` +
+      `iPhone (App Store):\n${APP_EQUIPE_IOS}` +
+      (cod ? `\n\nDepois de instalar, entre com o código ${codigoFmt(cod)} (vale uma vez, por 7 dias).` : "") +
+      `\n\nSe não conseguir instalar, use pelo navegador neste link:\n${link}`,
   );
 }
 
