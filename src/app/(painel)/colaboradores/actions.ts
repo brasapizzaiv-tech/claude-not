@@ -175,6 +175,26 @@ export async function gerarCodigoColaborador(formData: FormData) {
   revalidatePath("/colaboradores");
 }
 
+// Código pra ir junto na mensagem do WhatsApp: usa o que ainda vale mais de um
+// dia; senão gera um novo na hora (o código vence em 7 dias e quase todos já
+// tinham vencido quando o Rafael foi mandar pra equipe, 16/11).
+export async function codigoParaMensagem(id: string): Promise<string | null> {
+  await exigirAcesso("/colaboradores");
+  const supabase = await createClient();
+  const { data: c } = await supabase.from("colaboradores").select("codigo, codigo_ate").eq("id", id).maybeSingle();
+  if (!c) return null;
+  if (c.codigo && c.codigo_ate && new Date(c.codigo_ate).getTime() > Date.now() + 86400000) return c.codigo as string;
+  const { data: codigo } = await supabase.rpc("gerar_codigo_colaborador");
+  if (typeof codigo !== "string") return null;
+  const { error } = await supabase
+    .from("colaboradores")
+    .update({ codigo, codigo_ate: new Date(Date.now() + 7 * 86400000).toISOString() })
+    .eq("id", id);
+  if (error) return null;
+  revalidatePath("/colaboradores");
+  return codigo;
+}
+
 // Zera o PIN do colaborador (ele cria um novo no próximo acesso ao app).
 export async function zerarPinColaborador(formData: FormData) {
   await exigirAcesso("/colaboradores");

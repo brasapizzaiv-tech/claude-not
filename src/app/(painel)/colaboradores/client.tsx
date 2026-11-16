@@ -1,7 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
-import { Enviar } from "@/components/enviar";
+import { Enviar, BotaoAcao } from "@/components/enviar";
 import { FormConfirmado } from "@/components/form-confirmado";
 import { avisar } from "@/components/dialogo";
 
@@ -20,6 +20,7 @@ import {
   zerarPinColaborador,
   gerarTokenColaborador,
   gerarCodigoColaborador,
+  codigoParaMensagem,
 } from "./actions";
 import { Janela } from "@/components/janela";
 
@@ -106,14 +107,37 @@ const APP_EQUIPE_PLAY = "https://play.google.com/store/apps/details?id=br.com.mo
 // App Store "não listado" (aprovado 13/11/2026, no ar 16/11): só abre por este link.
 const APP_EQUIPE_IOS = "https://apps.apple.com/us/app/motelli-equipe/id6822387480";
 
-function mensagemApp(c: Colaborador, link: string) {
-  const cod = codigoValido(c, Date.now());
+function mensagemApp(c: Colaborador, link: string, cod: string | null) {
   return encodeURIComponent(
     `Oi ${c.nome}! Baixe o app da equipe, o Motelli Equipe:\n\n` +
       `Android (Play Store):\n${APP_EQUIPE_PLAY}\n\n` +
       `iPhone (App Store):\n${APP_EQUIPE_IOS}` +
       (cod ? `\n\nDepois de instalar, entre com o código ${codigoFmt(cod)} (vale uma vez, por 7 dias).` : "") +
       `\n\nSe não conseguir instalar, use pelo navegador neste link:\n${link}`,
+  );
+}
+
+// Abre a conversa no WhatsApp com o código de entrada já na mensagem. A aba
+// abre no clique (antes de esperar o servidor) pro navegador não bloquear.
+function ZapApp({ c, link, zapNum, className, children }: { c: Colaborador; link: string; zapNum: string; className: string; children: React.ReactNode }) {
+  return (
+    <BotaoAcao
+      className={className}
+      aoClicar={async () => {
+        const janela = window.open("about:blank", "_blank");
+        const cod = await codigoParaMensagem(c.id).catch(() => null);
+        const url = `https://web.whatsapp.com/send?phone=${zapNum}&text=${mensagemApp(c, link, cod)}`;
+        if (janela) {
+          janela.opener = null;
+          janela.location.href = url;
+        } else {
+          window.open(url, "_blank", "noopener");
+        }
+        if (!cod) void avisar("A mensagem foi sem o código.", "Não deu pra gerar o código agora. Confira a internet e clique em \"Gerar código\" na pessoa.");
+      }}
+    >
+      {children}
+    </BotaoAcao>
   );
 }
 
@@ -124,7 +148,6 @@ function LinkApp({ c }: { c: Colaborador }) {
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
-  const msg = mensagemApp(c, link);
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <button
@@ -138,14 +161,9 @@ function LinkApp({ c }: { c: Colaborador }) {
         {copiado ? "Copiado!" : "Copiar link"}
       </button>
       {zapNum && (
-        <a
-          href={`https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded border border-green-500 px-2 py-1 font-medium text-ok-texto hover:bg-green-50 dark:hover:bg-green-950"
-        >
+        <ZapApp c={c} link={link} zapNum={zapNum} className="rounded border border-green-500 px-2 py-1 font-medium text-ok-texto hover:bg-green-50 dark:hover:bg-green-950">
           Enviar no WhatsApp
-        </a>
+        </ZapApp>
       )}
       <CodigoApp c={c} link={link} />
       <span className={c.pin ? "text-texto-fraco" : "text-aviso-texto"}>
@@ -180,7 +198,6 @@ function CardApp({ c }: { c: Colaborador }) {
   const link = `${origin}/eu/${c.token}`;
   const zap = (c.whatsapp ?? "").replace(/\D/g, "");
   const zapNum = zap ? (zap.startsWith("55") ? zap : `55${zap}`) : "";
-  const msg = mensagemApp(c, link);
   return (
     <div className="cartao p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -200,14 +217,9 @@ function CardApp({ c }: { c: Colaborador }) {
           {copiado ? "Copiado!" : "Copiar link"}
         </button>
         {zapNum && (
-          <a
-            href={`https://web.whatsapp.com/send?phone=${zapNum}&text=${msg}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 rounded-controle bg-texto px-3 py-1.5 text-center text-sm font-medium text-fundo hover:opacity-90"
-          >
+          <ZapApp c={c} link={link} zapNum={zapNum} className="flex-1 rounded-controle bg-texto px-3 py-1.5 text-center text-sm font-medium text-fundo hover:opacity-90">
             WhatsApp
-          </a>
+          </ZapApp>
         )}
       </div>
     </div>
