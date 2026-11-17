@@ -66,15 +66,41 @@ function gtag(){dataLayer.push(arguments);}
   document.head.appendChild(s);
   gtag("js",new Date()); gtag("config",c.id);
 })();
-/* Avisa o Google Ads de uma conversão. Nunca manda dado do cliente, só o tipo. */
+/* Meta (Instagram/Facebook) — pixel do site.
+   "id" é a identificação do conjunto de dados no Gerenciador de Eventos da Meta.
+   Com "id" vazio nada é carregado. Sem o "Aceitar" do aviso de cookies o pixel
+   fica mudo (consent revoke): não manda nada pra Meta. */
+window.BRASA_META={id:"4480223582198682"};
+(function(){
+  var m=window.BRASA_META; if(!m.id) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");
+  var ok=false; try{ ok=localStorage.getItem("brasa_cookies")==="sim"; }catch(e){}
+  fbq("consent",ok?"grant":"revoke");
+  /* Só os eventos que a gente manda; nada de leitura automática de botão ou campo. */
+  fbq("set","autoConfig",false,m.id);
+  fbq("init",m.id);
+  fbq("track","PageView");
+})();
+/* Avisa o Google Ads e a Meta de uma conversão. Nunca manda dado do cliente, só o tipo. */
 window.brasaConversao=function(tipo){
-  var c=window.BRASA_ADS; if(!c||!c.id||!c[tipo]) return;
-  try{ gtag("event","conversion",{send_to:c.id+"/"+c[tipo]}); }catch(e){}
+  var c=window.BRASA_ADS;
+  if(c&&c.id&&c[tipo]){ try{ gtag("event","conversion",{send_to:c.id+"/"+c[tipo]}); }catch(e){} }
+  var m=window.BRASA_META;
+  if(m&&m.id&&window.fbq){
+    try{
+      if(tipo==="reserva") fbq("track","Schedule");
+      else if(tipo==="whatsapp"||tipo==="telefone") fbq("track","Contact",{meio:tipo});
+      else if(tipo==="delivery") fbq("trackCustom","CliqueDelivery");
+    }catch(e){}
+  }
 };
 /* Guarda a escolha do aviso de cookies e, no "Aceitar", libera os cookies. */
 window.brasaCookies=function(aceitou){
   try{ localStorage.setItem("brasa_cookies",aceitou?"sim":"nao"); }catch(e){}
-  if(aceitou){ try{ gtag("consent","update",{ad_storage:"granted",ad_user_data:"granted",ad_personalization:"granted",analytics_storage:"granted"}); }catch(e){} }
+  if(aceitou){
+    try{ gtag("consent","update",{ad_storage:"granted",ad_user_data:"granted",ad_personalization:"granted",analytics_storage:"granted"}); }catch(e){}
+    try{ if(window.fbq) fbq("consent","grant"); }catch(e){}
+  }
 };
 </script>
 <style>
