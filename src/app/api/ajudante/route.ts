@@ -14,7 +14,8 @@ export const maxDuration = 120;
 
 const MODELO = "claude-opus-5-5";
 // US$ por milhão de tokens (Opus 5.5): entrada, gravar no cache, ler do cache, saída.
-const PRECO = { entrada: 4, cacheEscrita: 5, cacheLeitura: 0.2, saida: 20 };
+// O manual vai no cache de 1 hora, que custa 2× a entrada pra gravar (o de 5 min é 1,25×).
+const PRECO = { entrada: 4, cacheEscrita: 8, cacheLeitura: 0.2, saida: 20 };
 const LIMITE_PESSOA_DIA = 40;
 const LIMITE_EMPRESA_USD_DIA = Number(process.env.AJUDANTE_LIMITE_DIA_USD) > 0 ? Number(process.env.AJUDANTE_LIMITE_DIA_USD) : 5;
 const MAX_MENSAGENS = 20;
