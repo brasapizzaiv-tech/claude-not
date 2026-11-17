@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { Dialogos } from "@/components/dialogo";
+import { Ajudante } from "@/components/ajudante";
 import { lerMarca } from "@/lib/marca";
 import { empresaAtual } from "@/lib/empresa";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
@@ -87,6 +88,8 @@ export default async function PainelLayout({
       <main id="conteudo" className="flex-1 overflow-auto bg-painel-fundo">
         {children}
       </main>
+      {/* Ajudante (IA): só aparece quando a chave da Anthropic está configurada. */}
+      {process.env.ANTHROPIC_API_KEY ? <Ajudante /> : null}
     </div>
   );
 }
