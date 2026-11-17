@@ -11,7 +11,7 @@ import { Icone } from "./icone";
 type Mensagem = { papel: "usuario" | "ajudante"; texto: string };
 
 const GUARDA = "ajudante_conversa";
-const EXEMPLOS = ["Como lanço uma sangria no caixa?", "Onde vejo as contas que vencem esta semana?", "Como faço uma contagem de estoque?"];
+const EXEMPLOS = ["Como lanço uma sangria no caixa?", "Quanto vendemos ontem?", "Quem está de folga no sábado?"];
 
 function lerGuardado(): Mensagem[] {
   try {
@@ -72,6 +72,7 @@ export function Ajudante() {
   const [texto, setTexto] = useState("");
   const [esperando, setEsperando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
@@ -132,13 +133,30 @@ export function Ajudante() {
       const leitor = res.body.getReader();
       const dec = new TextDecoder();
       let resposta = "";
+      let resto = "";
+      // Uma linha JSON por evento: {"t":"txt"} pedaço da resposta, {"t":"st"} o que está consultando.
       for (;;) {
         const { done, value } = await leitor.read();
         if (done) break;
-        resposta += dec.decode(value, { stream: true });
+        resto += dec.decode(value, { stream: true });
+        const linhas = resto.split("\n");
+        resto = linhas.pop() ?? "";
+        for (const l of linhas) {
+          if (!l.trim()) continue;
+          try {
+            const ev = JSON.parse(l) as { t?: string; v?: string };
+            if (ev.t === "txt" && typeof ev.v === "string") {
+              resposta += ev.v;
+              setStatus(null);
+            } else if (ev.t === "st" && typeof ev.v === "string") {
+              setStatus(ev.v);
+            }
+          } catch {}
+        }
         const r = resposta;
         setMensagens([...historico, { papel: "ajudante", texto: r }]);
       }
+      setStatus(null);
       if (!resposta.trim()) setMensagens([...historico, { papel: "ajudante", texto: "Não consegui responder agora. Tente de novo." }]);
     } catch {
       setMensagens(historico.slice(0, -1));
@@ -146,6 +164,7 @@ export function Ajudante() {
       setErro("A conexão caiu no meio da resposta. Confira a internet e tente de novo.");
     } finally {
       setEsperando(false);
+      setStatus(null);
       campo.current?.focus();
     }
   }
@@ -190,7 +209,8 @@ export function Ajudante() {
             {mensagens.length === 0 ? (
               <div className="space-y-3 text-texto-suave">
                 <p>Pergunte como fazer alguma coisa no sistema, onde fica uma tela ou o que quer dizer um aviso.</p>
-                <p className="text-xs text-texto-fraco">O Ajudante não vê os dados do restaurante e não faz nada no sistema: ele só explica.</p>
+                <p>Também dá para consultar números de vendas, estoque e compras, e equipe, dentro do que o seu login já vê no painel.</p>
+                <p className="text-xs text-texto-fraco">O Ajudante só lê: ele não muda nada no sistema. Confira os números importantes na tela.</p>
                 <div className="flex flex-col items-start gap-2 pt-1">
                   {EXEMPLOS.map((e) => (
                     <button key={e} type="button" onClick={() => perguntar(e)} className="pilula min-h-11 text-left">
@@ -205,7 +225,12 @@ export function Ajudante() {
                   <div key={i} className="ml-8 rounded-cartao bg-destaque px-4 py-3 text-texto">{m.texto}</div>
                 ) : (
                   <div key={i} className="text-texto">
-                    {m.texto ? <Resposta texto={m.texto} /> : <span className="inline-flex items-center gap-2 text-texto-fraco"><Icone nome="esperando" tamanho={16} className="animate-spin" /> Pensando…</span>}
+                    {m.texto ? <Resposta texto={m.texto} /> : null}
+                    {esperando && i === mensagens.length - 1 && (!m.texto || status) && (
+                      <span className="mt-2 inline-flex items-center gap-2 text-texto-fraco">
+                        <Icone nome="esperando" tamanho={16} className="animate-spin" /> {status ?? "Pensando…"}
+                      </span>
+                    )}
                   </div>
                 ),
               )
