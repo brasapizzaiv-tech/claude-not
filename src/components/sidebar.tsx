@@ -109,6 +109,7 @@ export function Sidebar({
   permissoes,
   reservasNovas = 0,
   pedidosCompra = 0,
+  sugestoes = 0,
   tema = TEMA_PADRAO,
   logoUrl = "/logo-brasa.png",
   empresaNome = "Brasa",
@@ -119,6 +120,8 @@ export function Sidebar({
   permissoes: string[];
   reservasNovas?: number;
   pedidosCompra?: number;
+  /** Sugestões do sistema esperando (só o dono). */
+  sugestoes?: number;
   tema?: Tema;
   /** Logo da empresa. Vem do cadastro (Etapa 3); o padrão é o da Brasa. */
   logoUrl?: string;
@@ -252,7 +255,7 @@ export function Sidebar({
       ],
     },
     {
-      key: "config", label: "Configurações", icon: "ajustes",
+      key: "config", label: "Configurações", icon: "ajustes", aviso: sugestoes || undefined,
       itens: [
         ...so(admin, { href: "/fiscal", label: "Config fiscal", icon: "cupom" }, { href: "/fiscal/perfis", label: "Perfis fiscais", icon: "etiqueta" }),
         ...so(has("impressao"), { href: "/impressao", label: "Central de impressões", icon: "imprimir" }),
@@ -261,6 +264,7 @@ export function Sidebar({
         ...so(admin, { href: "/usuarios", label: "Usuários e permissões", icon: "chave" }),
         ...so(admin, { href: "/aparencia", label: "Aparência da empresa", icon: "brilho" }),
         ...so(admin, { href: "/formas-pagamento", label: "Formas de pagamento", icon: "cartao" }),
+        ...so(admin, { href: "/sugestoes", label: "Sugestões do sistema", icon: "conversa", aviso: sugestoes || undefined }),
       ],
     },
   ];

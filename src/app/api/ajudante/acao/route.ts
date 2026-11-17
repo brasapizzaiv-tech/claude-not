@@ -27,7 +27,6 @@ export async function POST(req: Request) {
   const empresaId = perfil?.empresa_id;
   if (!perfil || !empresaId) return resposta(403, { ok: false, mensagem: "Seu login não está ligado a uma empresa." });
   const dono = perfil.papel === "dono";
-  if (ACOES_SO_DONO && !dono) return resposta(403, { ok: false, mensagem: "Por enquanto só o dono pode fazer ações pelo Ajudante." });
 
   let id = "";
   let decisao = "";
@@ -65,6 +64,7 @@ export async function POST(req: Request) {
 
   const acao = POR_NOME.get(pedido.acao);
   if (!acao) return resposta(400, { ok: false, mensagem: "Essa ação não existe mais." });
+  if (ACOES_SO_DONO && !dono && !acao.todos) return resposta(403, { ok: false, mensagem: "Por enquanto só o dono pode fazer essa ação pelo Ajudante." });
   if (!acao.telas.some((t) => podeAcessar(t, dono, perfil.permissoes ?? []))) {
     return resposta(403, { ok: false, mensagem: "Seu login não pode fazer isso pela tela, então o Ajudante também não." });
   }

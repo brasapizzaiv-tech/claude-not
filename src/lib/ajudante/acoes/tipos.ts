@@ -27,6 +27,8 @@ export type Acao = {
   /** Rotas do painel; basta poder abrir UMA delas. */
   telas: string[];
   parametros: EsquemaJson;
+  /** Vale pra qualquer login, mesmo enquanto as ações são só do dono (ex.: mandar sugestão). */
+  todos?: boolean;
   /** Só lê (cliente da sessão). Resolve nomes → ids e valida. Problema de uso: lance Error com frase pra pessoa. */
   preparar: (db: Db, args: Record<string, unknown>, ctx: ContextoFerramenta) => Promise<AcaoPreparada>;
   /** Executa de verdade com os `dados` do preparar, chamando a função da tela. Devolve a frase do que foi feito. Falhou: lance Error com frase. */

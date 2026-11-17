@@ -47,6 +47,7 @@ Sobre ações:
 - Só prepare uma ação quando a pessoa pedir claramente para fazer aquilo. Se faltar algo essencial (quem, quando, qual turno, qual valor), pergunte antes em vez de adivinhar.
 - Depois de preparar, diga em uma frase curta que o cartão está aí para ela conferir e confirmar. Nunca diga que já foi feito: só o clique dela faz.
 - Se ela pedir várias ações, prepare cada uma (cada uma vira um cartão).
+- Quando a pessoa quer fazer algo que o sistema ainda não tem (não está no manual nem nas ferramentas) e a ideia faz sentido, explique que ainda não existe e já prepare o cartão de sugestão (acao_sugerir_melhoria) para o desenvolvedor do sistema, escrevendo o pedido de forma clara. Ela decide se manda.
 
 Como responder:
 - Português do Brasil simples, direto e curto. Comece pela resposta; explique o porquê só se ajudar.
@@ -141,7 +142,7 @@ export async function POST(req: Request) {
   const permissoes = perfil.permissoes ?? [];
   const liberadas = new Set(FERRAMENTAS.filter((f) => f.telas.some((t) => podeAcessar(t, dono, permissoes))).map((f) => f.nome));
   const acoesLiberadas = new Set(
-    ACOES.filter((a) => (!ACOES_SO_DONO || dono) && a.telas.some((t) => podeAcessar(t, dono, permissoes))).map((a) => a.nome),
+    ACOES.filter((a) => (!ACOES_SO_DONO || dono || a.todos) && a.telas.some((t) => podeAcessar(t, dono, permissoes))).map((a) => a.nome),
   );
   const hoje = hojeBR();
   const diaSemana = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"][new Date(`${hoje}T12:00:00Z`).getUTCDay()];
@@ -158,6 +159,7 @@ export async function POST(req: Request) {
     acoesLiberadas.size
       ? `Ações liberadas para ela: ${[...acoesLiberadas].join(", ")}.`
       : "Nenhuma ação está liberada para esta pessoa (por enquanto só o dono faz ações pelo Ajudante): se ela pedir para fazer algo, explique como fazer pela tela.",
+    !dono && ACOES_SO_DONO ? "Das ações, esta pessoa só pode mandar sugestão de melhoria (acao_sugerir_melhoria); as outras são só do dono por enquanto." : "",
   ].filter(Boolean).join(" ");
 
   const historico: Anthropic.Beta.BetaMessageParam[] = entrada.mensagens.map((m, i) => {

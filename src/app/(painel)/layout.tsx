@@ -54,13 +54,17 @@ export default async function PainelLayout({
   const hoje = hojeBR();
   // Pedidos de compra da equipe ainda não atendidos — numerozinho no menu.
   // As três buscas ao mesmo tempo (antes uma esperava a outra).
-  const [marca, reservasNovas, pedidosCompra] = await Promise.all([
+  const [marca, reservasNovas, pedidosCompra, sugestoes] = await Promise.all([
     lerMarca(),
     admin || permissoes.includes("reservas")
       ? supabase.from("reservas").select("id", { count: "exact", head: true }).gte("data", hoje).in("status", ["nova", "aguardando"]).then((r) => r.count ?? 0)
       : Promise.resolve(0),
     admin || permissoes.includes("solicitacoes")
       ? supabase.from("solicitacoes_compra").select("id", { count: "exact", head: true }).eq("status", "pendente").then((r) => r.count ?? 0)
+      : Promise.resolve(0),
+    // Sugestões do sistema que a equipe mandou pelo Ajudante (só o dono vê).
+    admin
+      ? supabase.from("sistema_sugestoes").select("id", { count: "exact", head: true }).eq("status", "pendente").then((r) => r.count ?? 0)
       : Promise.resolve(0),
   ]);
 
@@ -81,6 +85,7 @@ export default async function PainelLayout({
         permissoes={permissoes}
         reservasNovas={reservasNovas}
         pedidosCompra={pedidosCompra}
+        sugestoes={sugestoes}
         tema={tema}
         logoUrl={marca.logoUrl}
         empresaNome={marca.nome}

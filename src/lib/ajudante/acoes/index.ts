@@ -3,9 +3,10 @@ import { ACOES_EQUIPE } from "./equipe";
 import { ACOES_RECADOS } from "./recados";
 import { ACOES_ESTOQUE } from "./estoque";
 import { ACOES_CADASTROS } from "./cadastros";
+import { ACOES_SUGESTOES } from "./sugestoes";
 
 // Todas as ações do Ajudante, numa ordem fixa (a ordem entra no cache).
-export const ACOES: Acao[] = [...ACOES_EQUIPE, ...ACOES_RECADOS, ...ACOES_ESTOQUE, ...ACOES_CADASTROS];
+export const ACOES: Acao[] = [...ACOES_EQUIPE, ...ACOES_RECADOS, ...ACOES_ESTOQUE, ...ACOES_CADASTROS, ...ACOES_SUGESTOES];
 
 const nomes = new Set<string>();
 for (const a of ACOES) {
