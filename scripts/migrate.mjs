@@ -111,6 +111,8 @@ async function main() {
   const SECRETAS = {
     colaboradores: ["token", "pin", "codigo", ...(r0295.length ? PESSOAIS : [])],
     entregadores: ["token", "codigo"],
+    // Link e PIN do "Minhas folgas" (app da equipe): o painel não precisa ler.
+    folgas_funcionarios: ["token", "pin"],
   };
   for (const [tabela, secretas] of Object.entries(SECRETAS)) {
     const { rows } = await client.query(

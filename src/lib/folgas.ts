@@ -33,7 +33,7 @@ export type Funcionario = {
   dias2: number[] | null;
   gerente: boolean;
   ativo: boolean;
-  token: string | null;
+  token?: string | null;
   pin?: string | null;
 };
 

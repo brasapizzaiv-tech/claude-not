@@ -7,7 +7,8 @@ export const metadata = { title: "Folgas" };
 export default async function FolgasPage() {
   const supabase = await createClient();
   const [{ data: eq }, { data: pe }, { data: li }, { data: aj }, { data: bl }] = await Promise.all([
-    supabase.from("folgas_funcionarios").select("*").order("nome"),
+    // Sem token/PIN: a sessão do painel não lê essas colunas (link e PIN são do app da equipe).
+    supabase.from("folgas_funcionarios").select("id, nome, grupo, vinculo, funcao, dias, grupo2, dias2, gerente, ativo, entrada_em, colaborador_id").order("nome"),
     supabase.from("folgas_pedidos").select("*").order("data"),
     supabase.from("folgas_limites").select("*"),
     supabase.from("folgas_ajustes").select("*"),
