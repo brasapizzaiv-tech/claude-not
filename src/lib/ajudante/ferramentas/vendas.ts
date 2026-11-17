@@ -142,11 +142,15 @@ const vendasPorForma: Ferramenta = {
     const horaNum = (iso: string) => Number(new Date(iso).toLocaleTimeString("en-GB", { timeZone: TZ, hour: "2-digit", hour12: false }));
 
     const { data: cxRows, error } = await db
-      .from("pdv_caixas").select("id, aberto_em, quebra")
+      .from("pdv_caixas").select("id, nome, status, aberto_em, fechado_em, quebra, dinheiro_contado, dinheiro_esperado, obs")
       .gte("aberto_em", ini).lte("aberto_em", fim)
       .order("aberto_em", { ascending: false }).limit(500);
     if (error) throw new Error("Não consegui ler os caixas agora. Tente de novo.");
-    const caixas = ((cxRows as { id: string; aberto_em: string; quebra: number | null }[]) ?? [])
+    type Cx = {
+      id: string; nome: string | null; status: string | null; aberto_em: string; fechado_em: string | null;
+      quebra: number | null; dinheiro_contado: number | null; dinheiro_esperado: number | null; obs: string | null;
+    };
+    const caixas = ((cxRows as Cx[]) ?? [])
       .filter((c) => turno === "todos" || (horaNum(c.aberto_em) < 16 ? "almoco" : "noite") === turno);
     const [movs, formas] = await Promise.all([movsDosCaixas(db, caixas.map((c) => c.id)), formasCadastradas(db)]);
 
@@ -186,6 +190,22 @@ const vendasPorForma: Ferramenta = {
       for (const id of s) servico += servicoDe.get(id) ?? 0;
     }
     const quebra = caixas.reduce((s, c) => s + (Number(c.quebra) || 0), 0);
+    // Fechamento de cada caixa: quebra = contado − esperado (positiva = SOBROU dinheiro, negativa = FALTOU).
+    const hora = (iso: string | null) => (iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : null);
+    const fechamentos = caixas.slice(0, 15).map((c) => {
+      const q = r2(Number(c.quebra) || 0);
+      return {
+        caixa: c.nome ?? "Caixa",
+        situacao: c.status === "fechado" ? "fechado" : "aberto",
+        abriu: hora(c.aberto_em),
+        fechou: hora(c.fechado_em),
+        dinheiro_esperado: c.dinheiro_esperado == null ? null : r2(Number(c.dinheiro_esperado)),
+        dinheiro_contado: c.dinheiro_contado == null ? null : r2(Number(c.dinheiro_contado)),
+        quebra: q,
+        resultado: c.status !== "fechado" ? "ainda aberto" : Math.abs(q) < 0.01 ? "bateu certinho" : q > 0 ? `sobrou R$ ${q.toFixed(2)}` : `faltou R$ ${Math.abs(q).toFixed(2)}`,
+        observacao_do_fechamento: c.obs?.trim() ? c.obs.trim().slice(0, 200) : null,
+      };
+    });
 
     const obs = ["Vendas = tudo que entrou nos caixas como venda (com o 10%)."];
     if (fiado >= 0.01) obs.push(`Inclui ${r2(fiado).toFixed(2)} de acerto de fiado recebido no caixa (não é venda nova e fica fora do faturamento oficial).`);
@@ -207,6 +227,8 @@ const vendasPorForma: Ferramenta = {
       sangrias: r2(sangrias),
       suprimentos: r2(suprimentos),
       quebra: r2(quebra),
+      quebra_explicada: "quebra = dinheiro contado − esperado: positiva é sobra, negativa é falta",
+      fechamentos,
       observacao: obs.join(" "),
     };
   },

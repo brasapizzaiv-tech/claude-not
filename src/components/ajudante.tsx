@@ -247,7 +247,7 @@ export function Ajudante() {
           <header className="flex items-center justify-between gap-3 border-b border-borda px-5 py-4">
             <div>
               <h2 className="font-numero text-lg font-bold text-texto">Ajudante</h2>
-              <p className="text-xs text-texto-fraco">Tira dúvidas sobre como usar o sistema</p>
+              <p className="text-xs text-texto-fraco">Explica o sistema, consulta e prepara ações</p>
             </div>
             <div className="flex items-center gap-1">
               {mensagens.length > 0 && (
