@@ -6,17 +6,21 @@ import { empresaAtual } from "@/lib/empresa";
 import { podeAcessar } from "@/lib/permissoes";
 import { MANUAL } from "@/lib/ajudante/manual";
 import { FERRAMENTAS } from "@/lib/ajudante/ferramentas";
+import { ACOES, ACOES_SO_DONO, ACAO_VALIDADE_MIN } from "@/lib/ajudante/acoes";
 
 // Ajudante do painel.
 //  Etapa 1: responde "como faço" a partir do manual do sistema (docs/ajudante).
 //  Etapa 2: CONSULTA dados (vendas, estoque e compras, equipe) por ferramentas
 //  fixas de leitura (src/lib/ajudante/ferramentas), com o cliente da SESSÃO e
-//  só as que a pessoa pode ver pela tela (podeAcessar). Não faz nada no sistema.
+//  só as que a pessoa pode ver pela tela (podeAcessar).
+//  Etapa 3: PREPARA ações (src/lib/ajudante/acoes); a pessoa confirma num
+//  cartão e só então /api/ajudante/acao executa (migration 0316). Só o dono.
 // Cada pergunta vira uma linha em ajudante_uso (migrations 0314/0315) com o custo,
 // que serve pro limite do dia.
 //
 // Resposta em NDJSON, uma linha por evento: {"t":"txt","v":"..."} (pedaço da
-// resposta) e {"t":"st","v":"..."} (o que está consultando agora).
+// resposta), {"t":"st","v":"..."} (o que está consultando agora) e
+// {"t":"acao","v":{id,resumo,detalhes}} (cartão de ação pra confirmar).
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -36,7 +40,13 @@ const INSTRUCOES = `Você é o Ajudante, o assistente que mora dentro do painel 
 
 Você faz duas coisas:
 1. Explica como usar o sistema: onde fica cada coisa, como fazer cada tarefa, o que significa uma mensagem ou trava. Para isso você conhece o sistema pelo MANUAL abaixo, e só por ele.
-2. Consulta dados do restaurante com as ferramentas de consulta (vendas e faturamento, estoque e compras, equipe). Elas só leem; você não consegue mudar nada no sistema.
+2. Consulta dados do restaurante com as ferramentas de consulta (vendas e faturamento, estoque e compras, equipe). Elas só leem.
+3. Prepara ações no sistema com as ferramentas que começam com "acao_" (equipe, recados e lembretes, estoque e compras, cadastros). Preparar NÃO faz a ação: aparece um cartão para a pessoa conferir e clicar em "Confirmar". Nada de dinheiro (caixa, contas, pagamentos, notas fiscais).
+
+Sobre ações:
+- Só prepare uma ação quando a pessoa pedir claramente para fazer aquilo. Se faltar algo essencial (quem, quando, qual turno, qual valor), pergunte antes em vez de adivinhar.
+- Depois de preparar, diga em uma frase curta que o cartão está aí para ela conferir e confirmar. Nunca diga que já foi feito: só o clique dela faz.
+- Se ela pedir várias ações, prepare cada uma (cada uma vira um cartão).
 
 Como responder:
 - Português do Brasil simples, direto e curto. Comece pela resposta; explique o porquê só se ajudar.
@@ -85,13 +95,14 @@ function lerEntrada(corpo: unknown): { mensagens: MensagemEntrada[]; tela: strin
 
 // Todas as ferramentas vão sempre na mesma ordem (o cache do manual depende de
 // o começo do pedido não mudar); quem não pode, recebe "sem permissão" ao usar.
-const DEFINICOES: Anthropic.Beta.BetaToolUnion[] = FERRAMENTAS.map((f) => ({
+const DEFINICOES: Anthropic.Beta.BetaToolUnion[] = [...FERRAMENTAS, ...ACOES].map((f) => ({
   name: f.nome,
   description: f.descricao,
   input_schema: f.parametros,
   eager_input_streaming: true,
 }));
 const POR_NOME = new Map(FERRAMENTAS.map((f) => [f.nome, f]));
+const ACAO_POR_NOME = new Map(ACOES.map((a) => [a.nome, a]));
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return erro(503, "O Ajudante ainda não está ligado neste sistema.");
@@ -129,6 +140,9 @@ export async function POST(req: Request) {
   const dono = perfil.papel === "dono";
   const permissoes = perfil.permissoes ?? [];
   const liberadas = new Set(FERRAMENTAS.filter((f) => f.telas.some((t) => podeAcessar(t, dono, permissoes))).map((f) => f.nome));
+  const acoesLiberadas = new Set(
+    ACOES.filter((a) => (!ACOES_SO_DONO || dono) && a.telas.some((t) => podeAcessar(t, dono, permissoes))).map((a) => a.nome),
+  );
   const hoje = hojeBR();
   const diaSemana = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"][new Date(`${hoje}T12:00:00Z`).getUTCDay()];
 
@@ -141,6 +155,9 @@ export async function POST(req: Request) {
     liberadas.size
       ? `Ferramentas de consulta liberadas para ela: ${[...liberadas].join(", ")}. As outras ferramentas NÃO estão liberadas para esta pessoa.`
       : "Nenhuma ferramenta de consulta está liberada para esta pessoa: só explique como usar o sistema.",
+    acoesLiberadas.size
+      ? `Ações liberadas para ela: ${[...acoesLiberadas].join(", ")}.`
+      : "Nenhuma ação está liberada para esta pessoa (por enquanto só o dono faz ações pelo Ajudante): se ela pedir para fazer algo, explique como fazer pela tela.",
   ].filter(Boolean).join(" ");
 
   const historico: Anthropic.Beta.BetaMessageParam[] = entrada.mensagens.map((m, i) => {
@@ -156,7 +173,7 @@ export async function POST(req: Request) {
 
   const corpo = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const mandar = (t: "txt" | "st", v: string) => controller.enqueue(encoder.encode(JSON.stringify({ t, v }) + "\n"));
+      const mandar = (t: "txt" | "st" | "acao", v: unknown) => controller.enqueue(encoder.encode(JSON.stringify({ t, v }) + "\n"));
       let falha: string | null = null;
       const total = { entrada: 0, escrita: 0, leitura: 0, saida: 0 };
       let modeloUsado = MODELO;
@@ -215,6 +232,34 @@ export async function POST(req: Request) {
             const f = POR_NOME.get(p.name);
             const args = p.input && typeof p.input === "object" && !Array.isArray(p.input) ? (p.input as Record<string, unknown>) : null;
             consultas.push(p.name);
+            const acao = ACAO_POR_NOME.get(p.name);
+            if (acao) {
+              if (!args || !acoesLiberadas.has(acao.nome)) {
+                resultados.push({ type: "tool_result", tool_use_id: p.id, is_error: true, content: args ? "Sem permissão: esta pessoa não pode fazer esta ação pelo Ajudante. Explique como fazer pela tela." : "Pedido de ação inválido." });
+                continue;
+              }
+              mandar("st", "Preparando…");
+              try {
+                const prep = await acao.preparar(db, args, { empresaId, hoje });
+                const detalhes = prep.detalhes.map((d) => String(d).slice(0, 200)).slice(0, 10);
+                const { data: salvo, error: erroSalvar } = await admin
+                  .from("ajudante_acoes")
+                  .insert({ empresa_id: empresaId, user_id: user.id, acao: acao.nome, resumo: prep.resumo.slice(0, 300), detalhes, dados: prep.dados })
+                  .select("id")
+                  .single();
+                if (erroSalvar || !salvo) throw new Error("Não consegui preparar agora. Tente de novo.");
+                mandar("acao", { id: salvo.id, resumo: prep.resumo, detalhes });
+                resultados.push({
+                  type: "tool_result",
+                  tool_use_id: p.id,
+                  content: `Ação PREPARADA (ainda não feita) e mostrada num cartão para a pessoa conferir: "${prep.resumo}". Só acontece se ela clicar em "Confirmar" em até ${ACAO_VALIDADE_MIN} minutos.`,
+                });
+              } catch (e) {
+                const msg = e instanceof Error && e.message.length < 400 ? e.message : "Não deu para preparar essa ação.";
+                resultados.push({ type: "tool_result", tool_use_id: p.id, is_error: true, content: msg });
+              }
+              continue;
+            }
             if (!f || !args) {
               resultados.push({ type: "tool_result", tool_use_id: p.id, is_error: true, content: "Consulta inválida." });
               continue;

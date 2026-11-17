@@ -10,13 +10,23 @@ import { prazoPadraoDesde } from "@/lib/cotacao-prazo";
 import { explicarErro } from "@/lib/erro-amigavel";
 
 export async function criarCotacao(formData: FormData) {
+  const r = await criarCotacaoId(formData.get("descricao") as string | null, formData.get("contagem_id") as string | null);
+  if (!r.ok) return;
+  redirect(`/cotacoes/${r.id}`);
+}
+
+/** Cria a cotação e devolve o id, sem ir pra página. A tela usa criarCotacao; o Ajudante usa esta. */
+export async function criarCotacaoId(
+  descricaoDigitada: string | null,
+  contagemId: string | null,
+): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
   await exigirAcesso("/cotacoes");
   const supabase = await createClient();
 
   const descricao =
-    (formData.get("descricao") as string)?.trim() ||
+    descricaoDigitada?.trim() ||
     `Cotação ${new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`;
-  const contagem_id = (formData.get("contagem_id") as string)?.trim() || null;
+  const contagem_id = contagemId?.trim() || null;
 
   const { data, error } = await supabase
     .from("cotacoes")
@@ -24,8 +34,9 @@ export async function criarCotacao(formData: FormData) {
     .select("id")
     .single();
 
-  if (error || !data) return;
-  redirect(`/cotacoes/${data.id}`);
+  if (error || !data) return { ok: false, erro: explicarErro(error, "Não consegui criar a cotação. Tente de novo.") };
+  revalidatePath("/cotacoes");
+  return { ok: true, id: data.id as string };
 }
 
 type ItemCotacao = { produto_id: string; qtd: number };
