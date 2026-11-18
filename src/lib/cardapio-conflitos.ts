@@ -6,7 +6,8 @@
 // Conta como repetido:
 //  - INGREDIENTE de destaque igual em dois pratos (berinjela, abobrinha, peixe…).
 //    As bases do buffet (frango, carne, arroz, feijão, batata, massa…) repetem
-//    todo dia de propósito e ficam de fora.
+//    todo dia de propósito e ficam de fora (camarão também: risoto + bobó no
+//    sábado é de propósito — Rafael, 18/11). A sobremesa (especial) não entra.
 //  - PREPARO marcante igual em dois pratos quentes (duas lasanhas, dois
 //    empanados). Não compara com o especial (sobremesa: "lasanha de chocolate").
 import { GRUPOS, chaveNome, type ConflitoDia, type Grupo } from "@/lib/cardapio-dia-core";
@@ -18,12 +19,12 @@ export type Conflito = ConflitoDia;
 export const BASES = new Set([
   "frango", "carne", "carne bovina", "boi", "porco", "carne suina", "suino", "arroz", "feijao", "batata", "massa", "macarrao",
   "ovo", "queijo", "cebola", "alho", "tomate", "molho de tomate", "creme de leite", "nata", "leite", "farinha", "pao", "oleo",
-  "manteiga", "sal", "presunto", "milho verde", "chocolate",
+  "manteiga", "sal", "presunto", "milho verde", "chocolate", "camarao", "polenta",
 ]);
 
 export const PREPAROS = [
   "lasanha", "empanado", "escondidinho", "strogonoff", "panqueca", "gratinado", "risoto", "torta", "bolinho", "pure",
-  "farofa", "moqueca", "parmegiana", "rocambole", "nhoque", "omelete", "souffle", "frito no oleo",
+  "farofa", "moqueca", "parmegiana", "rocambole", "nhoque", "omelete", "souffle",
 ] as const;
 
 const limpa = (s: string) => chaveNome(s).replace(/\s+/g, " ").trim();
@@ -40,6 +41,7 @@ export function conflitosDoDia(sel: Record<Grupo, string[]>, analises: Map<strin
   const porIngrediente = new Map<string, string[]>();
   const porPreparo = new Map<string, string[]>();
   for (const g of GRUPOS) {
+    if (g === "especial") continue; // sobremesa não compara com os pratos quentes
     for (const nome of sel[g] ?? []) {
       const a = ler(chavePrato(g, nome));
       if (!a) continue;
@@ -47,7 +49,7 @@ export function conflitosDoDia(sel: Record<Grupo, string[]>, analises: Map<strin
         if (!d || BASES.has(d)) continue;
         porIngrediente.set(d, [...(porIngrediente.get(d) ?? []), nome]);
       }
-      if (a.preparo && g !== "especial") {
+      if (a.preparo) {
         const p = limpa(a.preparo);
         if (p) porPreparo.set(p, [...(porPreparo.get(p) ?? []), nome]);
       }
