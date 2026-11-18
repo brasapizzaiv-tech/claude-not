@@ -36,19 +36,51 @@ type ItemNota = {
   valor_total: number;
 };
 
-// Tenta casar cada item da nota com um produto cadastrado (pelo nome).
+// Tenta casar cada item da nota com um produto cadastrado.
+// 1) Se o mesmo texto do mesmo fornecedor já foi ligado antes, NÃO chuta pelo
+//    nome: deixa vazio e o gatilho da 0205/0210 põe a ligação aprendida (e o
+//    fator). Antes o chute pelo nome vinha primeiro e o gatilho respeitava o
+//    chute — "STIKADINHO MORANGO" ia pro produto "Morango" toda semana em vez
+//    do que a pessoa tinha ligado (pedido de 18/11/2026).
+// 2) Senão, chuta pelo nome — palavra inteira, o nome mais comprido primeiro
+//    ("Uva" não casa mais com "LUVA", nem "Mel" com "CARAMELO").
 async function comProdutoVinculado(
   supabase: SupabaseClient,
   itens: ItemNota[],
+  cnpj: string | null,
 ) {
+  const descricoes = [...new Set(itens.map((i) => (i.descricao ?? "").trim()).filter(Boolean))];
+  const aprendidas = new Set<string>();
+  if (cnpj && descricoes.length > 0) {
+    // Uma busca por texto (limit 1): o histórico inteiro passaria das 1000 linhas.
+    const achou = await Promise.all(
+      descricoes.map((d) =>
+        supabase
+          .from("nota_itens")
+          .select("id, notas_fiscais!inner(emit_cnpj)")
+          .eq("notas_fiscais.emit_cnpj", cnpj)
+          .not("produto_id", "is", null)
+          .ilike("descricao", d.replace(/[\\%_]/g, (c) => `\\${c}`))
+          .limit(1)
+          .then((r) => ((r.data ?? []).length > 0 ? d.toLowerCase() : null)),
+      ),
+    );
+    for (const d of achou) if (d) aprendidas.add(d);
+  }
+
   const { data: prods } = await supabase
     .from("produtos")
     .select("id, nome")
-    .eq("ativo", true);
-  const lista = (prods ?? []).map((p) => ({ id: p.id, n: norm(p.nome) }));
+    .eq("ativo", true)
+    .limit(5000);
+  const lista = (prods ?? [])
+    .map((p) => ({ id: p.id, n: norm(p.nome) }))
+    .filter((p) => p.n.length > 2)
+    .sort((a, b) => b.n.length - a.n.length);
   return itens.map((i) => {
-    const d = norm(i.descricao);
-    const m = lista.find((p) => p.n.length > 2 && (d.includes(p.n) || p.n.includes(d)));
+    if (aprendidas.has((i.descricao ?? "").trim().toLowerCase())) return { ...i, produto_id: null };
+    const d = ` ${norm(i.descricao)} `;
+    const m = lista.find((p) => d.includes(` ${p.n} `));
     return { ...i, produto_id: m?.id ?? null };
   });
 }
@@ -144,7 +176,7 @@ async function gravarNotaLida(supabase: SupabaseClient, nf: NfeLida) {
       })
       .eq("id", existe.id);
     if (nf.itens.length > 0) {
-      const itens = await comProdutoVinculado(supabase, nf.itens);
+      const itens = await comProdutoVinculado(supabase, nf.itens, nf.emit_cnpj || null);
       const { error: eItens } = await supabase
         .from("nota_itens")
         .insert(itens.map((i) => ({ ...i, nota_id: existe.id })));
@@ -178,7 +210,7 @@ async function gravarNotaLida(supabase: SupabaseClient, nf: NfeLida) {
   if (error || !nota) return { ok: false, erro: "Não foi possível salvar a nota." };
 
   if (nf.itens.length > 0) {
-    const itens = await comProdutoVinculado(supabase, nf.itens);
+    const itens = await comProdutoVinculado(supabase, nf.itens, nf.emit_cnpj || null);
     const { error: eItens } = await supabase
       .from("nota_itens")
       .insert(itens.map((i) => ({ ...i, nota_id: nota.id })));
