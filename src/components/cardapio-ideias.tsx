@@ -39,8 +39,14 @@ export function CardapioIdeias({
     .filter((x) => x.lista.length > 0);
 
   // Por cuba: até 3 (painel) ou 2 (celular) pratos de cada cuba que não estão no dia.
+  // Prato que serve em várias cubas (abobrinha ao forno na 10, 11 e 12) aparece só na primeira.
+  const mostrados = new Set<string>();
   const cubas = (ideias.porCuba ?? [])
-    .map((c) => ({ ...c, pratos: c.pratos.filter((p) => !ja.has(chaveNome(p.nome))).slice(0, grande ? 2 : 3) }))
+    .map((c) => {
+      const pratos = c.pratos.filter((p) => !ja.has(chaveNome(p.nome)) && !mostrados.has(chaveNome(p.nome))).slice(0, grande ? 2 : 3);
+      for (const p of pratos) mostrados.add(chaveNome(p.nome));
+      return { ...c, pratos };
+    })
     .filter((c) => c.pratos.length > 0);
 
   if (sobras.length === 0 && esquecidos.length === 0 && cubas.length === 0) return null;
