@@ -40,11 +40,8 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
     });
 
   const usadaEm = [...new Set(itens.filter((i) => i.sub_ficha_id === id).map((i) => i.ficha_id))].map((fid) => ({ id: fid, nome: nomeFicha.get(fid) ?? "" }));
-  let prato: { id: string; nome: string } | null = null;
-  if (ficha.cardapio_item_id) {
-    const { data } = await supabase.from("cardapio_itens").select("id, nome").eq("id", ficha.cardapio_item_id).maybeSingle();
-    prato = (data as { id: string; nome: string } | null) ?? null;
-  }
+  const { data: pratosData } = await supabase.from("cardapio_itens").select("id, nome").eq("ficha_id", id).eq("ativo", true).order("nome");
+  const pratos = (pratosData as { id: string; nome: string }[] | null) ?? [];
   const categorias = [...new Set(fichas.map((f) => f.categoria).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
   return (
@@ -58,7 +55,7 @@ export default async function FichaPage({ params }: { params: Promise<{ id: stri
         pendencias={custo.pendencias}
         usaPlanilha={custo.usaPlanilha}
         usadaEm={usadaEm}
-        prato={prato}
+        pratos={pratos}
         categorias={categorias}
       />
     </div>

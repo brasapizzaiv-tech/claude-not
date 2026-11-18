@@ -23,10 +23,10 @@ const brl = (n: number | null | undefined, casas = 2) => (n == null ? "—" : n.
 const numBR = (n: number | null | undefined) => (n == null ? "" : String(n).replace(".", ","));
 
 export function EditorFicha({
-  ficha, linhas, total, custoKg, pendencias, usaPlanilha, usadaEm, prato, categorias,
+  ficha, linhas, total, custoKg, pendencias, usaPlanilha, usadaEm, pratos, categorias,
 }: {
   ficha: Ficha; linhas: LinhaItem[]; total: number | null; custoKg: number | null; pendencias: number; usaPlanilha: number;
-  usadaEm: { id: string; nome: string }[]; prato: { id: string; nome: string } | null; categorias: string[];
+  usadaEm: { id: string; nome: string }[]; pratos: { id: string; nome: string }[]; categorias: string[];
 }) {
   const router = useRouter();
   const [ligando, setLigando] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export function EditorFicha({
               {usaPlanilha > 0 && <p className="mt-1 text-texto-suave">{usaPlanilha} ainda com o preço da planilha de 2025. Ligue ao produto do estoque pra acompanhar as notas.</p>}
             </div>
           )}
-          <PratoLigado fichaId={ficha.id} prato={prato} rodar={rodar} />
+          <PratosLigados fichaId={ficha.id} pratos={pratos} rodar={rodar} />
           {usadaEm.length > 0 && (
             <div className="cartao p-4 text-sm">
               <p className="rotulo">Usada dentro de</p>
@@ -269,10 +269,10 @@ function Ligador({ fichaId, itemId, sugestao, fechar, rodar }: { fichaId: string
   );
 }
 
-/** Prato do cardápio do dia que usa esta ficha (pro custo aparecer no cardápio). */
-function PratoLigado({ fichaId, prato, rodar }: { fichaId: string; prato: { id: string; nome: string } | null; rodar: (p: Promise<{ ok: boolean; erro?: string }>) => Promise<void> }) {
+/** Pratos do cardápio do dia que usam esta ficha (pro custo aparecer no cardápio). */
+function PratosLigados({ fichaId, pratos, rodar }: { fichaId: string; pratos: { id: string; nome: string }[]; rodar: (p: Promise<{ ok: boolean; erro?: string }>) => Promise<void> }) {
   const [q, setQ] = useState("");
-  const [res, setRes] = useState<{ id: string; nome: string; grupo: string }[]>([]);
+  const [res, setRes] = useState<{ id: string; nome: string; grupo: string; ficha_id: string | null }[]>([]);
   useEffect(() => {
     let vivo = true;
     const t = setTimeout(async () => {
@@ -283,20 +283,24 @@ function PratoLigado({ fichaId, prato, rodar }: { fichaId: string; prato: { id: 
   }, [q]);
   return (
     <div className="cartao p-4 text-sm">
-      <p className="rotulo">Prato do cardápio do dia</p>
-      {prato ? (
-        <div className="mt-1 flex items-center justify-between gap-2">
-          <p className="font-semibold text-texto">{prato.nome}</p>
-          <BotaoAcao aria-label="Tirar o prato" className="h-11 w-11 rounded-controle text-urgente-texto" aoClicar={() => rodar(ligarPrato(fichaId, null))}>✕</BotaoAcao>
-        </div>
+      <p className="rotulo">Pratos do cardápio do dia</p>
+      {pratos.length > 0 ? (
+        <ul className="mt-1 space-y-1">
+          {pratos.map((p) => (
+            <li key={p.id} className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-texto">{p.nome}</span>
+              <BotaoAcao aria-label={`Tirar ${p.nome}`} className="h-11 w-11 rounded-controle text-urgente-texto" aoClicar={() => rodar(ligarPrato(fichaId, p.id, false))}>✕</BotaoAcao>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p className="mt-1 text-texto-suave">Nenhum. Ligue pra o custo aparecer quando o prato entrar no cardápio.</p>
+        <p className="mt-1 text-texto-suave">Nenhum. Ligue pra o custo aparecer quando o prato entrar no cardápio. Dá pra ligar vários nomes à mesma ficha.</p>
       )}
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={prato ? "Trocar o prato" : "Buscar o prato"} aria-label="Buscar prato do cardápio" className="campo mt-2 w-full" />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ligar mais um prato" aria-label="Buscar prato do cardápio" className="campo mt-2 w-full" />
       <div className="mt-1 flex flex-wrap gap-1.5">
-        {res.map((r) => (
-          <BotaoAcao key={r.id} className="min-h-11 rounded-full bg-superficie-suave px-3 text-left text-sm text-texto" aoClicar={async () => { await rodar(ligarPrato(fichaId, r.id)); setQ(""); }}>
-            {r.nome}
+        {res.filter((r) => r.ficha_id !== fichaId).map((r) => (
+          <BotaoAcao key={r.id} className="min-h-11 rounded-full bg-superficie-suave px-3 text-left text-sm text-texto" aoClicar={async () => { await rodar(ligarPrato(fichaId, r.id, true)); setQ(""); }}>
+            {r.nome}{r.ficha_id ? <span className="text-xs text-texto-fraco"> · troca a ficha dele</span> : null}
           </BotaoAcao>
         ))}
       </div>

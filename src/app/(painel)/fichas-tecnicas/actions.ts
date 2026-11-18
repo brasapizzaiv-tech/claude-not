@@ -65,11 +65,15 @@ export async function excluirFicha(id: string): Promise<R> {
   redirect("/fichas-tecnicas");
 }
 
-export async function ligarPrato(id: string, cardapioItemId: string | null): Promise<R> {
+/** Liga um prato do cardápio a esta ficha (ou tira, com fichaId null). Um prato tem uma ficha; a ficha serve a vários pratos. */
+export async function ligarPrato(fichaId: string, cardapioItemId: string, ligar: boolean): Promise<R> {
   const supabase = await db();
-  const { error } = await supabase.from("fichas_tecnicas").update({ cardapio_item_id: cardapioItemId, atualizado_em: new Date().toISOString() }).eq("id", id);
+  let q = supabase.from("cardapio_itens").update({ ficha_id: ligar ? fichaId : null }).eq("id", cardapioItemId);
+  if (!ligar) q = q.eq("ficha_id", fichaId);
+  const { error } = await q;
   if (error) return { ok: false, erro: ERRO_REDE };
-  atualizar(id);
+  atualizar(fichaId);
+  revalidatePath("/cardapio-do-dia");
   return { ok: true };
 }
 
@@ -159,6 +163,6 @@ export async function buscarPratos(q: string) {
   const supabase = await db();
   const t = limpaBusca(q);
   if (t.length < 2) return [];
-  const { data } = await supabase.from("cardapio_itens").select("id, nome, grupo").eq("ativo", true).ilike("nome", `%${t}%`).order("nome").limit(20);
-  return (data as { id: string; nome: string; grupo: string }[] | null) ?? [];
+  const { data } = await supabase.from("cardapio_itens").select("id, nome, grupo, ficha_id").eq("ativo", true).ilike("nome", `%${t}%`).order("nome").limit(20);
+  return (data as { id: string; nome: string; grupo: string; ficha_id: string | null }[] | null) ?? [];
 }

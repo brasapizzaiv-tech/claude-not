@@ -32,6 +32,8 @@ async function decidirRepetidos(lista: Conflito[]): Promise<{ manterRepetidos: t
 
 export type Cardapio = CardapioDia;
 export type ItemCat = ItemCatalogo;
+/** Custo por kg do prato pela ficha técnica (0320). */
+export type CustoPrato = { custoKg: number; fichaId: string; pendencias: number };
 /** Publicação com prato repetido que alguém decidiu manter (0318). */
 export type AlertaCardapio = { id: number; data: string; conflitos: Conflito[]; motivo: string | null; por_nome: string | null; criado_em: string; visto_em: string | null };
 
@@ -98,6 +100,7 @@ export function EditorCardapio({
   comPrecoAdicional = {},
   ideias,
   alertas = [],
+  custos = null,
 }: {
   dia: string;
   hoje: string;
@@ -112,6 +115,8 @@ export function EditorCardapio({
   ideias: IdeiasDia;
   /** Últimas publicações com prato repetido mantido. */
   alertas?: AlertaCardapio[];
+  /** Custo por kg dos pratos com ficha técnica (null = login sem a permissão das fichas). */
+  custos?: Record<string, CustoPrato> | null;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -310,6 +315,7 @@ export function EditorCardapio({
                 escolhidos={sel[b.grupo]}
                 aoMudar={(novos) => mudarBloco(b.grupo, novos)}
                 marmitas={b.grupo === "especial" ? undefined : { marcas, alternar: alternarMarca, sabado: dow === 6 }}
+                custoDe={custos ? (nome) => custos[chavePrato(b.grupo, nome)] : undefined}
               />
             ))}
           </div>
@@ -338,6 +344,8 @@ export function EditorCardapio({
               </p>
             );
           })}
+
+          {custos && <CustoDoDia sel={sel} custos={custos} precoKg={numero(precos.kg)} />}
 
           {conflitos.length > 0 && (
             <div role="alert" className="mt-4 cartao border-l-4 border-urgente-texto p-4">
@@ -538,12 +546,15 @@ function BlocoItens({
   escolhidos,
   aoMudar,
   marmitas,
+  custoDe,
 }: {
   titulo: string;
   grupo: Grupo;
   catalogo: ItemCat[];
   escolhidos: string[];
   aoMudar: (novos: string[]) => void;
+  /** R$/kg pela ficha técnica (só aparece pra quem pode ver as fichas). */
+  custoDe?: (nome: string) => CustoPrato | undefined;
   /** Proteínas e acompanhamentos: em quais marmitas do delivery o prato vai. */
   marmitas?: { marcas: Record<QualMarmita, string[]>; alternar: (k: QualMarmita, nome: string) => void; sabado: boolean };
 }) {
@@ -599,6 +610,12 @@ function BlocoItens({
               className="flex items-center gap-2 rounded-controle bg-superficie-suave px-2.5 py-1.5 text-sm text-zinc-800 dark:text-zinc-200"
             >
               <span className="flex-1">{nome}</span>
+              {custoDe && (() => {
+                const c = custoDe(nome);
+                return c
+                  ? <a href={`/fichas-tecnicas/${c.fichaId}`} target="_blank" rel="noreferrer" title={c.pendencias ? "Custo pela ficha técnica (tem ingrediente com preço de 2025)" : "Custo pela ficha técnica"} className="font-numero text-xs font-semibold text-texto-suave hover:text-texto-marca">{moeda(c.custoKg)}/kg{c.pendencias ? "*" : ""}</a>
+                  : <span className="text-mini text-texto-fraco" title="Este prato não tem ficha técnica ligada">sem ficha</span>;
+              })()}
               {marmitas && MARMITAS.filter((m) => !m.soSabado || marmitas.sabado).map((m) => {
                 const on = marmitas.marcas[m.k].includes(nome);
                 return (
@@ -848,6 +865,39 @@ function AlertasCardapio({ alertas }: { alertas: AlertaCardapio[] }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/* ---------------- custo do dia pelas fichas técnicas ---------------- */
+// Média simples do R$/kg dos pratos com ficha (proteínas e acompanhamentos;
+// a sobremesa fica de fora) comparada com o preço do quilo do buffet.
+function CustoDoDia({ sel, custos, precoKg }: { sel: Record<Grupo, string[]>; custos: Record<string, CustoPrato>; precoKg: number | null }) {
+  const pratos = (["proteinas", "carboidratos"] as Grupo[]).flatMap((g) => sel[g].map((nome) => ({ nome, c: custos[chavePrato(g, nome)] })));
+  const com = pratos.filter((p) => p.c);
+  if (pratos.length === 0) return null;
+  const media = com.length ? com.reduce((s, p) => s + p.c!.custoKg, 0) / com.length : null;
+  const pct = media != null && precoKg ? (media / precoKg) * 100 : null;
+  const caros = [...com].sort((a, b) => b.c!.custoKg - a.c!.custoKg).slice(0, 3);
+  return (
+    <div className="mt-4 cartao p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="rotulo">Custo médio do quilo hoje</p>
+          <p className="numero-grande text-3xl text-texto">{media != null ? `${moeda(media)}/kg` : "—"}</p>
+          <p className="text-xs text-texto-suave">{com.length} de {pratos.length} pratos com ficha técnica · sobremesa fora da conta</p>
+        </div>
+        {pct != null && (
+          <div className="rounded-controle bg-destaque px-4 py-2 text-right">
+            <p className="rotulo">Do preço do quilo ({moeda(precoKg)})</p>
+            <p className="numero-grande text-2xl text-texto">{pct.toFixed(0)}%</p>
+          </div>
+        )}
+      </div>
+      {caros.length > 0 && (
+        <p className="mt-2 text-xs text-texto-suave">Mais caros: {caros.map((p) => `${p.nome} ${moeda(p.c!.custoKg)}`).join(" · ")}</p>
+      )}
+      <p className="mt-1 text-mini text-texto-fraco">Média simples dos pratos, sem pesar quanto sai de cada um. * = ficha com ingrediente ainda no preço de 2025.</p>
     </div>
   );
 }

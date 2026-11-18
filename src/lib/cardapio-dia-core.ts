@@ -55,6 +55,8 @@ export type ItemCatalogo = {
   destaques?: string[] | null; preparo?: string | null; analise_em?: string | null; analise_por?: string | null;
   /** Ideias da IA pra usar a sobra deste prato no dia seguinte. */
   reaproveitar?: { nome: string; grupo: "proteinas" | "carboidratos" }[] | null;
+  /** Ficha técnica do prato (0321): de onde vem o custo por kg. */
+  ficha_id?: string | null;
 };
 /** Publicar com prato repetido: sem "manter", volta os conflitos pra pessoa decidir. */
 export type OpcoesPublicar = { manterRepetidos?: boolean; motivo?: string | null };
@@ -207,7 +209,7 @@ export async function apagarCardapioDia(db: Db, data: string, ator: Ator) {
 
 // ---------- Catálogo (busca de itens já usados) ----------
 export async function listarCatalogo(db: Db): Promise<ItemCatalogo[]> {
-  const { data } = await db.from("cardapio_itens").select("id, grupo, nome, usos, destaques, preparo, analise_em, analise_por, reaproveitar").eq("ativo", true).order("nome");
+  const { data } = await db.from("cardapio_itens").select("id, grupo, nome, usos, destaques, preparo, analise_em, analise_por, reaproveitar, ficha_id").eq("ativo", true).order("nome");
   return (data as ItemCatalogo[]) ?? [];
 }
 

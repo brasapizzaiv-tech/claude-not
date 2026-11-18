@@ -19,7 +19,7 @@ export type FichaItem = {
 };
 export type Ficha = {
   id: string; nome: string; categoria: string | null; rendimento_kg: number | null; rendimento_texto: string | null;
-  base: boolean; cardapio_item_id: string | null; custo_kg_planilha: number | null; obs: string | null; ativo: boolean;
+  base: boolean; custo_kg_planilha: number | null; obs: string | null; ativo: boolean;
 };
 export type Problema = "sem_ligacao" | "sem_preco" | "sem_conversao" | "sub_sem_custo";
 export type CustoItem = { custo: number | null; fonte: "produto" | "planilha" | "ficha" | null; problema: Problema | null; conversaoUsada: number | null };
@@ -127,7 +127,7 @@ type DbLike = { from: (t: string) => any }; // eslint-disable-line @typescript-e
 export async function carregarFichas(db: DbLike, opts: { soAtivas?: boolean } = {}) {
   const [fichas, itens] = await Promise.all([
     buscarTodas<Ficha>((de, ate) => {
-      let q = db.from("fichas_tecnicas").select("id, nome, categoria, rendimento_kg, rendimento_texto, base, cardapio_item_id, custo_kg_planilha, obs, ativo").order("nome").range(de, ate);
+      let q = db.from("fichas_tecnicas").select("id, nome, categoria, rendimento_kg, rendimento_texto, base, custo_kg_planilha, obs, ativo").order("nome").range(de, ate);
       if (opts.soAtivas !== false) q = q.eq("ativo", true);
       return q;
     }),
