@@ -38,6 +38,10 @@
     {
       "path": "/api/fiscal/conferir",
       "schedule": "10,40 * * * *"
+    },
+    {
+      "path": "/api/cardapio/analisar",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

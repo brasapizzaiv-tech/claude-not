@@ -226,6 +226,10 @@ Menu Site e apps. Precisa da permissão "Cardápio do dia (site)".
 - Marmita sem prato não pode ser pedida. Prato sem preço de adicional não entra como adicional (preço no cardápio do salão).
 - Site e TV mostram sempre a tabela de preços do buffet.
 - Marmitas do convênio só mudam antes de abrirem os pedidos do dia.
+- **Prato repetido:** a IA lê cada prato do catálogo e guarda o ingrediente de destaque (berinjela, abobrinha, peixe...) e o jeito de preparo marcante (lasanha, empanado, escondidinho...). Se dois pratos do dia repetem, aparece o aviso "Prato repetido" (no celular, cada prato mostra "repete ..."). Frango, carne, arroz, feijão, batata e massa podem repetir; a sobremesa não conta no preparo. Ao publicar com repetido, o sistema pergunta: "Voltar" (não publica) ou "Publicar mesmo assim" com o motivo. Aí quem tem a caixinha "Receber aviso no celular quando o cardápio for publicado com prato repetido" (em Colaboradores) recebe a notificação, e o aviso fica em "Publicados com prato repetido" na tela do painel ("Visto" tira o destaque).
+- **Corrigir o que a IA leu:** no "Catálogo de pratos", clique na linha de ingredientes embaixo do prato e ajuste (separado por vírgula) e o preparo. Prato corrigido à mão a IA não muda mais.
+- **Ideias para este dia:** "Sobras de (dia anterior)" sugere o que fazer com a sobra de cada prato (ex.: carreteiro → bolinho de carreteiro) e "Faz tempo que não sai" mostra pratos bem usados que não aparecem há 14 dias ou mais. Um toque põe o prato no cardápio; depois é só salvar e publicar.
+- Prato novo é lido pela IA na hora de publicar; os outros são lidos sozinhos de 10 em 10 minutos.
 
 ---
 

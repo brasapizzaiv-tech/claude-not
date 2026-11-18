@@ -28,6 +28,7 @@ export async function salvarColaborador(formData: FormData) {
   const fazContas = formData.get("faz_contas") === "on";
   const fazGarcom = formData.get("faz_garcom") === "on";
   const fazCardapio = formData.get("faz_cardapio") === "on";
+  const recebeAlertaCardapio = formData.get("recebe_alerta_cardapio") === "on";
   const fazCofre = formData.get("faz_cofre") === "on";
   const fazRecepcao = formData.get("faz_recepcao") === "on";
   const checklistSetores = formData.getAll("checklist_setor").map(String).filter(Boolean);
@@ -71,7 +72,7 @@ export async function salvarColaborador(formData: FormData) {
   if (id) {
     const { error } = await supabase
       .from("colaboradores")
-      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, faz_recepcao: fazRecepcao, checklist_setores: checklistSetores, ...quadro })
+      .update({ nome, whatsapp, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, recebe_alerta_cardapio: recebeAlertaCardapio, faz_cofre: fazCofre, faz_recepcao: fazRecepcao, checklist_setores: checklistSetores, ...quadro })
       .eq("id", id);
     if (error) return { erro: `Não salvou: ${error.message}` };
     // O token não é lido pela sessão (SEC-04): pelo servidor, já com a permissão conferida.
@@ -84,7 +85,7 @@ export async function salvarColaborador(formData: FormData) {
     token = novoToken();
     const { data, error } = await supabase
       .from("colaboradores")
-      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, faz_cofre: fazCofre, faz_recepcao: fazRecepcao, checklist_setores: checklistSetores, ...quadro })
+      .insert({ nome, whatsapp, token, faz_contagem: fazContagem, faz_etiquetas: fazEtiquetas, faz_contas: fazContas, faz_garcom: fazGarcom, faz_cardapio: fazCardapio, recebe_alerta_cardapio: recebeAlertaCardapio, faz_cofre: fazCofre, faz_recepcao: fazRecepcao, checklist_setores: checklistSetores, ...quadro })
       .select("id")
       .single();
     if (error) return { erro: `Não salvou: ${error.message}` };

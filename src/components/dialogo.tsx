@@ -161,7 +161,7 @@ export function Dialogos() {
           />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-texto">{pedido.texto}</p>
-            {pedido.detalhe && <p className="mt-1 text-sm text-texto-suave">{pedido.detalhe}</p>}
+            {pedido.detalhe && <p className="mt-1 whitespace-pre-line text-sm text-texto-suave">{pedido.detalhe}</p>}
 
             {pedido.tipo === "perguntar" && (
               <input

@@ -693,6 +693,9 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
             <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
           </label>
           <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="recebe_alerta_cardapio" defaultChecked={editando ? !!editando.recebe_alerta_cardapio : false} /> <Icone nome="aviso" tamanho={14} /> Receber aviso no celular quando o cardápio for publicado com prato repetido
+          </label>
+          <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="faz_cofre" defaultChecked={editando ? !!editando.faz_cofre : false} /> <Icone nome="cofre" tamanho={14} /> Cofre (ver o saldo, guardar dinheiro e pagar contas pelo app)
           </label>
           <label className="flex items-center gap-2 text-sm">

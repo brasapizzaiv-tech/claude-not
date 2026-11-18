@@ -43,6 +43,8 @@ export type Colaborador = {
   faz_contas?: boolean;
   faz_garcom?: boolean;
   faz_cardapio?: boolean;
+  /** Recebe no celular o aviso de cardápio publicado com prato repetido (0318). */
+  recebe_alerta_cardapio?: boolean;
   faz_cofre?: boolean;
   faz_recepcao?: boolean;
   bate_ponto?: boolean;

@@ -3,18 +3,20 @@
 // Cardápio do dia no celular, na cozinha: letra grande, botões altos, três
 // abas (Buffet, Saladas, Marmitas). O dia abre no próximo a ser servido.
 import { useMemo, useState, useTransition } from "react";
-import { confirmar } from "@/components/dialogo";
+import { confirmar, perguntar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { addDiasIso, diaSemanaIso, rotuloDiaLongo } from "@/lib/dia-cardapio";
 import {
   CATEGORIAS_SALADA, GRUPOS, chaveNome, limparNomePrato, linhas, statusCardapio,
-  type CardapioDia, type EstatPrato, type Grupo, type ItemCatalogo, type PrecosBuffet, type Publicacao, type SaladaBase,
+  type CardapioDia, type EstatPrato, type Grupo, type IdeiasDia, type ItemCatalogo, type PrecosBuffet, type Publicacao, type SaladaBase,
 } from "@/lib/cardapio-dia-core";
 import type { KernDia } from "@/lib/marmitas-cardapio";
 import { MarmitaDiaForm, type PodeMarmita } from "@/components/marmita-dia-form";
 import { CardapioHistorico } from "@/components/cardapio-historico";
+import { CardapioIdeias } from "@/components/cardapio-ideias";
 import { MARMITAS, marcarPratoNovo, marcasDoDia, type QualMarmita } from "@/lib/marmitas-marcas";
 import { publicarApp, salvarBuffetApp, salvarEPublicarApp, salvarMarmitaApp, salvarSaladasApp } from "./actions";
+import { chavePrato, conflitosDaResposta, conflitosDoDia, conflitosPorPrato, textoConflito, type Analise, type Conflito } from "@/lib/cardapio-conflitos";
 
 const TITULO: Record<Grupo, string> = { proteinas: "Proteínas", carboidratos: "Acompanhamentos", especial: "Especial do dia" };
 const DIA_NOME = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
@@ -31,13 +33,15 @@ const quando = (ts: string | null) =>
 const norm = chaveNome;
 
 export function CardapioApp({
-  token, dia, cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat, precos,
+  token, dia, cardapio, itens, base, marcadas, padrao, historico, kern, podeMarmita, estat, precos, ideias,
 }: {
   token: string; dia: string; cardapio: CardapioDia | null; itens: ItemCatalogo[]; base: SaladaBase[];
   marcadas: string[]; padrao: string[]; historico: Publicacao[]; kern: KernDia | null; podeMarmita: PodeMarmita;
   estat: Record<string, EstatPrato>;
   /** Tabela de preços do buffet (a mesma da balança e do caixa). */
   precos: PrecosBuffet;
+  /** Sobras do dia anterior e pratos que faz tempo que não saem. */
+  ideias: IdeiasDia;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -59,6 +63,23 @@ export function CardapioApp({
   };
   const [busca, setBusca] = useState<Record<Grupo, string>>({ proteinas: "", carboidratos: "", especial: "" });
   const status = statusCardapio(cardapio);
+  // Prato repetido (mesmo ingrediente de destaque ou preparo), pelo que a IA
+  // já leu de cada prato. Prato novo é lido na hora de publicar.
+  const analises = useMemo(() => {
+    const m = new Map<string, Analise>();
+    for (const i of itens) if (i.analise_em) m.set(chavePrato(i.grupo, i.nome), { destaques: i.destaques ?? null, preparo: i.preparo ?? null });
+    return m;
+  }, [itens]);
+  const conflitos = useMemo(() => conflitosDoDia(sel, analises), [sel, analises]);
+  const repetidoDe = useMemo(() => conflitosPorPrato(conflitos), [conflitos]);
+  // O servidor achou repetido (inclui prato novo): pergunta se mantém.
+  async function decidirRepetidos(lista: Conflito[]): Promise<{ manterRepetidos: true; motivo: string } | null> {
+    const motivo = await perguntar("Tem prato repetido neste dia", "", {
+      detalhe: `${lista.map(textoConflito).join("\n")}\n\nO melhor é trocar um deles. Se for manter, escreva o motivo (o responsável recebe um aviso).`,
+      okTexto: "Publicar mesmo assim",
+    });
+    return motivo === null ? null : { manterRepetidos: true, motivo };
+  }
   const dados = () => ({
     proteinas: sel.proteinas.join("\n"), carboidratos: sel.carboidratos.join("\n"), especial: sel.especial.join("\n"),
     preco_livre: sugerido?.livre ?? cardapio?.preco_livre ?? null, preco_kg: sugerido?.kg ?? cardapio?.preco_kg ?? null,
@@ -95,7 +116,12 @@ export function CardapioApp({
     if (publicar && !await confirmar(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
     setMsg(null);
     start(async () => {
-      const r = publicar ? await salvarEPublicarApp(token, dia, dados()) : await salvarBuffetApp(token, dia, dados());
+      let r = publicar ? await salvarEPublicarApp(token, dia, dados()) : await salvarBuffetApp(token, dia, dados());
+      if (conflitosDaResposta(r).length) {
+        const manter = await decidirRepetidos(conflitosDaResposta(r));
+        if (!manter) { setSujoBuffet(false); setMsg("Salvo, mas NÃO publicado: troque o prato repetido e publique de novo."); router.refresh(); return; }
+        r = await publicarApp(token, dia, manter);
+      }
       if (!r.ok) { setMsg(r.mensagem); return; }
       setSujoBuffet(false);
       setMsg(publicar ? "✓ Publicado! Site e TV já mostram." : cardapio?.publicado ? "✓ Salvo. O site continua com a versão publicada até você apertar Publicar." : "✓ Salvo como rascunho.");
@@ -106,7 +132,12 @@ export function CardapioApp({
     if (!await confirmar(`Publicar o cardápio de ${rotuloDiaLongo(dia)}? Site e TV passam a mostrar.`)) return;
     setMsg(null);
     start(async () => {
-      const r = await publicarApp(token, dia);
+      let r = await publicarApp(token, dia);
+      if (conflitosDaResposta(r).length) {
+        const manter = await decidirRepetidos(conflitosDaResposta(r));
+        if (!manter) { setMsg("Não publicado: troque o prato repetido e publique de novo."); return; }
+        r = await publicarApp(token, dia, manter);
+      }
       setMsg(r.ok ? "✓ Publicado! Site e TV já mostram." : r.mensagem);
       router.refresh();
     });
@@ -177,6 +208,7 @@ export function CardapioApp({
       {/* ---- BUFFET */}
       {aba === "buffet" && (
         <div className="mt-3 space-y-4">
+          <CardapioIdeias ideias={ideias} itens={itens} sel={sel} adicionar={addItem} grande />
           {GRUPOS.map((g) => (
             <div key={g} className="cartao p-3">
               <p className="mb-2 text-xs font-bold text-orange-600">{TITULO[g]} <span className="text-texto-fraco">({sel[g].length})</span></p>
@@ -184,7 +216,12 @@ export function CardapioApp({
                 {sel[g].map((nome, i) => (
                   <li key={i} className="rounded-cartao bg-superficie-suave px-3 py-2 text-base text-texto">
                     <div className="flex items-center justify-between gap-2">
-                      <span>{nome}</span>
+                      <span>
+                        {nome}
+                        {repetidoDe.get(norm(nome))?.map((c) => (
+                          <span key={c.tipo + c.chave} className="pilula-urgente ml-2 align-middle text-xs">repete {c.chave}</span>
+                        ))}
+                      </span>
                       <button type="button" onClick={() => tirarItem(g, i)} className="h-9 w-9 shrink-0 rounded-controle text-lg text-urgente-texto" aria-label="tirar">✕</button>
                     </div>
                     {g !== "especial" && (
@@ -239,6 +276,16 @@ export function CardapioApp({
               )}
             </div>
           ))}
+
+          {conflitos.length > 0 && (
+            <div role="alert" className="cartao border-l-4 border-urgente-texto p-3">
+              <p className="text-base font-bold text-urgente-texto">⚠ Prato repetido</p>
+              <ul className="mt-1 space-y-1 text-base text-texto">
+                {conflitos.map((c) => <li key={c.tipo + c.chave}>{textoConflito(c)}</li>)}
+              </ul>
+              <p className="mt-1 text-sm text-texto-suave">Troque um deles. Se precisar manter, o sistema pede o motivo ao publicar.</p>
+            </div>
+          )}
 
           <div className="sticky bottom-0 -mx-4 space-y-2 bg-painel-fundo/95 px-4 pb-3 pt-2 backdrop-blur">
             <button type="button" onClick={() => salvarBuffet(false)} disabled={proc || !sujoBuffet} className="btn-principal h-14 w-full text-lg">

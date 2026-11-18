@@ -16,6 +16,8 @@ export type Db = ReturnType<typeof createAdminClient>;
 // também é importado por telas do navegador (tipos e listas), e a sincronia
 // usa o cliente administrativo. Importado na hora, quando salva/publica.
 const marmitas = () => import("@/lib/marmitas-do-cardapio");
+// Leitura dos pratos pela IA e aviso de repetido: também só no servidor.
+const ia = () => import("@/lib/cardapio-ia");
 export type Ator = { nome: string; userId?: string | null; colabId?: string | null };
 
 export const GRUPOS = ["proteinas", "carboidratos", "especial"] as const;
@@ -47,7 +49,17 @@ export type CardapioDia = {
   marmitas?: Marmitas | null;
 };
 export type StatusCardapio = "vazio" | "rascunho" | "publicado" | "alterado";
-export type ItemCatalogo = { id: string; grupo: string; nome: string; usos: number };
+export type ItemCatalogo = {
+  id: string; grupo: string; nome: string; usos: number;
+  /** O que a IA leu do prato (0318): ingrediente de destaque e preparo. */
+  destaques?: string[] | null; preparo?: string | null; analise_em?: string | null; analise_por?: string | null;
+  /** Ideias da IA pra usar a sobra deste prato no dia seguinte. */
+  reaproveitar?: { nome: string; grupo: "proteinas" | "carboidratos" }[] | null;
+};
+/** Publicar com prato repetido: sem "manter", volta os conflitos pra pessoa decidir. */
+export type OpcoesPublicar = { manterRepetidos?: boolean; motivo?: string | null };
+export type ConflitoDia = { tipo: "ingrediente" | "preparo"; chave: string; pratos: string[] };
+export type RespostaPublicar = { ok: true } | { ok: false; mensagem: string; conflitos?: ConflitoDia[] };
 export type Publicacao = { id: string; data: string; acao: string; detalhe: string | null; por_nome: string | null; em: string };
 
 // Preços do buffet por dia da semana (0 = domingo): os MESMOS que a balança e
@@ -146,11 +158,18 @@ function marmitasDoDia(d: DadosCardapio): Marmitas | null {
 }
 
 // Publica o que está gravado (salve antes). Site e TV passam a mostrar.
-export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
+export async function publicarCardapioDia(db: Db, data: string, ator: Ator, opcoes: OpcoesPublicar = {}): Promise<RespostaPublicar> {
   if (!diaValido(data)) return { ok: false as const, mensagem: "Dia inválido." };
   const atual = await lerCardapioDia(db, data);
   if (!atual || (!atual.proteinas && !atual.carboidratos && !atual.especial)) {
     return { ok: false as const, mensagem: "Coloque pelo menos um prato antes de publicar." };
+  }
+  // Prato repetido (mesmo ingrediente de destaque ou mesmo preparo): avisa
+  // antes; se a pessoa decidir manter, publica e avisa o responsável.
+  const empresaDia = (atual as { empresa_id?: string | null }).empresa_id ?? null;
+  const conflitos = await (await ia()).conflitosParaPublicar(db, { ...atual, empresa_id: empresaDia }).catch(() => []);
+  if (conflitos.length > 0 && !opcoes.manterRepetidos) {
+    return { ok: false as const, mensagem: "Tem prato repetido no cardápio deste dia.", conflitos };
   }
   const agora = new Date().toISOString();
   const { error } = await db
@@ -159,7 +178,8 @@ export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
     .eq("data", data);
   if (error) return { ok: false as const, mensagem: "Não consegui publicar." };
   await recalcularUsos(db);
-  await registrarPublicacao(db, data, "publicado", ator);
+  await registrarPublicacao(db, data, "publicado", ator, conflitos.length > 0 ? "com prato repetido" : undefined);
+  if (conflitos.length > 0) await (await ia()).registrarAlertaCardapio(data, conflitos, opcoes.motivo ?? null, ator, empresaDia);
   // Publicou o de hoje: as marmitas do delivery já passam a oferecer esses pratos.
   const m = await marmitas();
   if (data === m.hojeSP()) await m.sincronizarMarmitas(db, data, (atual as { empresa_id?: string }).empresa_id ?? null);
@@ -167,10 +187,10 @@ export async function publicarCardapioDia(db: Db, data: string, ator: Ator) {
 }
 
 // Salva e publica de uma vez (o botão do painel "Salvar e manter no ar").
-export async function salvarEPublicarCardapioDia(db: Db, data: string, d: DadosCardapio, ator: Ator, empresaId: string) {
+export async function salvarEPublicarCardapioDia(db: Db, data: string, d: DadosCardapio, ator: Ator, empresaId: string, opcoes: OpcoesPublicar = {}): Promise<RespostaPublicar> {
   const s = await salvarCardapioDia(db, data, d, ator, empresaId);
   if (!s.ok) return s;
-  return publicarCardapioDia(db, data, ator);
+  return publicarCardapioDia(db, data, ator, opcoes);
 }
 
 export async function despublicarCardapioDia(db: Db, data: string, ator: Ator) {
@@ -187,7 +207,7 @@ export async function apagarCardapioDia(db: Db, data: string, ator: Ator) {
 
 // ---------- Catálogo (busca de itens já usados) ----------
 export async function listarCatalogo(db: Db): Promise<ItemCatalogo[]> {
-  const { data } = await db.from("cardapio_itens").select("id, grupo, nome, usos").eq("ativo", true).order("nome");
+  const { data } = await db.from("cardapio_itens").select("id, grupo, nome, usos, destaques, preparo, analise_em, analise_por, reaproveitar").eq("ativo", true).order("nome");
   return (data as ItemCatalogo[]) ?? [];
 }
 
@@ -245,6 +265,47 @@ export async function estatisticasPratos(db: Db, dia: string): Promise<Record<st
   return out;
 }
 
+// ---------- Ideias pro dia (pedido do Rafael, 18/11/2026) ----------
+// "Sobras de ontem": os pratos do último dia servido antes deste (até 2 dias
+// atrás); a tela cruza com as ideias de reaproveitamento que a IA leu de cada
+// prato. "Faz tempo que não sai": pratos bem usados (3+ dias publicados) que
+// não aparecem há 14 dias ou mais, os mais usados primeiro.
+export type Esquecido = { grupo: Grupo; nome: string; ultimo: string; usos: number };
+export type IdeiasDia = {
+  anterior: { data: string; pratos: { grupo: Grupo; nome: string }[] } | null;
+  esquecidos: Esquecido[];
+};
+export async function ideiasDoDia(db: Db, dia: string): Promise<IdeiasDia> {
+  const { data } = await db
+    .from("cardapio_dia")
+    .select("data, proteinas, carboidratos, especial")
+    .eq("publicado", true)
+    .gte("data", addDiasIso(dia, -400))
+    .lt("data", dia)
+    .order("data", { ascending: false })
+    .limit(400);
+  const dias = (data as { data: string; proteinas: string | null; carboidratos: string | null; especial: string | null }[]) ?? [];
+  const ult = dias[0];
+  const anterior = ult && ult.data >= addDiasIso(dia, -2)
+    ? { data: ult.data, pratos: (["proteinas", "carboidratos"] as Grupo[]).flatMap((g) => linhas(ult[g]).map((nome) => ({ grupo: g, nome }))) }
+    : null;
+  const visto = new Map<string, Esquecido>();
+  for (const d of dias) {
+    for (const g of GRUPOS) for (const nome of new Set(linhas(d[g]))) {
+      const k = g + "|" + chaveNome(nome);
+      const e = visto.get(k);
+      if (e) e.usos++;
+      else visto.set(k, { grupo: g, nome, ultimo: d.data, usos: 1 });
+    }
+  }
+  const limite = addDiasIso(dia, -14);
+  const esquecidos = [...visto.values()]
+    .filter((e) => e.usos >= 3 && e.ultimo <= limite)
+    .sort((a, b) => b.usos - a.usos || a.ultimo.localeCompare(b.ultimo))
+    .slice(0, 30);
+  return { anterior, esquecidos };
+}
+
 export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string, empresaId: string) {
   const nomes = [...new Set(linhas(texto))];
   if (nomes.length === 0) return { ok: false as const, mensagem: "Nada para cadastrar." };
@@ -256,6 +317,18 @@ export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string, em
     );
   if (error) return { ok: false as const, mensagem: "Não consegui cadastrar." };
   return { ok: true as const, total: nomes.length };
+}
+
+// Correção à mão do que a IA leu: "berinjela, abobrinha" e o preparo (ou vazio).
+// Fica marcado com o nome de quem corrigiu e a IA não mexe mais nesse prato.
+export async function corrigirAnalise(db: Db, id: string, destaquesTexto: string, preparo: string, ator: Ator) {
+  const destaques = [...new Set(destaquesTexto.split(/[,;\n]/).map((d) => d.trim().toLowerCase()).filter((d) => d.length >= 2 && d.length <= 40))].slice(0, 5);
+  const p = preparo.trim().toLowerCase().slice(0, 40) || null;
+  const { error } = await db.from("cardapio_itens").update({
+    destaques, preparo: p, analise_em: new Date().toISOString(), analise_por: (ator.nome || "painel").slice(0, 80), analise_erro: null,
+  }).eq("id", id);
+  if (error) return { ok: false as const, mensagem: "Não consegui salvar. Confira a internet e tente de novo." };
+  return { ok: true as const };
 }
 
 export async function apagarItemCatalogo(db: Db, id: string) {

@@ -27,22 +27,38 @@ async function sessao() {
 const atualizar = () => revalidatePath("/cardapio-do-dia");
 
 // Salva; com publicar=true também publica (botão "Publicar no site").
-export async function salvarCardapio(data: string, d: core.DadosCardapio, publicar: boolean) {
+export async function salvarCardapio(data: string, d: core.DadosCardapio, publicar: boolean, opcoes: core.OpcoesPublicar = {}) {
   const { db, ator } = await sessao();
   const empresaId = await empresaAtualId();
   if (!empresaId) return { ok: false as const, erro: "Não consegui identificar a empresa." };
   const r = publicar
-    ? await core.salvarEPublicarCardapioDia(db, data, d, ator, empresaId)
+    ? await core.salvarEPublicarCardapioDia(db, data, d, ator, empresaId, opcoes)
     : await core.salvarCardapioDia(db, data, d, ator, empresaId);
+  atualizar();
+  return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem, conflitos: "conflitos" in r ? r.conflitos : undefined };
+}
+
+export async function publicarCardapio(data: string, opcoes: core.OpcoesPublicar = {}) {
+  const { db, ator } = await sessao();
+  const r = await core.publicarCardapioDia(db, data, ator, opcoes);
+  atualizar();
+  return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem, conflitos: r.conflitos };
+}
+
+// Corrige à mão o que a IA leu de um prato (a IA não sobrescreve depois).
+export async function corrigirAnalisePrato(id: string, destaques: string, preparo: string) {
+  const { db, ator } = await sessao();
+  const r = await core.corrigirAnalise(db, id, destaques, preparo, ator);
   atualizar();
   return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem };
 }
 
-export async function publicarCardapio(data: string) {
-  const { db, ator } = await sessao();
-  const r = await core.publicarCardapioDia(db, data, ator);
+// Viu o aviso de cardápio publicado com prato repetido.
+export async function marcarAlertaVisto(id: number) {
+  const { db } = await sessao();
+  await db.from("cardapio_alertas").update({ visto_em: new Date().toISOString() }).eq("id", id).is("visto_em", null);
   atualizar();
-  return r.ok ? { ok: true as const } : { ok: false as const, erro: r.mensagem };
+  return { ok: true as const };
 }
 
 export async function criarItens(grupo: core.Grupo, texto: string) {

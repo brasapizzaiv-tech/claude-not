@@ -1,23 +1,39 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { confirmar } from "@/components/dialogo";
+import { confirmar, perguntar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { dataBR } from "@/lib/format";
 import {
   apagarCardapio,
   apagarItem,
+  corrigirAnalisePrato,
   criarItens,
   despublicarCardapio,
+  marcarAlertaVisto,
   publicarCardapio,
   salvarCardapio,
   type Grupo,
 } from "./actions";
-import { statusCardapio, type CardapioDia, type ItemCatalogo, type PrecosBuffet } from "@/lib/cardapio-dia-core";
+import { statusCardapio, type CardapioDia, type IdeiasDia, type ItemCatalogo, type PrecosBuffet } from "@/lib/cardapio-dia-core";
+import { CardapioIdeias } from "@/components/cardapio-ideias";
+import { BotaoAcao } from "@/components/enviar";
 import { MARMITAS, marcarPratoNovo, marcasDoDia, type QualMarmita } from "@/lib/marmitas-marcas";
+import { PREPAROS, chavePrato, conflitosDaResposta, conflitosDoDia, textoConflito, type Analise, type Conflito } from "@/lib/cardapio-conflitos";
+
+// Publicar com prato repetido: o servidor devolve os conflitos e a pessoa decide.
+async function decidirRepetidos(lista: Conflito[]): Promise<{ manterRepetidos: true; motivo: string } | null> {
+  const motivo = await perguntar("Tem prato repetido neste dia", "", {
+    detalhe: `${lista.map(textoConflito).join("\n")}\n\nO melhor é trocar um deles. Se for manter, escreva o motivo (o responsável recebe um aviso).`,
+    okTexto: "Publicar mesmo assim",
+  });
+  return motivo === null ? null : { manterRepetidos: true, motivo };
+}
 
 export type Cardapio = CardapioDia;
 export type ItemCat = ItemCatalogo;
+/** Publicação com prato repetido que alguém decidiu manter (0318). */
+export type AlertaCardapio = { id: number; data: string; conflitos: Conflito[]; motivo: string | null; por_nome: string | null; criado_em: string; visto_em: string | null };
 
 const quando = (ts: string | null) =>
   ts ? new Date(ts).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
@@ -80,6 +96,8 @@ export function EditorCardapio({
   itens,
   precos: PRECOS,
   comPrecoAdicional = {},
+  ideias,
+  alertas = [],
 }: {
   dia: string;
   hoje: string;
@@ -90,6 +108,10 @@ export function EditorCardapio({
   precos: PrecosBuffet;
   /** Pratos com preço nos Adicionais de cada marmita (nome sem acento/caixa). */
   comPrecoAdicional?: Partial<Record<QualMarmita, string[]>>;
+  /** Sobras do dia anterior e pratos que faz tempo que não saem. */
+  ideias: IdeiasDia;
+  /** Últimas publicações com prato repetido mantido. */
+  alertas?: AlertaCardapio[];
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -133,7 +155,7 @@ export function EditorCardapio({
   function salvar(publicar: boolean) {
     setMsg(null);
     start(async () => {
-      const r = await salvarCardapio(
+      let r = await salvarCardapio(
         dia,
         {
           proteinas: sel.proteinas.join("\n"),
@@ -145,6 +167,11 @@ export function EditorCardapio({
         },
         publicar,
       );
+      if (conflitosDaResposta(r).length) {
+        const manter = await decidirRepetidos(conflitosDaResposta(r));
+        if (!manter) { setMsg("Salvo, mas NÃO publicado: troque o prato repetido e publique de novo."); router.refresh(); return; }
+        r = await publicarCardapio(dia, manter);
+      }
       setMsg(
         r.ok
           ? publicar
@@ -160,12 +187,24 @@ export function EditorCardapio({
   function publicarSo() {
     setMsg(null);
     start(async () => {
-      const r = await publicarCardapio(dia);
+      let r = await publicarCardapio(dia);
+      if (conflitosDaResposta(r).length) {
+        const manter = await decidirRepetidos(conflitosDaResposta(r));
+        if (!manter) { setMsg("Não publicado: troque o prato repetido e publique de novo."); return; }
+        r = await publicarCardapio(dia, manter);
+      }
       setMsg(r.ok ? "✓ Publicado — já está no site e na TV." : (r.erro ?? "Não publicou."));
       router.refresh();
     });
   }
   const status = statusCardapio(atual);
+  // Prato repetido, pelo que a IA já leu (prato novo é lido ao publicar).
+  const analises = useMemo(() => {
+    const m = new Map<string, Analise>();
+    for (const i of itens) if (i.analise_em) m.set(chavePrato(i.grupo, i.nome), { destaques: i.destaques ?? null, preparo: i.preparo ?? null });
+    return m;
+  }, [itens]);
+  const conflitos = useMemo(() => conflitosDoDia(sel, analises), [sel, analises]);
 
   // Copia o cardápio de um dia já preenchido (mesmo dia da semana primeiro).
   function copiarDe(origem: Cardapio) {
@@ -300,6 +339,16 @@ export function EditorCardapio({
             );
           })}
 
+          {conflitos.length > 0 && (
+            <div role="alert" className="mt-4 cartao border-l-4 border-urgente-texto p-4">
+              <p className="text-sm font-bold text-urgente-texto">⚠ Prato repetido</p>
+              <ul className="mt-1 space-y-0.5 text-sm text-texto">
+                {conflitos.map((c) => <li key={c.tipo + c.chave}>{textoConflito(c)}</li>)}
+              </ul>
+              <p className="mt-1 text-xs text-texto-suave">Troque um deles. Se precisar manter, o sistema pede o motivo ao publicar e avisa o responsável.</p>
+            </div>
+          )}
+
           {/* Preços e ações */}
           <div className="mt-4 cartao p-4">
             <div className="flex flex-wrap gap-3">
@@ -388,6 +437,13 @@ export function EditorCardapio({
 
         {/* Coluna da direita */}
         <div className="space-y-5">
+          <CardapioIdeias
+            ideias={ideias}
+            itens={itens}
+            sel={sel}
+            adicionar={(g, nome) => { if (!sel[g].some((x) => norm(x) === norm(nome))) mudarBloco(g, [...sel[g], nome]); }}
+          />
+          {alertas.length > 0 && <AlertasCardapio alertas={alertas} />}
           <div className="cartao p-4">
             <h2 className="mb-3 text-sm font-semibold text-texto">
               Próximos dias
@@ -634,6 +690,25 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
   const [busca, setBusca] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Corrige à mão o que a IA leu (vale daqui pra frente; a IA não mexe mais).
+  async function corrigir(i: ItemCat) {
+    const d = await perguntar(`Ingredientes de destaque de “${i.nome}”`, (i.destaques ?? []).join(", "), {
+      detalhe: "Separe por vírgula (ex.: berinjela, abobrinha). Deixe vazio se o prato não tem destaque. Frango, carne, arroz, feijão, batata e massa não contam.",
+      okTexto: "Continuar",
+    });
+    if (d === null) return;
+    const p = await perguntar(`Jeito de preparo de “${i.nome}”`, i.preparo ?? "", {
+      detalhe: `Só se for marcante, pra não repetir no mesmo dia: ${PREPAROS.join(", ")}. Deixe vazio se não for nenhum.`,
+      okTexto: "Salvar",
+    });
+    if (p === null) return;
+    start(async () => {
+      const r = await corrigirAnalisePrato(i.id, d, p);
+      setMsg(r.ok ? `✓ “${i.nome}” corrigido.` : (r.erro ?? "Não deu."));
+      router.refresh();
+    });
+  }
+
   const lista = useMemo(() => {
     const q = norm(busca.trim());
     return itens
@@ -702,11 +777,22 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
               key={i.id}
               className="flex items-center justify-between gap-2 rounded-controle px-2 py-1 text-xs text-texto-suave hover:bg-superficie-suave"
             >
-              <span>
+              <span className="min-w-0">
                 {i.nome}
                 {i.usos > 0 && (
                   <span className="ml-1 text-texto-fraco">· {i.usos}x</span>
                 )}
+                <button
+                  type="button"
+                  disabled={ocupado}
+                  title="Corrigir o que a IA leu deste prato"
+                  onClick={() => corrigir(i)}
+                  className="block text-left text-mini text-texto-fraco underline-offset-2 hover:underline"
+                >
+                  {!i.analise_em
+                    ? "ingredientes: ainda não lidos"
+                    : `${(i.destaques ?? []).length ? (i.destaques ?? []).join(", ") : "sem destaque"}${i.preparo ? ` · ${i.preparo}` : ""}${i.analise_por && i.analise_por !== "ia" ? " · corrigido" : ""}`}
+                </button>
               </span>
               <button aria-label="Fechar" disabled={ocupado}
                 onClick={async () => {
@@ -732,5 +818,36 @@ function GerenciarCatalogo({ itens, proc }: { itens: ItemCat[]; proc: boolean })
         </p>
       </div>
     </details>
+  );
+}
+
+/* ---------------- avisos de prato repetido mantido ---------------- */
+function AlertasCardapio({ alertas }: { alertas: AlertaCardapio[] }) {
+  const router = useRouter();
+  const novos = alertas.filter((a) => !a.visto_em).length;
+  return (
+    <div className="cartao p-4">
+      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-texto">
+        Publicados com prato repetido
+        {novos > 0 && <span className="pilula-urgente-solido text-xs">{novos} novo{novos > 1 ? "s" : ""}</span>}
+      </h2>
+      <ul className="space-y-2">
+        {alertas.map((a) => (
+          <li key={a.id} className={`rounded-controle px-3 py-2 text-xs ${a.visto_em ? "bg-painel-fundo text-texto-suave" : "bg-destaque text-texto"}`}>
+            <p className="font-semibold">{dataBR(a.data).slice(0, 5)} · {a.por_nome ?? "?"} <span className="font-normal text-texto-fraco">em {quando(a.criado_em)}</span></p>
+            {(a.conflitos ?? []).map((c) => <p key={c.tipo + c.chave}>{textoConflito(c)}</p>)}
+            {a.motivo && <p className="mt-0.5 text-texto-suave">Motivo: {a.motivo}</p>}
+            {!a.visto_em && (
+              <BotaoAcao
+                aoClicar={async () => { await marcarAlertaVisto(a.id); router.refresh(); }}
+                className="btn-secundario mt-1.5 min-h-9 px-3 text-xs"
+              >
+                Visto
+              </BotaoAcao>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

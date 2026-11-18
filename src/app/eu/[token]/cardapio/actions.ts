@@ -48,20 +48,20 @@ export async function salvarBuffetApp(token: string, dia: string, d: core.DadosC
   return r;
 }
 
-export async function publicarApp(token: string, dia: string) {
+export async function publicarApp(token: string, dia: string, opcoes: core.OpcoesPublicar = {}) {
   const s = await sessao(token);
   if (!s) return SEM_PERMISSAO;
-  const r = await core.publicarCardapioDia(s.db, dia, s.ator);
+  const r = await core.publicarCardapioDia(s.db, dia, s.ator, opcoes);
   atualizar(token);
   return r;
 }
 
-export async function salvarEPublicarApp(token: string, dia: string, d: core.DadosCardapio) {
+export async function salvarEPublicarApp(token: string, dia: string, d: core.DadosCardapio, opcoes: core.OpcoesPublicar = {}) {
   const s = await sessao(token);
   if (!s) return SEM_PERMISSAO;
   const empresaId = await empresaDoColaborador(token);
   if (!empresaId) return SEM_PERMISSAO;
-  const r = await core.salvarEPublicarCardapioDia(s.db, dia, d, s.ator, empresaId);
+  const r = await core.salvarEPublicarCardapioDia(s.db, dia, d, s.ator, empresaId, opcoes);
   atualizar(token);
   return r;
 }
