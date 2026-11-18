@@ -31,7 +31,8 @@ export type ModuloKey =
   | "mural"
   | "feriados"
   | "lembretes"
-  | "rodizio";
+  | "rodizio"
+  | "fichas";
 
 // `icon` é o NOME do ícone, não o desenho: quem desenha é o <Icone> em
 // src/components/icone.tsx. Fica como texto porque este arquivo também roda no
@@ -75,6 +76,8 @@ export const MODULOS: {
   { key: "feriados", label: "Feriados e eventos", icon: "agenda", rotas: ["/feriados"] },
   { key: "lembretes", label: "Lembretes pra equipe", icon: "sino", rotas: ["/lembretes"] },
   { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "pizza", rotas: ["/cozinha"] },
+  // Fichas técnicas: receitas e custo dos pratos (0320). A chefe no celular não vê custo.
+  { key: "fichas", label: "Fichas técnicas (custo dos pratos)", icon: "caderno", rotas: ["/fichas-tecnicas"] },
 ];
 
 // Rotas só do dono. A configuração fiscal guarda o token da Focus e o CSC, e as

@@ -191,6 +191,7 @@ export function Sidebar({
         ...so(has("rodizio"), { href: "/cozinha/relatorio", label: "Rodízio · relatório", icon: "grafico" }),
         ...so(has("rodizio"), { href: "/cozinha/recados", label: "Recados da TV", icon: "tv" }),
         ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "etiqueta" }),
+        ...so(has("fichas"), { href: "/fichas-tecnicas", label: "Fichas técnicas", icon: "caderno" }),
       ],
     },
     {

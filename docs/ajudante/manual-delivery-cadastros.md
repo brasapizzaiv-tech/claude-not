@@ -233,6 +233,26 @@ Menu Site e apps. Precisa da permissão "Cardápio do dia (site)".
 
 ---
 
+## Fichas técnicas (/fichas-tecnicas)
+
+Menu Cozinha. Precisa da permissão "Fichas técnicas (custo dos pratos)". A chefe no celular não vê custo.
+
+**Para que serve:** a receita de cada prato (ingredientes, quantidade e quanto rende pronto) e o **custo por kg com o preço de hoje**. O preço vem do produto do estoque (último preço de compra, que muda a cada nota lançada). As 156 receitas da planilha "FICHA TÉCNICA v04" (set/2025) foram importadas; a coluna "R$/kg 2025" mostra o que a planilha dizia.
+
+**Como fazer:**
+1. A lista mostra cada ficha com "Rende", "R$/kg hoje", "R$/kg 2025" e a diferença. Filtros: busca, categoria, "Com pendência" e "Mais caras primeiro".
+2. "Nova ficha": escreva o nome e clique; a ficha abre para preencher.
+3. Na ficha: nome, categoria, "Rende (kg pronto)", "Rende o quê" (1 forma, porção), "Usada dentro de outras fichas" (molho, massa, base) e observações. "Salvar".
+4. Ingredientes: quantidade e unidade (kg, g, L, ml, un) mudam ao sair do campo. "Ligar a um produto ou ficha" (ou "Trocar") abre a busca: "Produto do estoque" ou "Outra ficha" (ex.: o molho branco dentro da lasanha). "Deixar sem ligação" usa o preço da planilha. O ✕ tira o ingrediente da ficha.
+5. Quando a unidade da receita não bate com a do produto (receita em kg, produto vendido por unidade), aparece "1 un = __ kg": diga quanto vem em uma unidade. Vale pra todas as fichas com esse produto.
+6. "Prato do cardápio do dia": ligue a ficha ao prato pra o custo aparecer no cardápio.
+7. "Excluir ficha" apaga de vez (não dá se ela for usada dentro de outra).
+
+**Regras e avisos:**
+- "pra ligar" / "ingrediente(s) pra acertar": ingrediente sem produto, produto sem preço, ou unidade sem conversão. Enquanto isso o custo usa o valor da planilha de 2025.
+- Líquido em litro com receita em kg conta 1 L ≈ 1 kg.
+- Custo por kg = soma dos ingredientes ÷ quanto rende pronto. Sem rendimento, não dá o custo por kg.
+
 ## Clientes (NF-e) (/clientes)
 
 Menu Configurações. Abre para quem tem Salão, PDV, Delivery ou Financeiro.
