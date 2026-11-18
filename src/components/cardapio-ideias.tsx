@@ -33,7 +33,8 @@ export function CardapioIdeias({
     .filter((s) => s.ideias.length > 0);
 
   const esquecidos = (["proteinas", "carboidratos", "especial"] as Grupo[])
-    .map((g) => ({ g, lista: ideias.esquecidos.filter((e) => e.grupo === g && !ja.has(chaveNome(e.nome))).slice(0, grande ? 5 : 6) }))
+    // Só o que ainda está no catálogo (prato renomeado ou tirado não volta como ideia).
+    .map((g) => ({ g, lista: ideias.esquecidos.filter((e) => e.grupo === g && !ja.has(chaveNome(e.nome)) && porChave.has(`${g}|${chaveNome(e.nome)}`)).slice(0, grande ? 5 : 6) }))
     .filter((x) => x.lista.length > 0);
 
   if (sobras.length === 0 && esquecidos.length === 0) return null;
