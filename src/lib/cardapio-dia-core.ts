@@ -271,9 +271,19 @@ export async function estatisticasPratos(db: Db, dia: string): Promise<Record<st
 // prato. "Faz tempo que não sai": pratos bem usados (3+ dias publicados) que
 // não aparecem há 14 dias ou mais, os mais usados primeiro.
 export type Esquecido = { grupo: Grupo; nome: string; ultimo: string; usos: number };
+/** Prato de uma cuba que faz tempo que não sai (ultimo null = nunca publicado no sistema). */
+export type IdeiaCuba = { grupo: Grupo; nome: string; ultimo: string | null; vezes: number };
+export type CubaIdeias = { cuba: number; nome: string; pratos: IdeiaCuba[] };
 export type IdeiasDia = {
   anterior: { data: string; pratos: { grupo: Grupo; nome: string }[] } | null;
   esquecidos: Esquecido[];
+  /** Mapa das cubas (0319): por cuba, os pratos dela que faz tempo que não saem. */
+  porCuba?: CubaIdeias[];
+};
+/** seg–qui, sex–sáb ou domingo (as colunas da planilha das cubas). */
+export const tipoDiaCuba = (dia: string): "semana" | "sexsab" | "domingo" => {
+  const d = diaSemanaIso(dia);
+  return d === 0 ? "domingo" : d >= 5 ? "sexsab" : "semana";
 };
 export async function ideiasDoDia(db: Db, dia: string): Promise<IdeiasDia> {
   const { data } = await db
@@ -303,7 +313,34 @@ export async function ideiasDoDia(db: Db, dia: string): Promise<IdeiasDia> {
     .filter((e) => e.usos >= 3 && e.ultimo <= limite)
     .sort((a, b) => b.usos - a.usos || a.ultimo.localeCompare(b.ultimo))
     .slice(0, 30);
-  return { anterior, esquecidos };
+
+  // Por cuba: os pratos da cuba (no tipo de dia) que não saem há 14+ dias,
+  // primeiro os que estão parados há mais tempo e os que mais saíam.
+  const porCuba: CubaIdeias[] = [];
+  const { data: cubas } = await db
+    .from("cardapio_cubas")
+    .select("cuba, nome_cuba, vezes, cardapio_itens(nome, grupo, ativo)")
+    .eq("tipo_dia", tipoDiaCuba(dia))
+    .order("cuba");
+  type LinhaCuba = { cuba: number; nome_cuba: string; vezes: number; cardapio_itens: { nome: string; grupo: string; ativo: boolean } | { nome: string; grupo: string; ativo: boolean }[] | null };
+  const porNumero = new Map<number, { nome: string; itens: IdeiaCuba[] }>();
+  for (const l of (cubas as LinhaCuba[] | null) ?? []) {
+    const it = Array.isArray(l.cardapio_itens) ? l.cardapio_itens[0] : l.cardapio_itens;
+    if (!it || !it.ativo) continue;
+    const g = it.grupo as Grupo;
+    const v = visto.get(g + "|" + chaveNome(it.nome));
+    const c = porNumero.get(l.cuba) ?? { nome: l.nome_cuba, itens: [] };
+    c.itens.push({ grupo: g, nome: it.nome, ultimo: v?.ultimo ?? null, vezes: l.vezes });
+    porNumero.set(l.cuba, c);
+  }
+  for (const [cuba, c] of porNumero) {
+    if (c.itens.length < 2) continue; // cuba de um prato só (arroz, feijão): nada a sugerir
+    const pratos = c.itens
+      .filter((p) => !p.ultimo || p.ultimo <= limite)
+      .sort((a, b) => (a.ultimo ?? "0000").localeCompare(b.ultimo ?? "0000") || b.vezes - a.vezes);
+    if (pratos.length) porCuba.push({ cuba, nome: c.nome, pratos });
+  }
+  return { anterior, esquecidos, porCuba };
 }
 
 export async function criarItensCatalogo(db: Db, grupo: Grupo, texto: string, empresaId: string) {

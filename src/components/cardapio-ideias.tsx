@@ -4,7 +4,8 @@
 // cozinha e no painel:
 //  - Sobras do último dia servido → o que a IA sugere fazer com elas
 //    (carreteiro → bolinho de carreteiro);
-//  - Pratos bem usados que não saem há 14 dias ou mais.
+//  - Pratos que não saem há 14 dias ou mais — por CUBA quando o mapa das cubas
+//    está cadastrado (0319), senão por grupo (os bem usados).
 // Um toque põe o prato no grupo certo; a pessoa ainda salva/publica como sempre.
 import { chaveNome, type Esquecido, type Grupo, type IdeiasDia, type ItemCatalogo } from "@/lib/cardapio-dia-core";
 
@@ -37,7 +38,12 @@ export function CardapioIdeias({
     .map((g) => ({ g, lista: ideias.esquecidos.filter((e) => e.grupo === g && !ja.has(chaveNome(e.nome)) && porChave.has(`${g}|${chaveNome(e.nome)}`)).slice(0, grande ? 5 : 6) }))
     .filter((x) => x.lista.length > 0);
 
-  if (sobras.length === 0 && esquecidos.length === 0) return null;
+  // Por cuba: até 3 (painel) ou 2 (celular) pratos de cada cuba que não estão no dia.
+  const cubas = (ideias.porCuba ?? [])
+    .map((c) => ({ ...c, pratos: c.pratos.filter((p) => !ja.has(chaveNome(p.nome))).slice(0, grande ? 2 : 3) }))
+    .filter((c) => c.pratos.length > 0);
+
+  if (sobras.length === 0 && esquecidos.length === 0 && cubas.length === 0) return null;
 
   const btn = grande
     ? "min-h-11 rounded-full bg-destaque px-3 py-2 text-left text-base font-medium text-texto"
@@ -68,7 +74,25 @@ export function CardapioIdeias({
         </div>
       )}
 
-      {esquecidos.length > 0 && (
+      {cubas.length > 0 && (
+        <div className="mt-3">
+          <p className="rotulo">Faz tempo que não sai · por cuba</p>
+          {cubas.map((c) => (
+            <div key={c.cuba} className="mt-1.5">
+              <p className={meta}>Cuba {c.cuba} · {c.nome}</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {c.pratos.map((p) => (
+                  <button key={p.nome} type="button" onClick={() => adicionar(p.grupo, p.nome)} className={btn}>
+                    + {p.nome} <span className={meta}>· {p.ultimo ? `último ${diaCurto(p.ultimo)}` : "ainda não saiu pelo sistema"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {cubas.length === 0 && esquecidos.length > 0 && (
         <div className="mt-3">
           <p className="rotulo">Faz tempo que não sai</p>
           {esquecidos.map(({ g, lista }) => (
