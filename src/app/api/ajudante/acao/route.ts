@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { perfilDaSessao, usuarioDaSessao } from "@/lib/sessao";
 import { podeAcessar } from "@/lib/permissoes";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
 import { ACOES, ACOES_SO_DONO, ACAO_VALIDADE_MIN } from "@/lib/ajudante/acoes";
 
 // Ajudante, etapa 3: o clique em "Confirmar" ou "Cancelar" no cartão de uma
@@ -65,7 +66,8 @@ export async function POST(req: Request) {
   const acao = POR_NOME.get(pedido.acao);
   if (!acao) return resposta(400, { ok: false, mensagem: "Essa ação não existe mais." });
   if (ACOES_SO_DONO && !dono && !acao.todos) return resposta(403, { ok: false, mensagem: "Por enquanto só o dono pode fazer essa ação pelo Ajudante." });
-  if (!acao.telas.some((t) => podeAcessar(t, dono, perfil.permissoes ?? []))) {
+  const mods = await modulosDaEmpresa(perfil.empresa_id ?? null);
+  if (!acao.telas.some((t) => podeAcessar(t, dono, perfil.permissoes ?? [], mods))) {
     return resposta(403, { ok: false, mensagem: "Seu login não pode fazer isso pela tela, então o Ajudante também não." });
   }
 

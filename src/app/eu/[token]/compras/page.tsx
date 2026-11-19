@@ -3,7 +3,7 @@ import { Icone } from "@/components/icone";
 import { colabPedidos, listarMinhasSolicitacoes } from "./compras-actions";
 import { ComprasColab } from "./form";
 
-export const metadata = { title: "Compra ou manutenção · Brasa" };
+export const metadata = { title: "Compra ou manutenção" };
 
 export default async function ComprasColabPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

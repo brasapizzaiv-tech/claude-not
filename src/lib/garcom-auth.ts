@@ -10,7 +10,8 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { podeAcessar } from "@/lib/permissoes";
+import { empresaTem, podeAcessar } from "@/lib/permissoes";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
 import { cookieGarcomConfere, montarCookieGarcom, tokenDoValor } from "@/lib/garcom-assinatura";
 
 export const COOKIE_GARCOM = "garcom_colab";
@@ -60,13 +61,16 @@ export async function colaboradorGarcom(): Promise<{ id: string; nome: string; t
   const admin = createAdminClient();
   const { data } = await admin
     .from("colaboradores")
-    .select("id, nome, token, garcom_ate, pin")
+    .select("id, nome, token, garcom_ate, pin, empresa_id")
     .eq("token", token)
     .eq("ativo", true)
     .eq("faz_garcom", true)
     .maybeSingle();
-  const c = data as { id: string; nome: string; token: string; garcom_ate: string | null; pin: string | null } | null;
+  const c = data as { id: string; nome: string; token: string; garcom_ate: string | null; pin: string | null; empresa_id: string } | null;
   if (!c) return null;
+  // Empresa que não contratou o salão não tem modo garçom (módulos, 0322).
+  const mods = await modulosDaEmpresa(c.empresa_id);
+  if (!empresaTem(mods, "garcom") && !empresaTem(mods, "salao")) return null;
   if (!cookieGarcomConfere(chave(), valor, c.token, c.pin)) return null;
   // Garçom avulso (link da noite, migration 0249): só até o fim do link.
   if (c.garcom_ate && new Date(c.garcom_ate).getTime() <= Date.now()) return null;
@@ -79,13 +83,14 @@ export async function sessaoGarcom(): Promise<SessaoGarcom | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    const { data: prof } = await supabase.from("profiles").select("papel, permissoes, nome").eq("id", user.id).maybeSingle();
+    const { data: prof } = await supabase.from("profiles").select("papel, permissoes, nome, empresa_id").eq("id", user.id).maybeSingle();
     const admin = prof?.papel === "dono";
     const permissoes = (prof?.permissoes as string[] | null) ?? [];
+    const mods = await modulosDaEmpresa((prof?.empresa_id as string | null) ?? null);
     // Celular logado no sistema com um usuário SEM garçom (ex.: "Forno") e a
     // pessoa entrou pelo "Modo garçom" do app dela: vale o cookie do app.
     // Antes o login de outro usuário ganhava e mandava pra tela inicial.
-    if (!podeAcessar("/garcom", admin, permissoes)) {
+    if (!podeAcessar("/garcom", admin, permissoes, mods)) {
       const colab = await colaboradorGarcom();
       if (colab) return { db: createAdminClient(), uid: null, colabId: colab.id, nome: colab.nome, token: colab.token, viaColab: true, avulso: colab.avulso, podeGarcom: true };
     }
@@ -96,7 +101,7 @@ export async function sessaoGarcom(): Promise<SessaoGarcom | null> {
       nome: (prof?.nome as string | null) ?? null,
       token: null,
       viaColab: false,
-      podeGarcom: podeAcessar("/garcom", admin, permissoes),
+      podeGarcom: podeAcessar("/garcom", admin, permissoes, mods),
     };
   }
   const colab = await colaboradorGarcom();

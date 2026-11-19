@@ -4,7 +4,7 @@ import {
   buscarContasAbertasApp, cancelarEncomendaApp, colabCofre, conferirCofreApp, dadosCofreApp, desfazerMovimentoApp, marcarEncomendaApp, pagarContaApp, registrarMovimentoApp, salvarFaixasApp,
 } from "./actions";
 
-export const metadata = { title: "Cofre · Brasa" };
+export const metadata = { title: "Cofre" };
 export const dynamic = "force-dynamic";
 
 // Só abre pra quem tem a caixinha "Cofre" e entrou com o PIN. A conferência é no

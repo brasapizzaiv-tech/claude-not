@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilDaSessao, usuarioDaSessao } from "@/lib/sessao";
 import { empresaAtual } from "@/lib/empresa";
 import { podeAcessar } from "@/lib/permissoes";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
 import { MANUAL } from "@/lib/ajudante/manual";
 import { FERRAMENTAS } from "@/lib/ajudante/ferramentas";
 import { ACOES, ACOES_SO_DONO, ACAO_VALIDADE_MIN } from "@/lib/ajudante/acoes";
@@ -140,9 +141,11 @@ export async function POST(req: Request) {
 
   const dono = perfil.papel === "dono";
   const permissoes = perfil.permissoes ?? [];
-  const liberadas = new Set(FERRAMENTAS.filter((f) => f.telas.some((t) => podeAcessar(t, dono, permissoes))).map((f) => f.nome));
+  // Só o que a empresa contratou (0322).
+  const mods = await modulosDaEmpresa(empresaId);
+  const liberadas = new Set(FERRAMENTAS.filter((f) => f.telas.some((t) => podeAcessar(t, dono, permissoes, mods))).map((f) => f.nome));
   const acoesLiberadas = new Set(
-    ACOES.filter((a) => (!ACOES_SO_DONO || dono || a.todos) && a.telas.some((t) => podeAcessar(t, dono, permissoes))).map((a) => a.nome),
+    ACOES.filter((a) => (!ACOES_SO_DONO || dono || a.todos) && a.telas.some((t) => podeAcessar(t, dono, permissoes, mods))).map((a) => a.nome),
   );
   const hoje = hojeBR();
   const diaSemana = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"][new Date(`${hoje}T12:00:00Z`).getUTCDay()];

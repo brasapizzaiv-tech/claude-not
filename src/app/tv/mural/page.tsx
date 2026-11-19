@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { dadosDoMural, empresaDaChaveMural } from "@/lib/mural-server";
 import { MuralTv } from "./mural-tv";
 import { TV } from "@/lib/tv-cores";
+import { nomeCurtoDaEmpresa } from "@/lib/marca";
 
 export const metadata: Metadata = {
   title: "Mural do escritório",
@@ -69,5 +70,5 @@ export default async function MuralTvPage({
   // Rafael fique num canto mais longe do que a gente supôs.
   const ajuste = Math.min(Math.max(Number(tamanho) || 1, 0.5), 2);
 
-  return <MuralTv folgas={folgas} solicitacoes={solicitacoes} feriados={feriados} eventos={eventos} aniversarios={aniversarios} entregas={entregas} hoje={hoje} ajuste={ajuste} />;
+  return <MuralTv folgas={folgas} solicitacoes={solicitacoes} feriados={feriados} eventos={eventos} aniversarios={aniversarios} entregas={entregas} hoje={hoje} ajuste={ajuste} empresaNome={await nomeCurtoDaEmpresa(empresaId)} />;
 }

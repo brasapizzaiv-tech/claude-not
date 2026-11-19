@@ -4,6 +4,7 @@
 import { podeAcessar } from "@/lib/permissoes";
 import { colaboradorGarcom } from "@/lib/garcom-auth";
 import { perfilDaSessao, usuarioDaSessao } from "@/lib/sessao";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
 
 // rota: uma rota ou uma lista (basta ter acesso a UMA delas).
 export async function exigirAcesso(rota: string | string[]) {
@@ -18,6 +19,8 @@ export async function exigirAcesso(rota: string | string[]) {
   const prof = await perfilDaSessao();
   const admin = prof?.papel === "dono";
   const permissoes = (prof?.permissoes as string[] | null) ?? [];
+  // E a empresa precisa ter contratado o módulo (empresas.modulos, 0322).
+  const mods = await modulosDaEmpresa(prof?.empresa_id ?? null);
   const rotas = Array.isArray(rota) ? rota : [rota];
-  if (!rotas.some((r) => podeAcessar(r, admin, permissoes))) throw new Error("Sem permissão para esta ação.");
+  if (!rotas.some((r) => podeAcessar(r, admin, permissoes, mods))) throw new Error("Sem permissão para esta ação.");
 }

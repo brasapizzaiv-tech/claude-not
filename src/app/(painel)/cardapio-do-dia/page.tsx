@@ -11,6 +11,7 @@ import { salvarMarmitaDia } from "./actions";
 import { pratosComPrecoAdicional } from "@/lib/marmitas-do-cardapio";
 import { perfilDaSessao } from "@/lib/sessao";
 import { podeAcessar } from "@/lib/permissoes";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
 import { carregarFichas } from "@/lib/fichas";
 import { chavePrato } from "@/lib/cardapio-conflitos";
 import type { CustoPrato } from "./editor";
@@ -51,7 +52,7 @@ export default async function CardapioDoDiaPage({
   // Custo por kg de cada prato (fichas técnicas, 0320): só pra quem pode ver as fichas.
   const perfil = await perfilDaSessao();
   let custos: Record<string, CustoPrato> | null = null;
-  if (podeAcessar("/fichas-tecnicas", perfil?.papel === "dono", (perfil?.permissoes as string[] | null) ?? [])) {
+  if (podeAcessar("/fichas-tecnicas", perfil?.papel === "dono", (perfil?.permissoes as string[] | null) ?? [], await modulosDaEmpresa(perfil?.empresa_id ?? null))) {
     custos = {};
     const f = await carregarFichas(supabase).catch(() => null);
     // Cada prato aponta pra sua ficha (0321); a mesma ficha serve a vários nomes.

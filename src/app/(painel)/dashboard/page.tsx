@@ -6,8 +6,10 @@ import { tipoDe } from "@/lib/formas-pagamento";
 import { formasParaTipo } from "@/lib/formas-pagamento-server";
 import { pedidoAtrasado } from "@/lib/delivery-atraso";
 import { Inicio, type DadosInicio, type Mesa } from "./inicio";
+import { InicioGestao } from "./inicio-gestao";
 import { AvisoSaude } from "@/components/aviso-saude";
-import { empresaAtualId } from "@/lib/empresa";
+import { empresaAtualId, modulosDaSessao } from "@/lib/empresa";
+import { empresaTem, type ModuloKey } from "@/lib/permissoes";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Tela inicial do painel (Etapa 4 do design).
@@ -79,9 +81,35 @@ export default async function DashboardPage({
   if (!admin && permissoes.includes("garcom") && permissoes.every((p) => p === "garcom")) {
     redirect("/garcom");
   }
-  const pode = (k: string) => admin || permissoes.includes(k);
+  // A pessoa pode E a empresa contratou (0322).
+  const modulos = await modulosDaSessao();
+  const pode = (k: ModuloKey) => empresaTem(modulos, k) && (admin || permissoes.includes(k));
 
   const hoje = hojeBR();
+
+  // Empresa sem salão, caixa nem delivery (só Compras + Equipe, 19/11/2026):
+  // a tela de mesas e caixa seria só zeros. Vai a tela inicial de gestão.
+  if (!["salao", "pdv", "delivery"].some((k) => empresaTem(modulos, k as ModuloKey))) {
+    const hora = Number(new Date(agoraMs() - 3 * 3600 * 1000).toISOString().slice(11, 13));
+    const t = new Date(hoje + "T12:00:00Z").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+    return (
+      <>
+        <div className="px-4 pt-5 sm:px-6 sm:pt-6 lg:px-[30px] lg:pt-[26px] empty:hidden">
+          <AvisoSaude empresaId={await empresaAtualId()} />
+        </div>
+        <InicioGestao
+          nome={(profile?.nome ?? user?.email ?? "").split(" ")[0] || "por aqui"}
+          saudacao={hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite"}
+          diaLegivel={t.charAt(0).toUpperCase() + t.slice(1)}
+          dia={hoje}
+          turno={hora >= 17 ? "noite" : "dia"}
+          empresaId={await empresaAtualId()}
+          pode={pode}
+        />
+      </>
+    );
+  }
+
   const { dia: diaPedido } = await searchParams;
   const dia = /^\d{4}-\d{2}-\d{2}$/.test(diaPedido ?? "") ? diaPedido! : hoje;
   const ehHoje = dia === hoje;

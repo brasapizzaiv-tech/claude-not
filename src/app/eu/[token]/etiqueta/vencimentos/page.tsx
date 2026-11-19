@@ -6,7 +6,7 @@ import { PainelVencimentos } from "@/components/etiqueta-ui";
 import { ListaVencimentos, type EtqVenc } from "./lista";
 import { buscarTodas } from "@/lib/supabase/todas";
 
-export const metadata = { title: "Vencimentos · Brasa" };
+export const metadata = { title: "Vencimentos" };
 
 export default async function VencimentosColabPage({
   params,

@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { BotoesDocumento } from "./botoes";
 
-export const metadata = { title: "Meus documentos · Brasa" };
+export const metadata = { title: "Meus documentos" };
 export const dynamic = "force-dynamic";
 
 const quando = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(",", " às");

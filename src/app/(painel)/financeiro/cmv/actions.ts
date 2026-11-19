@@ -12,7 +12,7 @@ export async function salvarContagemItem(
   produtoId: string,
   qtd: number,
 ) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/financeiro/cmv");
   const supabase = await createClient();
   await supabase
     .from("contagem_itens")
@@ -30,7 +30,7 @@ export async function salvarFaturamentoDia(
   turno: string,
   valor: number,
 ) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/financeiro/cmv");
   const supabase = await createClient();
   // O par dia + turno virou dia + turno DENTRO da empresa (migration 0190),
   // senão dois restaurantes não poderiam faturar no mesmo dia. O upsert tem
@@ -54,7 +54,7 @@ export async function salvarComprasManual(
   produtoId: string,
   valor: number | null,
 ) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/financeiro/cmv");
   const supabase = await createClient();
   if (valor == null) {
     await supabase
@@ -76,7 +76,7 @@ export async function salvarComprasManual(
 
 // Marca se um produto entra (ou não) no cálculo do CMV.
 export async function definirEntraCmvProduto(produtoId: string, entra: boolean) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/financeiro/cmv");
   const supabase = await createClient();
   await supabase.from("produtos").update({ entra_cmv: entra }).eq("id", produtoId);
   revalidatePath("/financeiro/cmv");
@@ -89,7 +89,7 @@ export async function definirEntraCmvCategoria(
   categoriaId: string | null,
   entra: boolean,
 ) {
-  await exigirAcesso("/financeiro");
+  await exigirAcesso("/financeiro/cmv");
   const supabase = await createClient();
   const q = supabase.from("produtos").update({ entra_cmv: entra });
   if (categoriaId) await q.eq("categoria_id", categoriaId);

@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { brl, rotuloSemana, segundaDe, somarDias, ymd } from "@/lib/equipe";
 
-export const metadata = { title: "Meus pagamentos · Brasa" };
+export const metadata = { title: "Meus pagamentos" };
 
 const fData = (s: string | null | undefined) => (s ? `${s.slice(8, 10)}/${s.slice(5, 7)}` : "");
 

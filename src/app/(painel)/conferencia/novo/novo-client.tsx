@@ -1,5 +1,6 @@
 "use client";
 import { Icone } from "@/components/icone";
+import { useNomeEmpresa } from "@/components/nome-empresa";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -23,6 +24,7 @@ export function NovoPedidoClient({
   fornecedores: Forn[];
   produtos: Prod[];
 }) {
+  const { nome: nomeEmpresa } = useNomeEmpresa();
   const [fornecedorId, setFornecedorId] = useState("");
   const [data, setData] = useState(() => hojeSP());
   const [itens, setItens] = useState<Item[]>([]);
@@ -71,7 +73,7 @@ export function NovoPedidoClient({
       (i) => `- ${i.qtd} ${i.unidade} ${i.nome}`,
     );
     const msg =
-      `Olá! Pedido do Restaurante Brasa:\n\n${linhas.join("\n")}\n\n` +
+      `Olá! Pedido do ${nomeEmpresa}:\n\n${linhas.join("\n")}\n\n` +
       `Data prevista: ${data.split("-").reverse().join("/")}\nObrigado!`;
     window.open(`https://web.whatsapp.com/send?phone=${zapFull}&text=${encodeURIComponent(msg)}`, "_blank");
   }

@@ -23,7 +23,7 @@ export type OpcoesManifesto = {
 
 export async function manifestoDaEmpresa(o: OpcoesManifesto) {
   const marca = await lerMarca();
-  const nomeCurto = "Brasa"; // TODO: virá de empresas.nome quando houver mais de uma
+  const nomeCurto = marca.nomeCurto;
 
   return {
     name: o.sufixo ? `${nomeCurto} · ${o.sufixo}` : nomeCurto,

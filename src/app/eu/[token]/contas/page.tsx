@@ -6,7 +6,7 @@ import { colabContas } from "./contas-actions";
 import { ContasColab, type ContaApp } from "./lista";
 import { buscarTodas } from "@/lib/supabase/todas";
 
-export const metadata = { title: "Contas a pagar · Brasa" };
+export const metadata = { title: "Contas a pagar" };
 
 export default async function ContasColabPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

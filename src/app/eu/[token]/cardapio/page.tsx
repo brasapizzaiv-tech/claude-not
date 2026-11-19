@@ -8,7 +8,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { colabCardapio } from "./actions";
 import { CardapioApp } from "./cardapio-app";
 
-export const metadata = { title: "Cardápio do dia · Brasa" };
+export const metadata = { title: "Cardápio do dia" };
 export const dynamic = "force-dynamic";
 
 // Cardápio do dia pelo app da equipe. Só abre pra quem tem a caixinha

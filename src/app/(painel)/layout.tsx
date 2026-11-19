@@ -5,9 +5,12 @@ import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { Dialogos } from "@/components/dialogo";
 import { Ajudante } from "@/components/ajudante";
 import { lerMarca } from "@/lib/marca";
+import { NomeEmpresaProvider } from "@/components/nome-empresa";
 import { empresaAtual } from "@/lib/empresa";
 import { ehTema, TEMA_PADRAO, type Tema } from "@/lib/tema";
 import { perfilDaSessao, usuarioDaSessao } from "@/lib/sessao";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
+import { empresaTem } from "@/lib/permissoes";
 
 // Hoje no fuso de Brasília (UTC−3, sem horário de verão).
 function hojeBR() {
@@ -45,6 +48,8 @@ export default async function PainelLayout({
 
   const admin = profile?.papel === "dono";
   const permissoes = (profile?.permissoes as string[] | null) ?? [];
+  // O que a empresa contratou (0322). NULL = tudo.
+  const modulos = await modulosDaEmpresa(profile?.empresa_id ?? null);
   // Aparência escolhida pela pessoa (claro / escuro / do aparelho). Vem do
   // perfil, e não do navegador, pra valer em qualquer aparelho onde ela entrar.
   const tema: Tema = profile && ehTema(profile.tema) ? profile.tema : TEMA_PADRAO;
@@ -56,10 +61,10 @@ export default async function PainelLayout({
   // As três buscas ao mesmo tempo (antes uma esperava a outra).
   const [marca, reservasNovas, pedidosCompra, sugestoes] = await Promise.all([
     lerMarca(),
-    admin || permissoes.includes("reservas")
+    empresaTem(modulos, "reservas") && (admin || permissoes.includes("reservas"))
       ? supabase.from("reservas").select("id", { count: "exact", head: true }).gte("data", hoje).in("status", ["nova", "aguardando"]).then((r) => r.count ?? 0)
       : Promise.resolve(0),
-    admin || permissoes.includes("solicitacoes")
+    empresaTem(modulos, "solicitacoes") && (admin || permissoes.includes("solicitacoes"))
       ? supabase.from("solicitacoes_compra").select("id", { count: "exact", head: true }).eq("status", "pendente").then((r) => r.count ?? 0)
       : Promise.resolve(0),
     // Sugestões do sistema que a equipe mandou pelo Ajudante (só o dono vê).
@@ -83,15 +88,16 @@ export default async function PainelLayout({
         papel={admin ? "dono" : "funcionário"}
         admin={admin}
         permissoes={permissoes}
+        modulos={modulos}
         reservasNovas={reservasNovas}
         pedidosCompra={pedidosCompra}
         sugestoes={sugestoes}
         tema={tema}
         logoUrl={marca.logoUrl}
-        empresaNome={marca.nome}
+        empresaNome={marca.nomeCurto}
       />
       <main id="conteudo" className="flex-1 overflow-auto bg-painel-fundo">
-        {children}
+        <NomeEmpresaProvider nome={marca.nome} curto={marca.nomeCurto}>{children}</NomeEmpresaProvider>
       </main>
       {/* Ajudante (IA): só aparece quando a chave da Anthropic está configurada. */}
       {process.env.ANTHROPIC_API_KEY ? <Ajudante /> : null}

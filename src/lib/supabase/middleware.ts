@@ -111,12 +111,19 @@ export async function updateSession(request: NextRequest) {
   if (user && !isPublic && moduloDaRota(path) !== null) {
     const { data: prof } = await supabase
       .from("profiles")
-      .select("papel, permissoes")
+      .select("papel, permissoes, empresa_id")
       .eq("id", user.id)
       .single();
     const admin = prof?.papel === "dono";
     const permissoes = (prof?.permissoes as string[] | null) ?? [];
-    if (!podeAcessar(path, admin, permissoes)) {
+    // Módulos que a empresa contratou (0322). Falhou a leitura = todos: quem
+    // separa os dados é o banco, isto aqui só esconde o que não foi contratado.
+    let modulos: string[] | null = null;
+    if (prof?.empresa_id) {
+      const { data: emp, error } = await supabase.from("empresas").select("modulos").eq("id", prof.empresa_id).maybeSingle();
+      if (!error && Array.isArray(emp?.modulos)) modulos = emp.modulos as string[];
+    }
+    if (!podeAcessar(path, admin, permissoes, modulos)) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);

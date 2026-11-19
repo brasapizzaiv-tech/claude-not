@@ -3,7 +3,7 @@ import { Icone } from "@/components/icone";
 import { colabRodizio, saboresRodizio } from "./rodizio-actions";
 import { RodizioForm } from "./form";
 
-export const metadata = { title: "Rodízio · Brasa" };
+export const metadata = { title: "Rodízio" };
 
 export default async function RodizioColabPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

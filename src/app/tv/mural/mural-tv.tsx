@@ -62,6 +62,7 @@ export function MuralTv({
   entregas = [],
   hoje,
   ajuste = 1,
+  empresaNome = "",
 }: {
   folgas: FolgaMural[];
   solicitacoes: PedidoCompraMural[];
@@ -72,6 +73,8 @@ export function MuralTv({
   hoje: string;
   /** Empurrãozinho pra letra: 1 é o tamanho calculado, 1.2 aumenta 20%. */
   ajuste?: number;
+  /** Nome curto da empresa dona da chave ("Brasa", "Beeis"). */
+  empresaNome?: string;
 }) {
   // Tudo que mede letra passa por aqui, pra o ?tamanho= do endereço valer na
   // tela inteira de uma vez.
@@ -355,7 +358,7 @@ export function MuralTv({
       </div>
 
       <div style={{ fontSize: t(1), color: BORDA, marginTop: "0.8vw", textAlign: "right" }}>
-        <span style={{ color: LARANJA }}>Brasa</span> · mural
+        <span style={{ color: LARANJA }}>{empresaNome}</span> · mural
       </div>
     </div>
   );

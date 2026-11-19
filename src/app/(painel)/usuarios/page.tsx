@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NovoUsuario, UsuarioLinha } from "./ui";
+import { modulosDaSessao } from "@/lib/empresa";
 
 export const metadata = { title: "Usuários" };
 
@@ -11,6 +12,7 @@ export default async function UsuariosPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const modulos = await modulosDaSessao();
 
   const { data: meu } = await supabase
     .from("profiles")
@@ -60,11 +62,11 @@ export default async function UsuariosPage() {
         </p>
       </div>
 
-      <NovoUsuario />
+      <NovoUsuario modulos={modulos} />
 
       <div className="space-y-3">
         {usuarios.map((u) => (
-          <UsuarioLinha key={u.id} usuario={u} souEu={u.id === user.id} />
+          <UsuarioLinha key={u.id} usuario={u} souEu={u.id === user.id} modulos={modulos} />
         ))}
       </div>
     </div>

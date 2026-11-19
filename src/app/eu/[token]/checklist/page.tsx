@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import * as core from "@/lib/checklists-core";
 import { colabChecklist } from "./actions";
 import { ChecklistApp, type ListaApp } from "./checklist-app";
 
-export const metadata = { title: "Checklists · Brasa" };
+export const metadata = { title: "Checklists" };
 export const dynamic = "force-dynamic";
 
 // Checklists do dia pelo app da equipe. Só abre pra quem tem setor atribuído e
@@ -29,7 +29,7 @@ export default async function ChecklistColabPage({
   }
 
   const dia = core.diaValido(diaParam) ? diaParam : core.hojeSP();
-  const db = createAdminClient() as core.Db;
+  const db = adminDaEmpresa(colab.empresa);
   const [setores, modelos] = await Promise.all([core.listarSetores(db), core.listarModelos(db)]);
 
   // Só os setores da pessoa, só o que vale no dia.

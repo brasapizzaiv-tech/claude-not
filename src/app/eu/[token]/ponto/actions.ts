@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { ASSINATURA_DESDE, cicloDoDia, fechamentosDoCiclo, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
@@ -27,11 +28,11 @@ export async function responderPonto(token: string, de: string, resposta: "assin
   const ciclo = cicloDoDia(de);
   if (ciclo.de !== de || de < ASSINATURA_DESDE) return { ok: false as const, erro: "Ciclo inválido." };
   if (ciclo.ate >= hojeSP()) return { ok: false as const, erro: "Esse mês ainda não fechou. Dá pra assinar a partir do dia 21." };
-  if (!(await fechamentosDoCiclo(admin, ciclo.de, [colab.id], colab.empresa_id)).has(colab.id)) return { ok: false as const, erro: "A gestão ainda está conferindo esse mês. Quando fechar, você assina aqui." };
+  if (!(await fechamentosDoCiclo(adminDaEmpresa(colab.empresa_id, admin), ciclo.de, [colab.id], colab.empresa_id)).has(colab.id)) return { ok: false as const, erro: "A gestão ainda está conferindo esse mês. Quando fechar, você assina aqui." };
   const motivo = comentario.trim().slice(0, 500);
   if (resposta === "discorda" && motivo.length < 3) return { ok: false as const, erro: "Escreva o que está errado." };
 
-  const e = await espelhoDaPessoa(admin, colab.id, ciclo.de, ciclo.ate, colab.empresa_id);
+  const e = await espelhoDaPessoa(adminDaEmpresa(colab.empresa_id, admin), colab.id, ciclo.de, ciclo.ate, colab.empresa_id);
   if (!e) return { ok: false as const, erro: "Seu cadastro não está marcado pra bater ponto." };
   const { resumo, hash } = resumoParaAssinar(e);
   const h = await headers();

@@ -3,6 +3,8 @@ import { cookies, headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { perfilDaSessao } from "@/lib/sessao";
 import { COOKIE_GARCOM, tokenDoCookieGarcom } from "@/lib/garcom-auth";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
+import type { ModulosEmpresa } from "@/lib/permissoes";
 
 // DE QUEM É ESTE ACESSO? (Etapa 1 do multiempresa)
 //
@@ -144,4 +146,11 @@ export async function comoReconheci(): Promise<{
   if (await porColaborador()) return { fonte: "colaborador", empresa };
   if (await porEndereco()) return { fonte: "endereco", empresa };
   return { fonte: "unica", empresa };
+}
+
+
+/** Os módulos da empresa deste acesso (login, link pessoal ou endereço).
+ *  NULL = todos. Ver src/lib/modulos-empresa.ts. */
+export async function modulosDaSessao(): Promise<ModulosEmpresa> {
+  return modulosDaEmpresa(await empresaAtualId());
 }

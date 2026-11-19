@@ -18,6 +18,8 @@ import { AvisosCelular } from "./avisos-celular";
 import { EntregaObrigatoria } from "./entrega-obrigatoria";
 import { pontoAResponder } from "@/lib/ponto-espelho";
 import { buscarTodas } from "@/lib/supabase/todas";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
+import { empresaTem, type ModuloKey } from "@/lib/permissoes";
 
 const agoraMs = () => Date.now(); // fora do componente (regra de pureza)
 
@@ -37,16 +39,17 @@ export async function generateMetadata({
   params: Promise<{ token: string }>;
 }): Promise<Metadata> {
   const { token } = await params;
+  const { nomeCurto } = await lerMarca();
   return {
-    title: "Brasa · Equipe",
-    appleWebApp: { capable: true, statusBarStyle: "default", title: "Brasa" },
+    title: { absolute: `${nomeCurto} · Equipe` },
+    appleWebApp: { capable: true, statusBarStyle: "default", title: nomeCurto },
     // Manifesto próprio: o app instalado abre no link da pessoa, não no site.
     manifest: `/eu/${token}/manifest.json`,
   };
 }
 
 async function Moldura({ children }: { children: React.ReactNode }) {
-  const { logoUrl: logoDaEmpresa } = await lerMarca();
+  const { logoUrl: logoDaEmpresa, nomeCurto } = await lerMarca();
   return (
     <div className="flex min-h-screen items-center justify-center bg-painel-fundo p-6">
       <div className="cartao w-full max-w-sm p-6">
@@ -54,7 +57,7 @@ async function Moldura({ children }: { children: React.ReactNode }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={logoDaEmpresa} alt="" className="h-14 w-14 object-contain" />
           <p className="mt-2 text-xs font-semibold text-texto-fraco">
-            Brasa · Equipe
+            {nomeCurto} · Equipe
           </p>
         </div>
         {children}
@@ -139,15 +142,24 @@ export default async function AppColaboradorPage({
     admin.from("folgas_funcionarios").select("id").eq("token", token).eq("ativo", true).maybeSingle(),
     admin.from("colaboradores").select("id, faz_contagem, faz_etiquetas, faz_contas, faz_garcom, faz_cardapio, faz_cofre, faz_recepcao, checklist_setores, bate_ponto, empresa_id").eq("token", token).maybeSingle(),
   ]);
-  const temFolga = !!folgaProf;
-  const fazContagem = colab?.faz_contagem ?? true;
-  const fazEtiquetas = !!colab?.faz_etiquetas;
-  const fazContas = !!colab?.faz_contas;
-  const fazGarcom = !!colab?.faz_garcom;
-  const fazCardapio = !!colab?.faz_cardapio;
-  const fazCofre = !!colab?.faz_cofre;
-  const fazRecepcao = !!colab?.faz_recepcao;
-  const fazChecklist = ((colab?.checklist_setores as string[] | null) ?? []).length > 0;
+  // Cada atalho só aparece se a caixinha da pessoa está marcada E a empresa
+  // contratou o módulo (empresas.modulos, 0322; NULL = todos, a Brasa).
+  const mods = await modulosDaEmpresa((colab?.empresa_id as string | null) ?? null);
+  const tem = (...k: ModuloKey[]) => k.some((m) => empresaTem(mods, m));
+  const temFolga = !!folgaProf && tem("folgas");
+  const fazContagem = (colab?.faz_contagem ?? true) && tem("contagem");
+  const fazEtiquetas = !!colab?.faz_etiquetas && tem("etiquetas");
+  const fazContas = !!colab?.faz_contas && tem("contas", "financeiro");
+  const fazGarcom = !!colab?.faz_garcom && tem("garcom", "salao");
+  const fazRodizio = fazGarcom && tem("rodizio");
+  const fazCardapio = !!colab?.faz_cardapio && tem("cardapio_dia");
+  const fazCofre = !!colab?.faz_cofre && tem("cofre");
+  const fazRecepcao = !!colab?.faz_recepcao && tem("recepcao", "reservas");
+  const fazChecklist = ((colab?.checklist_setores as string[] | null) ?? []).length > 0 && tem("checklists");
+  const temConferencia = (colab?.faz_contagem ?? true) && tem("conferencia");
+  const temRetiradas = tem("retiradas");
+  const temSolicitacoes = tem("solicitacoes");
+  const temLembretes = tem("lembretes");
 
   // Contas abertas (só pra quem tem a função gerencial).
   let contasAbertas = 0;
@@ -172,7 +184,7 @@ export default async function AppColaboradorPage({
 
   // Minhas compras internas (só leitura).
   let compras: { item: string; valor: number; data: string; status: string; data_pagamento: string | null; obs_pagamento: string | null }[] = [];
-  if (colab?.id) {
+  if (colab?.id && temRetiradas) {
     const { data: rets } = await admin
       .from("retiradas")
       .select("item, valor, data, status, data_pagamento, obs_pagamento")
@@ -218,7 +230,7 @@ export default async function AppColaboradorPage({
     docsPendentes = ((ds ?? []) as { assinado_em: string | null }[]).filter((d) => !d.assinado_em).length;
   }
   // Lembretes da gestão pra hoje (Visto / Feito).
-  const lembretes = colab?.id ? await lembretesDoColaborador(colab.id as string) : [];
+  const lembretes = colab?.id && temLembretes ? await lembretesDoColaborador(colab.id as string) : [];
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const fData = (s: string) => { const [, m, d] = s.split("-"); return `${d}/${m}`; };
 
@@ -228,7 +240,7 @@ export default async function AppColaboradorPage({
       {/^\d{4}$/.test(pinCookie) && <RenovarAcesso token={token} />}
       <AvisosCelular token={token} />
       <LembretesHoje token={token} itens={lembretes} />
-      {fazContagem && <EntregaObrigatoria token={token} pedidos={entregasObrigatorias(pedidos, hojeSP())} produtos={produtos} hoje={hojeSP()} />}
+      {temConferencia && <EntregaObrigatoria token={token} pedidos={entregasObrigatorias(pedidos, hojeSP())} produtos={produtos} hoje={hojeSP()} />}
       {temFolga && (
         <Link
           href={`/folga/${token}`}
@@ -293,7 +305,7 @@ export default async function AppColaboradorPage({
           <span className="text-xs font-normal text-texto-suave">saldo, guardar, pagar →</span>
         </Link>
       )}
-      {fazGarcom && (
+      {fazRodizio && (
         <Link
           href={`/eu/${token}/rodizio`}
           className="cartao mb-3 flex min-h-[64px] items-center justify-between gap-3 p-4 font-semibold text-texto transition hover:bg-superficie-suave"
@@ -347,7 +359,7 @@ export default async function AppColaboradorPage({
             : "ver semanas"}
         </span>
       </Link>
-      <Link
+      {temSolicitacoes && <Link
         href={`/eu/${token}/compras`}
         className="cartao mb-3 flex min-h-[64px] items-center justify-between gap-3 p-4 font-semibold text-texto transition hover:bg-superficie-suave"
       >
@@ -355,7 +367,7 @@ export default async function AppColaboradorPage({
         <span className="text-xs font-normal text-texto-suave">
           {pedidosCompra > 0 ? `${pedidosCompra} aguardando` : "faltou algo ou quebrou? avise aqui"}
         </span>
-      </Link>
+      </Link>}
       {compras.length > 0 && (
         <div className="cartao mb-3 p-4">
           <div className="mb-2 flex items-center justify-between">

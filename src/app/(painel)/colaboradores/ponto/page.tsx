@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { lerMarca } from "@/lib/marca";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { Icone } from "@/components/icone";
 import { diasEntre } from "@/lib/assiduidade-core";
@@ -52,6 +53,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   const aba = sp.aba === "horas" || sp.aba === "atrasos" ? sp.aba : "espelho";
   const soInconsistencias = sp.inc === "1";
   const supabase = await createClient();
+  const { nome: nomeEmpresa } = await lerMarca();
   const cfg = await lerConfig(supabase);
   const base = await carregarBasePonto(supabase, de, ate, { incluirInativos: true });
   const ativos = base.pessoas.filter((p) => p.ativo || (base.batidas.get(p.id)?.size ?? 0) > 0);
@@ -298,7 +300,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
             })()}
             <div className="mt-12 hidden grid-cols-2 gap-16 text-center text-sm print:grid">
               <div className="border-t border-black pt-1">{pessoa.nome}</div>
-              <div className="border-t border-black pt-1">Brasa Pizza Ivoti</div>
+              <div className="border-t border-black pt-1">{nomeEmpresa}</div>
             </div>
           </section>
         );

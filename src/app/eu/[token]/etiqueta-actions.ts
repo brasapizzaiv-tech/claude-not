@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { tipoValido } from "@/lib/etiqueta-tipos";
 import { explicarErro } from "@/lib/erro-amigavel";
 
@@ -8,7 +9,7 @@ async function colabDoToken(token: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("colaboradores")
-    .select("id, nome, ativo, faz_etiquetas")
+    .select("id, nome, ativo, faz_etiquetas, empresa_id")
     .eq("token", token)
     .maybeSingle();
   return data && data.ativo && data.faz_etiquetas ? data : null;
@@ -31,9 +32,10 @@ export async function criarEtiquetaColab(token: string, dados: {
   sif?: string;
   copias?: number;
 }) {
-  const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
+  // Tudo preso à empresa do colaborador (etapa B do multiempresa).
+  const admin = adminDaEmpresa(colab.empresa_id as string);
   const tipo = tipoValido(dados.tipo);
   const livre = tipo === "livre";
 
@@ -108,9 +110,10 @@ export async function criarItemEtiquetaColab(token: string, d: {
   validade_resfriado: number | null;
   validade_ambiente: number | null;
 }) {
-  const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return null;
+  // Tudo preso à empresa do colaborador (etapa B do multiempresa).
+  const admin = adminDaEmpresa(colab.empresa_id as string);
   const nome = (d.nome || "").trim();
   if (!nome) return null;
   const dias = (v: number | null) => (v == null ? null : Math.max(0, Math.floor(Number(v))) || null);
@@ -130,9 +133,10 @@ export async function criarItemEtiquetaColab(token: string, d: {
 
 // Consulta uma etiqueta lida pelo QR (para montar a lista antes da baixa).
 export async function consultarEtiquetaColab(token: string, etiquetaId: string) {
-  const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
+  // Tudo preso à empresa do colaborador (etapa B do multiempresa).
+  const admin = adminDaEmpresa(colab.empresa_id as string);
   const { data } = await admin
     .from("etiquetas")
     .select("id, numero, produto_nome, status")
@@ -150,9 +154,10 @@ export async function consultarEtiquetaColab(token: string, etiquetaId: string) 
 
 // Consulta pelo NÚMERO impresso na etiqueta (quando o QR não lê).
 export async function consultarEtiquetaPorNumeroColab(token: string, numero: number) {
-  const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
+  // Tudo preso à empresa do colaborador (etapa B do multiempresa).
+  const admin = adminDaEmpresa(colab.empresa_id as string);
   if (!Number.isFinite(numero) || numero <= 0) return { ok: false as const, mensagem: "Número inválido." };
   const { data } = await admin
     .from("etiquetas")
@@ -171,9 +176,10 @@ export async function consultarEtiquetaPorNumeroColab(token: string, numero: num
 
 // Dá baixa em várias etiquetas de uma vez (só as que ainda estão ativas).
 export async function darBaixaLoteColab(token: string, ids: string[], status: "usada" | "descartada") {
-  const admin = createAdminClient();
   const colab = await colabDoToken(token);
   if (!colab) return { ok: false as const, mensagem: "Sem acesso." };
+  // Tudo preso à empresa do colaborador (etapa B do multiempresa).
+  const admin = adminDaEmpresa(colab.empresa_id as string);
   if (!ids?.length) return { ok: false as const, mensagem: "Nada para dar baixa." };
   const { data } = await admin
     .from("etiquetas")

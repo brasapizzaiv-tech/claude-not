@@ -10,7 +10,7 @@ async function funcDoToken(token: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("folgas_funcionarios")
-    .select("id, grupo, grupo2, ativo")
+    .select("id, grupo, grupo2, ativo, empresa_id")
     .eq("token", token)
     .maybeSingle();
   return data && data.ativo ? data : null;
@@ -22,7 +22,7 @@ export async function pedirFolga(token: string, data: string, motivo: string, gr
   if (!eu) return { ok: false as const, mensagem: "Link inválido." };
   if (!data) return { ok: false as const, mensagem: "Escolha a data." };
 
-  const trava = (await admin.from("folgas_bloqueios").select("motivo").eq("data", data).maybeSingle()).data;
+  const trava = (await admin.from("folgas_bloqueios").select("motivo").eq("empresa_id", eu.empresa_id).eq("data", data).maybeSingle()).data;
   if (trava?.motivo) return { ok: false as const, mensagem: `Data travada: ${trava.motivo}` };
 
   if (grupoAlvo && grupoAlvo !== eu.grupo && grupoAlvo !== eu.grupo2) {
@@ -30,6 +30,7 @@ export async function pedirFolga(token: string, data: string, motivo: string, gr
   }
 
   const { error } = await admin.from("folgas_pedidos").insert({
+    empresa_id: eu.empresa_id,
     funcionario_id: eu.id,
     data,
     motivo: motivo?.trim() || null,

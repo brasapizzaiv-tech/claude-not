@@ -23,6 +23,7 @@ import {
   codigoParaMensagem,
 } from "./actions";
 import { Janela } from "@/components/janela";
+import { empresaTem, type ModuloKey, type ModulosEmpresa } from "@/lib/permissoes";
 
 export type FolgaPerfil = {
   id: number;
@@ -315,7 +316,7 @@ function DesligarModal({ c, onClose, motivos = [] }: { c: Row; onClose: () => vo
 
 export type SetorChecklist = { id: string; nome: string; cor: string | null };
 
-export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = [], motivos = [] }: { rows: Row[]; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[]; motivos?: { id: string; nome: string }[] }) {
+export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = [], motivos = [], modulos = null }: { rows: Row[]; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[]; motivos?: { id: string; nome: string }[]; modulos?: ModulosEmpresa }) {
   const [editando, setEditando] = useState<Row | null>(null);
   const [aberto, setAberto] = useState(false);
   const [verLinks, setVerLinks] = useState(false);
@@ -465,13 +466,15 @@ export function ColaboradoresClient({ rows, setoresChecklist = [], horarios = []
         </div>
       )}
 
-      {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} setoresChecklist={setoresChecklist} horarios={horarios} />}
+      {aberto && <EditModal editando={editando} onClose={() => setAberto(false)} setoresChecklist={setoresChecklist} horarios={horarios} modulos={modulos} />}
       {desligando && <DesligarModal c={desligando} onClose={() => setDesligando(null)} motivos={motivos} />}
     </div>
   );
 }
 
-function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: { editando: Row | null; onClose: () => void; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[] }) {
+function EditModal({ editando, onClose, setoresChecklist = [], horarios = [], modulos = null }: { editando: Row | null; onClose: () => void; setoresChecklist?: SetorChecklist[]; horarios?: HorarioOpcao[]; modulos?: ModulosEmpresa }) {
+  // Caixinhas do app só dos módulos que a empresa contratou (0322).
+  const tem = (...k: ModuloKey[]) => k.some((m) => empresaTem(modulos, m));
   const [batePonto, setBatePonto] = useState(editando ? !!editando.bate_ponto : false);
   const [horarioId, setHorarioId] = useState(editando?.horario?.id ?? "");
   const [hojeLocal] = useState(() => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
@@ -677,31 +680,47 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [] }: 
             </div>
           )}
           <p className="pt-1 text-xs font-bold text-texto-fraco">App pessoal</p>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_contagem" defaultChecked={editando ? editando.faz_contagem : false} /> Faz contagem de estoque
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_etiquetas" defaultChecked={editando ? editando.faz_etiquetas : false} /> Faz etiquetas (gerar / dar baixa)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_contas" defaultChecked={editando ? editando.faz_contas : false} /> Contas a pagar (ver boletos e dar baixa) — gerencial
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_garcom" defaultChecked={editando ? !!editando.faz_garcom : false} /> <Icone nome="garcom" tamanho={14} /> Garçom (atalho &quot;Modo garçom&quot; no app: mesas, pedidos e conta)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="recebe_alerta_cardapio" defaultChecked={editando ? !!editando.recebe_alerta_cardapio : false} /> <Icone nome="aviso" tamanho={14} /> Receber aviso no celular quando o cardápio for publicado com prato repetido
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_cofre" defaultChecked={editando ? !!editando.faz_cofre : false} /> <Icone nome="cofre" tamanho={14} /> Cofre (ver o saldo, guardar dinheiro e pagar contas pelo app)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="faz_recepcao" defaultChecked={editando ? !!editando.faz_recepcao : false} /> <Icone nome="agenda" tamanho={14} /> Recepção (&quot;Reservas de hoje&quot; no app: marcar quem chegou e a mesa)
-          </label>
-          {setoresChecklist.length > 0 && (
+          {tem("contagem") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_contagem" defaultChecked={editando ? editando.faz_contagem : false} /> Faz contagem de estoque
+            </label>
+          )}
+          {tem("etiquetas") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_etiquetas" defaultChecked={editando ? editando.faz_etiquetas : false} /> Faz etiquetas (gerar / dar baixa)
+            </label>
+          )}
+          {tem("contas", "financeiro") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_contas" defaultChecked={editando ? editando.faz_contas : false} /> Contas a pagar (ver boletos e dar baixa) — gerencial
+            </label>
+          )}
+          {tem("garcom", "salao") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_garcom" defaultChecked={editando ? !!editando.faz_garcom : false} /> <Icone nome="garcom" tamanho={14} /> Garçom (atalho &quot;Modo garçom&quot; no app: mesas, pedidos e conta)
+            </label>
+          )}
+          {tem("cardapio_dia") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_cardapio" defaultChecked={editando ? !!editando.faz_cardapio : false} /> <Icone nome="salao" tamanho={14} /> Editar cardápio do dia (buffet, saladas e marmitas — e publicar no site/TV)
+            </label>
+          )}
+          {tem("cardapio_dia") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="recebe_alerta_cardapio" defaultChecked={editando ? !!editando.recebe_alerta_cardapio : false} /> <Icone nome="aviso" tamanho={14} /> Receber aviso no celular quando o cardápio for publicado com prato repetido
+            </label>
+          )}
+          {tem("cofre") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_cofre" defaultChecked={editando ? !!editando.faz_cofre : false} /> <Icone nome="cofre" tamanho={14} /> Cofre (ver o saldo, guardar dinheiro e pagar contas pelo app)
+            </label>
+          )}
+          {tem("recepcao", "reservas") && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="faz_recepcao" defaultChecked={editando ? !!editando.faz_recepcao : false} /> <Icone nome="agenda" tamanho={14} /> Recepção (&quot;Reservas de hoje&quot; no app: marcar quem chegou e a mesa)
+            </label>
+          )}
+          {setoresChecklist.length > 0 && tem("checklists") && (
             <div className="cartao p-3">
               <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-texto-suave"><Icone nome="checklist" tamanho={14} /> Checklists — setores que esta pessoa executa</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">

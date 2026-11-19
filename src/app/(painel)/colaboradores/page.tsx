@@ -4,6 +4,7 @@ import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
 import type { Colaborador } from "@/lib/types";
 import { ColaboradoresClient, type FolgaPerfil, type HorarioOpcao, type Row } from "./client";
+import { modulosDaSessao } from "@/lib/empresa";
 import { resumoHorario, type HorarioPonto } from "@/lib/ponto-horarios-core";
 import { hojeSP } from "@/lib/assiduidade-server";
 
@@ -45,5 +46,5 @@ export default async function ColaboradoresPage() {
     horario: horarioHoje.has(c.id) ? { id: horarioHoje.get(c.id) as string, nome: nomeHorario.get(horarioHoje.get(c.id) as string) ?? "" } : null,
   }));
 
-  return <ColaboradoresClient rows={rows} setoresChecklist={(setoresCk as { id: string; nome: string; cor: string | null }[]) ?? []} horarios={opcoes} motivos={(motivos ?? []) as { id: string; nome: string }[]} />;
+  return <ColaboradoresClient rows={rows} setoresChecklist={(setoresCk as { id: string; nome: string; cor: string | null }[]) ?? []} horarios={opcoes} motivos={(motivos ?? []) as { id: string; nome: string }[]} modulos={await modulosDaSessao()} />;
 }

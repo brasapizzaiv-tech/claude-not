@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { explicarErro } from "@/lib/erro-amigavel";
 
@@ -11,14 +12,14 @@ export async function colabPedidos(token: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("colaboradores")
-    .select("id, nome, ativo, pin")
+    .select("id, nome, ativo, pin, empresa_id")
     .eq("token", token)
     .maybeSingle();
   if (!data || !data.ativo) return null;
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
   if (!data.pin || !(await pinConfere(token, pin))) return null;
-  return { id: data.id as string, nome: data.nome as string };
+  return { id: data.id as string, nome: data.nome as string, empresa: data.empresa_id as string };
 }
 
 export type Solicitacao = {
@@ -54,8 +55,7 @@ export async function pedirCompra(
   const item = (input.item || "").trim().slice(0, 200);
   if (item.length < 2) return { ok: false as const, mensagem: "Escreva o que precisa." };
   const tipo = input.tipo === "manutencao" ? "manutencao" : "compra";
-  const admin = createAdminClient();
-  const { error } = await admin.from("solicitacoes_compra").insert({
+  const { error } = await adminDaEmpresa(colab.empresa).from("solicitacoes_compra").insert({
     colaborador_id: colab.id,
     nome: colab.nome,
     tipo,

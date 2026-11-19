@@ -1,4 +1,5 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
+import { lerMarca } from "@/lib/marca";
 import { SemZoom } from "@/components/sem-zoom";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { Dialogos } from "@/components/dialogo";
@@ -13,6 +14,12 @@ export const viewport: Viewport = {
   // do traço de baixo é reservado no invólucro abaixo (env(safe-area-inset-*)).
   viewportFit: "cover",
 };
+
+// "Meu ponto · Beeis": o nome que vai na aba e no app vem do cadastro da empresa.
+export async function generateMetadata(): Promise<Metadata> {
+  const { nomeCurto } = await lerMarca();
+  return { title: { template: `%s · ${nomeCurto}`, default: `${nomeCurto} · Equipe` } };
+}
 
 export default function EuLayout({ children }: { children: React.ReactNode }) {
   return (

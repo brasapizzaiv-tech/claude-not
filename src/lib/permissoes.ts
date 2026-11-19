@@ -12,6 +12,7 @@ export type ModuloKey =
   | "cotacoes"
   | "conferencia"
   | "notas"
+  | "cmv"
   | "financeiro"
   | "contas"
   | "cofre"
@@ -53,6 +54,10 @@ export const MODULOS: {
   // Contas a pagar sozinha (dar baixa nos boletos) — vem ANTES de "financeiro"
   // para /financeiro/contas ser controlada por esta permissão (mais específica).
   { key: "contas", label: "Contas a pagar (só baixa de boletos)", icon: "documento", rotas: ["/financeiro/contas"] },
+  // CMV / Consumo sozinho (19/11/2026): quem vende só Compras e estoque precisa
+  // do CMV sem abrir o resto do financeiro. Vem ANTES de "financeiro" pelo mesmo
+  // motivo das Contas a pagar; quem tem o Financeiro completo continua vendo.
+  { key: "cmv", label: "CMV / Consumo (só o relatório)", icon: "descendo", rotas: ["/financeiro/cmv"] },
   { key: "financeiro", label: "Financeiro (completo)", icon: "grafico", rotas: ["/financeiro"] },
   { key: "cofre", label: "Cofre (dinheiro em espécie)", icon: "cofre", rotas: ["/cofre"] },
   { key: "etiquetas", label: "Etiquetas", icon: "etiqueta", rotas: ["/etiquetas"] },
@@ -105,19 +110,48 @@ export function moduloDaRota(path: string): ModuloKey | "usuarios" | "clientes" 
   return null;
 }
 
+// ---------- Módulos da EMPRESA (o que ela contratou) ----------
+// As permissões acima são por PESSOA. Esta lista é por EMPRESA (19/11/2026, pra
+// vender só alguns módulos): o que a empresa não contratou some do menu e as
+// telas dele ficam fechadas até pro dono. Mora em `empresas.modulos`
+// (migration 0322); NULL = todos os módulos (a Brasa). Só a chave
+// administrativa grava (a tabela não tem política de escrita), então o cliente
+// não liga módulo sozinho.
+export type ModulosEmpresa = readonly string[] | null;
+
+/** A empresa contratou este módulo? (NULL = tudo contratado.) */
+export function empresaTem(modulos: ModulosEmpresa | undefined, key: ModuloKey): boolean {
+  return !modulos || modulos.includes(key);
+}
+
+// Telas só do dono que pertencem a um módulo: sem o módulo, nem o dono vê.
+// (Usuários, Aparência e Sugestões valem pra toda empresa.)
+const DONO_POR_MODULO: { rota: string; modulos: ModuloKey[] }[] = [
+  { rota: "/fiscal", modulos: ["salao", "pdv", "delivery"] },
+  { rota: "/formas-pagamento", modulos: ["salao", "pdv", "delivery"] },
+  { rota: "/notas/sefaz", modulos: ["notas"] },
+];
+
 export function podeAcessar(
   path: string,
   admin: boolean,
   permissoes: string[],
+  modulos: ModulosEmpresa = null,
 ): boolean {
-  if (admin) return true;
   const mod = moduloDaRota(path);
   if (mod === null) return true; // rota livre (dashboard etc.)
-  if (mod === "usuarios") return false; // só o dono
-  if (mod === "clientes") return PERMISSOES_CLIENTES.some((p) => permissoes.includes(p));
+  // A pessoa pode E a empresa contratou.
+  const tem = (k: ModuloKey) => empresaTem(modulos, k) && (admin || permissoes.includes(k));
+  if (mod === "usuarios") {
+    if (!admin) return false; // só o dono
+    const regra = DONO_POR_MODULO.find((d) => naRota(path, d.rota));
+    return !regra || regra.modulos.some((k) => empresaTem(modulos, k));
+  }
+  if (mod === "clientes") return PERMISSOES_CLIENTES.some(tem);
   // Quem tem acesso ao Salão também usa o app do garçom.
-  if (mod === "garcom") return permissoes.includes("garcom") || permissoes.includes("salao");
-  // Quem tem o Financeiro completo também abre as Contas a pagar.
-  if (mod === "contas") return permissoes.includes("contas") || permissoes.includes("financeiro");
-  return permissoes.includes(mod);
+  if (mod === "garcom") return tem("garcom") || tem("salao");
+  // Quem tem o Financeiro completo também abre as Contas a pagar e o CMV.
+  if (mod === "contas") return tem("contas") || tem("financeiro");
+  if (mod === "cmv") return tem("cmv") || tem("financeiro");
+  return tem(mod);
 }

@@ -6,17 +6,18 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { pinConfere } from "@/lib/pin-colaborador";
 import * as core from "@/lib/checklists-core";
 
-export type ColabChecklist = { id: string; nome: string; setores: string[] };
+export type ColabChecklist = { id: string; nome: string; setores: string[]; empresa: string };
 
 export async function colabChecklist(token: string): Promise<ColabChecklist | null> {
   if (!token) return null;
   const admin = createAdminClient();
   const { data } = await admin
     .from("colaboradores")
-    .select("id, nome, ativo, pin, checklist_setores")
+    .select("id, nome, ativo, pin, checklist_setores, empresa_id")
     .eq("token", token)
     .maybeSingle();
   if (!data || !data.ativo) return null;
@@ -25,7 +26,7 @@ export async function colabChecklist(token: string): Promise<ColabChecklist | nu
   const jar = await cookies();
   const pin = jar.get(`eu_${token}`)?.value ?? "";
   if (!data.pin || !(await pinConfere(token, pin))) return null;
-  return { id: data.id as string, nome: data.nome as string, setores };
+  return { id: data.id as string, nome: data.nome as string, setores, empresa: data.empresa_id as string };
 }
 
 const SEM_PERMISSAO = { ok: false as const, mensagem: "Sem permissão — entre com o PIN de novo ou peça a liberação ao responsável." };
@@ -47,7 +48,7 @@ async function execucaoPermitida(db: core.Db, execucaoId: string, colab: ColabCh
 export async function abrirListaApp(token: string, modeloId: string, dia?: string) {
   const colab = await colabChecklist(token);
   if (!colab) return SEM_PERMISSAO;
-  const db = createAdminClient() as core.Db;
+  const db = adminDaEmpresa(colab.empresa);
   if (!(await modeloPermitido(db, modeloId, colab))) return SEM_PERMISSAO;
   const d = dia && core.diaValido(dia) ? dia : core.hojeSP();
   const r = await core.abrirExecucao(db, modeloId, d, { nome: colab.nome, colabId: colab.id });
@@ -63,7 +64,7 @@ export async function salvarRespostaApp(
 ) {
   const colab = await colabChecklist(token);
   if (!colab) return SEM_PERMISSAO;
-  const db = createAdminClient() as core.Db;
+  const db = adminDaEmpresa(colab.empresa);
   const exec = await execucaoPermitida(db, execucaoId, colab);
   if (!exec) return SEM_PERMISSAO;
   if (exec.concluido_em) return { ok: false as const, mensagem: "Esta lista já foi concluída." };
@@ -77,15 +78,14 @@ export async function salvarRespostaApp(
 export async function enviarFotoApp(token: string, execucaoId: string, itemId: string, form: FormData) {
   const colab = await colabChecklist(token);
   if (!colab) return SEM_PERMISSAO;
-  const db = createAdminClient() as core.Db;
+  const db = adminDaEmpresa(colab.empresa);
   const exec = await execucaoPermitida(db, execucaoId, colab);
   if (!exec) return SEM_PERMISSAO;
   const file = form.get("foto");
   if (!(file instanceof File) || file.size === 0) return { ok: false as const, mensagem: "Foto não chegou." };
   if (file.size > 6 * 1024 * 1024) return { ok: false as const, mensagem: "Foto muito grande." };
   const admin = createAdminClient();
-  const { data: empRow } = await admin.from("checklist_execucoes").select("empresa_id").eq("id", execucaoId).maybeSingle();
-  const empresa = (empRow?.empresa_id as string) ?? "empresa";
+  const empresa = colab.empresa;
   const ext = (file.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
   const path = `${empresa}/${exec.data}/${execucaoId}/${itemId}-${Date.now()}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -101,7 +101,7 @@ export async function enviarFotoApp(token: string, execucaoId: string, itemId: s
 export async function concluirListaApp(token: string, execucaoId: string) {
   const colab = await colabChecklist(token);
   if (!colab) return SEM_PERMISSAO;
-  const db = createAdminClient() as core.Db;
+  const db = adminDaEmpresa(colab.empresa);
   if (!(await execucaoPermitida(db, execucaoId, colab))) return SEM_PERMISSAO;
   const r = await core.concluirExecucao(db, execucaoId, { nome: colab.nome, colabId: colab.id });
   revalidatePath(`/eu/${token}/checklist`);

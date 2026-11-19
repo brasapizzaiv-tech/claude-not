@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Cotacao } from "@/lib/types";
 import { PedidoAcoes } from "./pedido-acoes";
+import { lerMarca } from "@/lib/marca";
 
 export const metadata = { title: "Pedidos" };
 
@@ -16,6 +17,7 @@ export default async function PedidosPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const { nome: nomeEmpresa } = await lerMarca();
 
   const { data: cotData } = await supabase
     .from("cotacoes")
@@ -85,7 +87,7 @@ export default async function PedidosPage({
                 (i.preco_unit != null ? ` (${moeda(i.preco_unit)})` : ""),
             );
             const texto =
-              `*Pedido - Brasa Pizza*\n${nome}\n\n` +
+              `*Pedido - ${nomeEmpresa}*\n${nome}\n\n` +
               linhas.join("\n") +
               `\n\nTotal: ${moeda(total)}`;
 

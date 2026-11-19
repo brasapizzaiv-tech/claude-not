@@ -4,6 +4,7 @@
 // abre digita o nome e entra no app do garçom até as 03:00, sem cadastro.
 import { useState } from "react";
 import QRCode from "qrcode";
+import { useNomeEmpresa } from "@/components/nome-empresa";
 import { BotaoAcao } from "@/components/enviar";
 import { avisar, confirmar } from "@/components/dialogo";
 import { Icone } from "@/components/icone";
@@ -12,6 +13,7 @@ import { encerrarLinkGarcomAvulso, gerarLinkGarcomAvulso, linkGarcomAvulso } fro
 import { Janela } from "@/components/janela";
 
 export function GarcomAvulso() {
+  const { curto: nomeEmpresa } = useNomeEmpresa();
   const [aberto, setAberto] = useState(false);
   const [link, setLink] = useState<{ token: string; valido_ate: string } | null>(null);
   const [qr, setQr] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function GarcomAvulso() {
     await encerrarLinkGarcomAvulso();
     await mostrar(null);
   }
-  const textoZap = link ? `Oi! Este é o link do garçom de hoje na Brasa: ${url}\nAbra, digite o seu nome e pronto. Vale até ${textoValidade(link.valido_ate)}.` : "";
+  const textoZap = link ? `Oi! Este é o link do garçom de hoje na ${nomeEmpresa}: ${url}\nAbra, digite o seu nome e pronto. Vale até ${textoValidade(link.valido_ate)}.` : "";
 
   return (
     <>

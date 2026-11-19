@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { rodarBuscaSefaz, type ConfigSefaz } from "@/lib/sefaz/busca";
 import { marcarSinal } from "@/lib/saude";
 import { cronAutorizado } from "@/lib/cron-auth";
@@ -14,22 +15,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 
+  // Uma configuração por empresa (cada uma com o certificado dela). Antes era
+  // `limit(1)`: com dois restaurantes no banco, só o primeiro buscava nota.
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("config_sefaz")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
-  const cfg = data as ConfigSefaz | null;
-  if (!cfg) return NextResponse.json({ erro: "sem configuração" });
+  const { data } = await admin.from("config_sefaz").select("*").not("cert_pfx", "is", null).order("empresa_id");
+  const cfgs = (data as ConfigSefaz[] | null) ?? [];
+  if (!cfgs.length) return NextResponse.json({ erro: "sem configuração" });
 
-  // Batimento: marca que o cron horário realmente rodou.
-  await admin
-    .from("config_sefaz")
-    .update({ cron_hora_em: new Date().toISOString() })
-    .eq("id", cfg.id);
-  await marcarSinal("rotina:sefaz-hora", true, null);
-
-  const r = await rodarBuscaSefaz(admin, cfg);
-  return NextResponse.json({ ok: !r.erro, ...r });
+  const resultados = [];
+  for (const cfg of cfgs) {
+    // Batimento: marca que o cron horário realmente rodou.
+    await admin.from("config_sefaz").update({ cron_hora_em: new Date().toISOString() }).eq("id", cfg.id);
+    await marcarSinal("rotina:sefaz-hora", true, null);
+    // As notas que chegam entram presas à empresa dona do certificado.
+    const db = cfg.empresa_id ? adminDaEmpresa(cfg.empresa_id, admin) : admin;
+    const r = await rodarBuscaSefaz(db, cfg);
+    resultados.push({ empresa: cfg.empresa_id, ok: !r.erro, ...r });
+  }
+  if (resultados.length === 1) return NextResponse.json(resultados[0]);
+  return NextResponse.json({ ok: resultados.every((r) => r.ok), resultados });
 }

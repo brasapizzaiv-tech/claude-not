@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { nomeCurtoDaEmpresa } from "@/lib/marca";
 
 export const metadata = { title: "Escolha a empresa · Cotação" };
 export const dynamic = "force-dynamic";
@@ -24,11 +25,15 @@ export default async function EscolherEmpresaPage({
   const { data } = tokens.length
     ? await admin
         .from("cotacao_fornecedores")
-        .select("token, status, respondido_em, fornecedores(nome), cotacoes(descricao, status)")
+        .select("token, status, respondido_em, empresa_id, fornecedores(nome), cotacoes(descricao, status)")
         .in("token", tokens)
     : { data: [] };
 
-  const linhas = ((data as unknown as {
+  // Um link de escolha é de UM comprador: as linhas de outra empresa ficam de fora.
+  const todas = (data as unknown as { empresa_id: string }[] | null) ?? [];
+  const empresaId = todas[0]?.empresa_id ?? null;
+  const nomeEmpresa = await nomeCurtoDaEmpresa(empresaId);
+  const linhas = ((todas.filter((r) => r.empresa_id === empresaId) as unknown as {
     token: string; status: string; respondido_em: string | null;
     fornecedores: { nome: string } | { nome: string }[] | null;
     cotacoes: { descricao: string | null; status: string } | { descricao: string | null; status: string }[] | null;
@@ -50,7 +55,7 @@ export default async function EscolherEmpresaPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
       <div className="w-full max-w-md rounded-cartao border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Cotação — Brasa</h1>
+        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Cotação — {nomeEmpresa}</h1>
         {linhas.length === 0 ? (
           <p className="mt-3 text-zinc-500">Link inválido ou vencido. Peça um novo ao comprador.</p>
         ) : (

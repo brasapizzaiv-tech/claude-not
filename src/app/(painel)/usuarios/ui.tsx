@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { confirmar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
-import { MODULOS } from "@/lib/permissoes";
+import { MODULOS, empresaTem, type ModulosEmpresa } from "@/lib/permissoes";
 import { Icone } from "@/components/icone";
 import {
   criarUsuario,
@@ -18,11 +18,14 @@ function EditorPermissoes({
   setDono,
   permissoes,
   toggle,
+  modulos,
 }: {
   dono: boolean;
   setDono: (v: boolean) => void;
   permissoes: string[];
   toggle: (key: string) => void;
+  /** Só os módulos que a empresa contratou (0322). NULL = todos. */
+  modulos: ModulosEmpresa;
 }) {
   return (
     <div>
@@ -37,7 +40,7 @@ function EditorPermissoes({
       </label>
       {!dono && (
         <div className="grid grid-cols-2 gap-1.5 cartao p-3">
-          {MODULOS.map((m) => (
+          {MODULOS.filter((m) => empresaTem(modulos, m.key)).map((m) => (
             <label
               key={m.key}
               className="flex items-center gap-2 text-sm text-texto-suave"
@@ -59,7 +62,7 @@ function EditorPermissoes({
   );
 }
 
-export function NovoUsuario() {
+export function NovoUsuario({ modulos = null }: { modulos?: ModulosEmpresa }) {
   const router = useRouter();
   const [p, start] = useTransition();
   const [nome, setNome] = useState("");
@@ -137,6 +140,7 @@ export function NovoUsuario() {
       </div>
       <div className="mt-4">
         <EditorPermissoes
+          modulos={modulos}
           dono={dono}
           setDono={setDono}
           permissoes={permissoes}
@@ -166,6 +170,7 @@ export function NovoUsuario() {
 export function UsuarioLinha({
   usuario,
   souEu,
+  modulos = null,
 }: {
   usuario: {
     id: string;
@@ -175,6 +180,7 @@ export function UsuarioLinha({
     permissoes: string[];
   };
   souEu: boolean;
+  modulos?: ModulosEmpresa;
 }) {
   const router = useRouter();
   const [p, start] = useTransition();
@@ -269,6 +275,7 @@ export function UsuarioLinha({
       {editando && (
         <div className="mt-4 space-y-4 border-t border-borda pt-4">
           <EditorPermissoes
+          modulos={modulos}
             dono={dono}
             setDono={setDono}
             permissoes={permissoes}

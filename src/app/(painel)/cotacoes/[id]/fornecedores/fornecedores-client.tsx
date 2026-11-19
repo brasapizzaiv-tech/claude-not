@@ -1,5 +1,6 @@
 "use client";
 
+import { useNomeEmpresa } from "@/components/nome-empresa";
 import { Icone } from "@/components/icone";
 import { BotaoAcao } from "@/components/enviar";
 
@@ -29,7 +30,6 @@ export type FornecedorLinha = {
   sempre: boolean; // marcado "Sempre convidar" no cadastro
 };
 
-const EMPRESA = "Brasa Pizzaria e Restaurante";
 const MSG_PADRAO_ANTIGA =
   "Olá! Segue o link para você nos passar os preços da nossa cotação ({itens} itens): {link}";
 const MSG_PADRAO =
@@ -69,6 +69,7 @@ export function FornecedoresClient({
   }, []);
   // Origem do site lida na hora do clique (evita setState em render).
   const origin = siteUrl();
+  const { nome: nomeEmpresa } = useNomeEmpresa();
   const [convidandoTodos, setConvidandoTodos] = useState(false);
   const [template, setTemplate] = useState<string>(() => {
     if (msgSalva) return msgSalva;
@@ -165,7 +166,7 @@ export function FornecedoresClient({
     const base = template
       .replaceAll("{itens}", String(l.cobertura))
       .replaceAll("{nome}", l.nome)
-      .replaceAll("{empresa}", EMPRESA)
+      .replaceAll("{empresa}", nomeEmpresa)
       .replaceAll("{link}", url);
     if (template.includes("{prazo}")) return base.replaceAll("{prazo}", prazoTxt);
     return ate ? `${base}\nPode responder até ${prazoTxt}.` : base;

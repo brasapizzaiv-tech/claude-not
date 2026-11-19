@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { lerMarca } from "@/lib/marca";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { duracao, hhmm } from "@/lib/ponto-relatorio-core";
@@ -25,6 +26,7 @@ export default async function EspelhosPage({ searchParams }: { searchParams: Pro
   const de = DATA.test(sp.de ?? "") ? (sp.de as string) : padrao.de;
   const ate = DATA.test(sp.ate ?? "") && (sp.ate as string) >= de ? (sp.ate as string) : padrao.ate;
   const supabase = await createClient();
+  const { nome: nomeEmpresa } = await lerMarca();
   const espelhos = await espelhosDoPeriodo(supabase, de, ate);
   const ids = espelhos.map((e) => e.pessoa.id);
   const { data: fichas } = ids.length
@@ -86,7 +88,7 @@ export default async function EspelhosPage({ searchParams }: { searchParams: Pro
             </table>
             <div className="mt-10 grid grid-cols-2 gap-16 text-center">
               <div className="border-t border-texto pt-1">{pessoa.nome}</div>
-              <div className="border-t border-texto pt-1">Brasa Pizza Ivoti</div>
+              <div className="border-t border-texto pt-1">{nomeEmpresa}</div>
             </div>
           </section>
         );

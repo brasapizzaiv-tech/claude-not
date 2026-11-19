@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FolgaApp } from "./app";
 import type { Pedido } from "@/lib/folgas";
+import { nomeCurtoDaEmpresa } from "@/lib/marca";
 
-export const metadata: Metadata = {
-  title: "Minhas folgas · Brasa",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Folgas" },
-};
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  const { data } = await createAdminClient().from("folgas_funcionarios").select("empresa_id").eq("token", token).maybeSingle();
+  const nome = await nomeCurtoDaEmpresa(data?.empresa_id as string | undefined);
+  return { title: `Minhas folgas · ${nome}`, appleWebApp: { capable: true, statusBarStyle: "default", title: "Folgas" } };
+}
 
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +27,7 @@ export default async function FolgaTokenPage({ params }: { params: Promise<{ tok
 
   const { data: eu } = await admin
     .from("folgas_funcionarios")
-    .select("id, nome, grupo, vinculo, funcao, dias, grupo2, dias2, ativo")
+    .select("id, nome, grupo, vinculo, funcao, dias, grupo2, dias2, ativo, empresa_id")
     .eq("token", token)
     .maybeSingle();
 
@@ -39,13 +42,16 @@ export default async function FolgaTokenPage({ params }: { params: Promise<{ tok
 
   const hojeIso = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
+  // Tudo preso à empresa do funcionário: a chave administrativa não filtra sozinha.
+  const emp = eu.empresa_id as string;
+  const empresaNome = await nomeCurtoDaEmpresa(emp);
   const [{ data: funcs }, { data: futuros }, { data: li }, { data: aj }, { data: bl }, { data: meus }] =
     await Promise.all([
-      admin.from("folgas_funcionarios").select("id, grupo, grupo2"),
-      admin.from("folgas_pedidos").select("funcionario_id, data, status, grupo_alvo").gte("data", hojeIso),
-      admin.from("folgas_limites").select("*"),
-      admin.from("folgas_ajustes").select("*"),
-      admin.from("folgas_bloqueios").select("*"),
+      admin.from("folgas_funcionarios").select("id, grupo, grupo2").eq("empresa_id", emp),
+      admin.from("folgas_pedidos").select("funcionario_id, data, status, grupo_alvo").eq("empresa_id", emp).gte("data", hojeIso),
+      admin.from("folgas_limites").select("*").eq("empresa_id", emp),
+      admin.from("folgas_ajustes").select("*").eq("empresa_id", emp),
+      admin.from("folgas_bloqueios").select("*").eq("empresa_id", emp),
       admin.from("folgas_pedidos").select("*").eq("funcionario_id", eu.id).order("data"),
     ]);
 
@@ -63,6 +69,7 @@ export default async function FolgaTokenPage({ params }: { params: Promise<{ tok
   return (
     <FolgaApp
       token={token}
+      empresaNome={empresaNome}
       eu={{
         nome: eu.nome,
         grupo: eu.grupo,

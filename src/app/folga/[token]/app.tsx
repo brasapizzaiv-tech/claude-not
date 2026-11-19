@@ -20,7 +20,7 @@ type Eu = {
 };
 
 export function FolgaApp({
-  token, eu, counts, limitesRows, ajustesRows, bloqueiosRows, meus, hojeIso,
+  token, empresaNome, eu, counts, limitesRows, ajustesRows, bloqueiosRows, meus, hojeIso,
 }: {
   token: string;
   eu: Eu;
@@ -30,6 +30,7 @@ export function FolgaApp({
   bloqueiosRows: { data: string; motivo: string }[];
   meus: Pedido[];
   hojeIso: string;
+  empresaNome: string;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
@@ -264,7 +265,7 @@ export function FolgaApp({
         )}
       </div>
 
-      <p className="mt-4 pb-6 text-center text-mini text-zinc-400">Brasa · folgas</p>
+      <p className="mt-4 pb-6 text-center text-mini text-zinc-400">{empresaNome} · folgas</p>
     </div>
   );
 }

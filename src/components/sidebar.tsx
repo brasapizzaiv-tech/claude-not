@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { PERMISSOES_CLIENTES, type ModuloKey } from "@/lib/permissoes";
+import { PERMISSOES_CLIENTES, empresaTem, podeAcessar, type ModuloKey, type ModulosEmpresa } from "@/lib/permissoes";
 import { Icone, type NomeIcone } from "@/components/icone";
 import { TEMA_PADRAO, type Tema } from "@/lib/tema";
 import { SeletorTema } from "@/components/seletor-tema";
@@ -107,17 +107,20 @@ export function Sidebar({
   papel,
   admin,
   permissoes,
+  modulos = null,
   reservasNovas = 0,
   pedidosCompra = 0,
   sugestoes = 0,
   tema = TEMA_PADRAO,
   logoUrl = "/logo-brasa.png",
-  empresaNome = "Brasa",
+  empresaNome = "",
 }: {
   nome: string;
   papel: string;
   admin: boolean;
   permissoes: string[];
+  /** Módulos que a empresa contratou (0322). NULL = todos. */
+  modulos?: ModulosEmpresa;
   reservasNovas?: number;
   pedidosCompra?: number;
   /** Sugestões do sistema esperando (só o dono). */
@@ -157,7 +160,8 @@ export function Sidebar({
   // Tablet da cozinha e TV: tela cheia, sem menu (o relatório do rodízio mantém o menu).
   if (pathname === "/cozinha" || pathname === "/tv" || pathname.startsWith("/tv/")) return null;
 
-  const has = (key: ModuloKey) => admin || permissoes.includes(key);
+  // A pessoa pode E a empresa contratou (0322).
+  const has = (key: ModuloKey) => empresaTem(modulos, key) && (admin || permissoes.includes(key));
   // "só aparece se a pessoa tem a permissão". Tipado como Item (e não genérico)
   // pra o TypeScript conferir o nome do ícone de cada linha do menu.
   const so = (cond: boolean, ...v: Item[]) => (cond ? v : []);
@@ -243,7 +247,10 @@ export function Sidebar({
             { href: "/financeiro/buffet", label: "Buffet: livre × quilo", icon: "balanca" },
             { href: "/financeiro/dre", label: "DRE", icon: "subindo" },
           ] as Item[])
-        : so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" })),
+        : [
+            ...so(has("cmv"), { href: "/financeiro/cmv", label: "CMV / Consumo", icon: "descendo" }),
+            ...so(has("contas"), { href: "/financeiro/contas", label: "Contas a pagar", icon: "documento" }),
+          ]),
         ...so(has("cofre"), { href: "/cofre", label: "Cofre", icon: "cofre" }),
       ],
     },
@@ -252,7 +259,7 @@ export function Sidebar({
       itens: [
         ...so(has("reservas"), { href: "/reservas", label: "Reservas", icon: "agenda", aviso: reservasNovas || undefined }),
         ...so(has("cardapio_dia"), { href: "/cardapio-do-dia", label: "Cardápio do dia", icon: "salao" }),
-        { href: "/marmitas", label: "Marmitas (convênio)", icon: "marmita", external: true },
+        ...so(empresaTem(modulos, "delivery"), { href: "/marmitas", label: "Marmitas (convênio)", icon: "marmita", external: true }),
       ],
     },
     {
@@ -269,7 +276,12 @@ export function Sidebar({
       ],
     },
   ];
-  const grupos = todosGrupos.filter((g) => g.itens.length > 0);
+  // Empresa com módulos escolhidos: cada linha passa pela mesma regra do
+  // bloqueio de rota (pega as telas do dono que pertencem a um módulo, como a
+  // Config fiscal). Na Brasa (NULL) o menu fica exatamente como era.
+  const grupos = todosGrupos
+    .map((g) => (modulos ? { ...g, itens: g.itens.filter((i) => i.external || podeAcessar(i.href, admin, permissoes, modulos)) } : g))
+    .filter((g) => g.itens.length > 0);
 
   // Item ativo = o de href mais específico que casa com a página atual.
   const todosItens = grupos.flatMap((g) => g.itens.map((i) => ({ ...i, grupo: g.key })));
@@ -295,7 +307,7 @@ export function Sidebar({
         aria-label={`${empresaNome} — início`}
         className="mb-3 flex h-10 w-10 items-center justify-center rounded-controle bg-marca-escuro font-numero text-lg font-bold text-primaria dark:bg-primaria dark:text-marca-sobre-primaria"
       >
-        {(empresaNome.trim()[0] ?? "B").toUpperCase()}
+        {(empresaNome.trim()[0] ?? "M").toUpperCase()}
       </Link>
 
       <BotaoRail icone="inicio" rotulo="Início" ativo={noInicio} href="/dashboard" />
@@ -392,7 +404,7 @@ export function Sidebar({
         <Link href="/dashboard" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={logoUrl} alt="" className="h-8 w-8 rounded-controle object-contain" />
-          <span className="font-semibold text-texto">Brasa</span>
+          <span className="font-semibold text-texto">{empresaNome}</span>
         </Link>
         {!!reservasNovas && (
           <span className="pilula pilula-urgente-solido ml-auto">
@@ -414,7 +426,7 @@ export function Sidebar({
             <div className="flex items-center gap-2 border-b border-borda px-3 py-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logoUrl} alt="" className="h-9 w-9 rounded-controle object-contain" />
-              <span className="flex-1 font-semibold text-texto">Brasa</span>
+              <span className="flex-1 font-semibold text-texto">{empresaNome}</span>
               <button
                 type="button"
                 onClick={() => setMobileAberto(false)}

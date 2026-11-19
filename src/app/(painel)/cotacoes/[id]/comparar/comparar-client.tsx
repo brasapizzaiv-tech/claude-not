@@ -1,5 +1,6 @@
 "use client";
 
+import { useNomeEmpresa } from "@/components/nome-empresa";
 import { Icone } from "@/components/icone";
 import { avisar, confirmar } from "@/components/dialogo";
 
@@ -111,6 +112,7 @@ export function CompararClient({
   estadoSalvo?: EstadoComparacao | null;
 }) {
   const router = useRouter();
+  const { nome: nomeEmpresa } = useNomeEmpresa();
   const [salvando, startSave] = useTransition();
   const [gerados, setGerados] = useState<Set<string>>(() => new Set(fornecedoresComPedido));
   const [adiantando, setAdiantando] = useState<string | null>(null);
@@ -420,7 +422,7 @@ export function CompararClient({
     for (const e of exclusivos) {
       if (e.fornecedorId === fid) linhas.push(`- ${e.nome}: ${e.qtd} ${e.unidade}`);
     }
-    return `*Pedido - Brasa Pizza*\n${nome}\n\n` + linhas.join("\n") + `\n\nTotal: ${moeda(total)}`;
+    return `*Pedido - ${nomeEmpresa}*\n${nome}\n\n` + linhas.join("\n") + `\n\nTotal: ${moeda(total)}`;
   }
 
   function waHref(whatsapp: string | null, texto: string) {

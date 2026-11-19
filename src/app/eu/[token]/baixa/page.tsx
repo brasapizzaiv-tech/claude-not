@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BaixaScanner } from "./scanner";
 
-export const metadata = { title: "Dar baixa · Brasa" };
+export const metadata = { title: "Dar baixa" };
 
 export default async function BaixaColabPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

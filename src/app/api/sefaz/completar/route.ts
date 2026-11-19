@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { rodarBuscaSefaz, podeForcar, type ConfigSefaz } from "@/lib/sefaz/busca";
 import { marcarSinal } from "@/lib/saude";
 import { cronAutorizado } from "@/lib/cron-auth";
@@ -16,15 +17,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("config_sefaz")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
-  const cfg = data as ConfigSefaz | null;
-  if (!cfg) return NextResponse.json({ erro: "sem configuração" });
+  // Uma configuração por empresa (cada uma com o certificado dela). Antes era
+  // `limit(1)`: com dois restaurantes no banco, só o primeiro era olhado.
+  const base = createAdminClient();
+  const { data } = await base.from("config_sefaz").select("*").not("cert_pfx", "is", null).order("empresa_id");
+  const cfgs = (data as ConfigSefaz[] | null) ?? [];
+  if (!cfgs.length) return NextResponse.json({ erro: "sem configuração" });
 
+  const resultados: Record<string, unknown>[] = [];
+  for (const cfg of cfgs) {
+    // As notas olhadas e as que chegam ficam presas à empresa do certificado.
+    const admin = cfg.empresa_id ? adminDaEmpresa(cfg.empresa_id, base) : base;
+    resultados.push({ empresa: cfg.empresa_id, ...(await completarEmpresa(admin, cfg)) });
+  }
+  if (resultados.length === 1) return NextResponse.json(resultados[0]);
+  return NextResponse.json({ ok: resultados.every((r) => r.ok), resultados });
+}
+
+async function completarEmpresa(admin: ReturnType<typeof createAdminClient>, cfg: ConfigSefaz): Promise<Record<string, unknown>> {
   // Batimento: marca que o cron REALMENTE rodou (passou pela auth). Serve para
   // verificar se o Vercel Cron está disparando.
   await admin
@@ -81,12 +91,12 @@ export async function GET(req: NextRequest) {
       { ...cfg, ult_nsu: "0", bloqueado_ate: null },
       { forcar: true },
     );
-    return NextResponse.json({ ok: !rr.erro, reprocessado: true, travadas, ...rr });
+    return { ok: !rr.erro, reprocessado: true, travadas, ...rr };
   }
 
   // Nada aguardando: não força nada (deixa o cron de hora em hora cuidar).
   if (aguardando === 0) {
-    return NextResponse.json({ ok: true, aguardando: 0, forcado: false, travadas });
+    return { ok: true, aguardando: 0, forcado: false, travadas };
   }
 
   // Só força enquanto a manifestação é recente (até 30 min), no máximo uma vez
@@ -94,17 +104,17 @@ export async function GET(req: NextRequest) {
   // hora: bater de 15 em 15 min por 3 horas arriscava o "656" (NFE-02).
   const recente = agora - manifestMaisNova < 30 * 60 * 1000;
   if (!recente) {
-    return NextResponse.json({ ok: true, aguardando, forcado: false, motivo: "fica pra busca de hora em hora" });
+    return { ok: true, aguardando, forcado: false, motivo: "fica pra busca de hora em hora" };
   }
   if (!podeForcar(cfg, false).ok) {
-    return NextResponse.json({
+    return {
       ok: true,
       aguardando,
       forcado: false,
       motivo: "aguardando intervalo mínimo",
-    });
+    };
   }
 
   const r = await rodarBuscaSefaz(admin, cfg, { forcar: true });
-  return NextResponse.json({ ok: !r.erro, aguardando, forcado: true, ...r });
+  return { ok: !r.erro, aguardando, forcado: true, ...r };
 }

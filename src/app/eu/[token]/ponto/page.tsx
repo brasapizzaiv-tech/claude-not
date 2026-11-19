@@ -2,13 +2,14 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Icone } from "@/components/icone";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminDaEmpresa } from "@/lib/supabase/admin-empresa";
 import { pinConfere } from "@/lib/pin-colaborador";
 import { hojeSP } from "@/lib/assiduidade-server";
 import { ASSINATURA_DESDE, assinaturasDoCiclo, fechamentosDoCiclo, cicloDoDia, ciclosRecentes, espelhoDaPessoa, resumoParaAssinar } from "@/lib/ponto-espelho";
 import { duracao, hhmm, type SituacaoDia } from "@/lib/ponto-relatorio-core";
 import { AssinarPonto } from "./assinar";
 
-export const metadata = { title: "Meu ponto · Brasa" };
+export const metadata = { title: "Meu ponto" };
 export const dynamic = "force-dynamic";
 
 const DOW = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -47,11 +48,13 @@ export default async function MeuPontoPage({ params, searchParams }: { params: P
   const assina = ciclo.de >= ASSINATURA_DESDE;
   const periodo = `${dm(ciclo.de)} a ${dm(ciclo.ate)}`;
 
+  // Daqui pra frente, tudo preso à empresa da pessoa (feriados, justificativas, folgas).
+  const db = adminDaEmpresa(colab.empresa_id, admin);
   const [e, assinaturas, fechamentos, { data: ult }] = await Promise.all([
-    espelhoDaPessoa(admin, colab.id, ciclo.de, ciclo.ate, colab.empresa_id),
-    assinaturasDoCiclo(admin, ciclo.de, ciclo.ate, [colab.id], colab.empresa_id),
-    fechamentosDoCiclo(admin, ciclo.de, [colab.id], colab.empresa_id),
-    admin.from("ponto_batidas").select("data_hora, nsr, origem, desconsiderada").eq("colaborador_id", colab.id)
+    espelhoDaPessoa(db, colab.id, ciclo.de, ciclo.ate, colab.empresa_id),
+    assinaturasDoCiclo(db, ciclo.de, ciclo.ate, [colab.id], colab.empresa_id),
+    fechamentosDoCiclo(db, ciclo.de, [colab.id], colab.empresa_id),
+    db.from("ponto_batidas").select("data_hora, nsr, origem, desconsiderada").eq("colaborador_id", colab.id)
       .order("data_hora", { ascending: false }).limit(8),
   ]);
   const ultimas = (ult ?? []) as { data_hora: string; nsr: number; origem: string; desconsiderada: boolean }[];
