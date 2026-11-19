@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
+// Projeto dos CLIENTES (decisão 2 do multiempresa: um código, dois bancos):
+// é o que tem o banco próprio nas variáveis (mesma regra de
+// src/lib/supabase/config.ts). Lá não existe site de restaurante nem app de
+// marmitas — a raiz e os endereços do site da Brasa levam pro sistema.
+const PROJETO_CLIENTES = !!(
+  process.env.NEXT_PUBLIC_BANCO_URL?.trim() && process.env.NEXT_PUBLIC_BANCO_ANON_KEY?.trim()
+);
+
 const nextConfig: NextConfig = {
   async rewrites() {
+    if (PROJETO_CLIENTES) return { beforeFiles: [], afterFiles: [], fallback: [] };
     return {
       // beforeFiles roda antes das rotas do app: é o que faz a raiz do
       // domínio (www.brasarestaurante.com.br) abrir o site do restaurante.
@@ -17,6 +26,13 @@ const nextConfig: NextConfig = {
     };
   },
   async redirects() {
+    if (PROJETO_CLIENTES) {
+      return ["/", "/site", "/site/:path*", "/marmitas", "/marmitas.html", "/cardapio"].map((source) => ({
+        source,
+        destination: "/dashboard",
+        permanent: false,
+      }));
+    }
     return [
       // Link curto para mandar a quem pede o cardápio.
       { source: "/cardapio", destination: "/#cardapio", permanent: false },

@@ -5,7 +5,9 @@ import { updateSession } from "@/lib/supabase/middleware";
 // privacidade), não o sistema em si. Mora neste mesmo projeto, em /motelli, e
 // quem chega por aquele domínio é levado pra lá sem passar pelo login. O
 // domínio do restaurante continua abrindo o site dele na raiz (next.config).
-const HOST_MOTELLI = /(^|\.)motelli\.com\.br$/i;
+// SÓ o domínio puro e o www: os subdomínios (beeis.motelli.com.br, ...) são
+// os sistemas dos clientes e passam pelo login como qualquer outro endereço.
+const HOST_MOTELLI = /^(www\.)?motelli\.com\.br$/i;
 
 export async function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").split(":")[0];
