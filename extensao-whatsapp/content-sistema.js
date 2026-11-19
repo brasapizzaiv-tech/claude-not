@@ -1,4 +1,4 @@
-// Roda nas páginas do sistema da Brasa. Faz duas coisas:
+// Roda nas páginas do sistema (Brasa e clientes em *.motelli.com.br). Faz duas coisas:
 //  1) quando a extensão pede, lista os botões "Envio manual" da tela de
 //     fornecedores da cotação (links do WhatsApp com a mensagem pronta);
 //  2) quando a extensão avisa que enviou, repassa pra página marcar "✓ Enviado".
@@ -15,6 +15,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg?.action === "marcarEnviado") {
+    // O nome da mensagem ficou o antigo de propósito: a página e as extensões já
+    // instaladas falam por ele.
     window.postMessage({ type: "BRASA_WHATS_ENVIADO", id: msg.id }, "*");
     sendResponse({ ok: true });
     return true;

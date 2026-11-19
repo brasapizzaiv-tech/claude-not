@@ -98,7 +98,7 @@ export function CentralImpressao({
             {verConfig ? "esconder" : "ver"} dados do agente (endereço/token)
           </button>
           {/* Instaladores dos agentes, pra baixar direto no PC (pedido do Rafael, 09/11). */}
-          <Link href="/impressao/downloads" className="text-xs font-medium text-texto-marca underline">
+          <Link href="/downloads" className="text-xs font-medium text-texto-marca underline">
             baixar os instaladores (impressão, balança, pinpad)
           </Link>
         </div>

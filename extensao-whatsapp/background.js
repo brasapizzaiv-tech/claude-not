@@ -50,7 +50,7 @@ async function iniciar(tabSistema, reenviar) {
     try {
       resp = await chrome.tabs.sendMessage(tabSistema, { action: "coletarLinks" });
     } catch {
-      await status("Abra a tela Cotação → Fornecedores do sistema da Brasa e clique de novo.");
+      await status("Abra a tela Cotação → Fornecedores do sistema e clique de novo.");
       return;
     }
     const todos = (resp?.links || []).filter((l) => l.href && l.telefone);

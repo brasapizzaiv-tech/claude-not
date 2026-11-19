@@ -1,17 +1,17 @@
-BRASA WHATSAPP SENDER (extensao do Chrome)
-==========================================
+MOTELLI WHATSAPP (extensao do Chrome)
+=====================================
 
 O que faz: na tela Cotacao -> Fornecedores do sistema, envia sozinha a mensagem
 com o link da cotacao pra cada fornecedor pelo WhatsApp Web, um a um, e marca
-"Enviado" no sistema. Igual a extensao da VMarket, so que pro nosso sistema.
+"Enviado" no sistema. Funciona no sistema da Brasa e no dos clientes (*.motelli.com.br).
 
 INSTALAR (uma vez, no Chrome do PC que fica com o WhatsApp Web logado)
-1) Descompacte esta pasta em um lugar fixo, ex.: C:\brasa-whatsapp
+1) Descompacte esta pasta em um lugar fixo, ex.: C:\motelli-whatsapp
    (nao apague depois: o Chrome le a pasta toda vez).
 2) No Chrome, abra:  chrome://extensions
 3) Ligue o "Modo do desenvolvedor" (canto superior direito).
-4) Clique em "Carregar sem compactacao" e escolha a pasta C:\brasa-whatsapp.
-5) Clique no icone de quebra-cabeca (extensoes) e fixe o "Brasa WhatsApp Sender".
+4) Clique em "Carregar sem compactacao" e escolha a pasta C:\motelli-whatsapp.
+5) Clique no icone de quebra-cabeca (extensoes) e fixe o "Motelli WhatsApp".
 
 USAR
 1) Abra o WhatsApp Web (web.whatsapp.com) neste Chrome e deixe logado.
@@ -23,3 +23,7 @@ USAR
 
 Se o WhatsApp Web mudar o botao Enviar e a extensao parar de enviar, avise —
 e um ajuste pequeno no arquivo content-whats.js.
+
+ATUALIZAR
+Baixe o arquivo novo em Configuracoes -> Downloads, descompacte POR CIMA da
+mesma pasta e, em chrome://extensions, clique no botao de recarregar da extensao.
