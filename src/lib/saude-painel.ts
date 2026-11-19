@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emServico } from "@/lib/horario-servico";
+import { modulosDaEmpresa } from "@/lib/modulos-empresa";
+import { empresaTem, type ModuloKey, type ModulosEmpresa } from "@/lib/permissoes";
 
 // Junta o último sinal de cada peça de fora num quadro só (auditoria, Onda 2).
 // Usado pela tela /saude e pelo aviso da tela inicial, do caixa e do PDV.
@@ -55,16 +57,22 @@ function hojeSP(d = new Date()) {
 
 // Rotinas automáticas (vercel.json) e de quanto em quanto tempo devem rodar.
 // "atraso" = depois de quanto tempo sem sinal vira problema.
-const ROTINAS: { chave: string; nome: string; atraso: number }[] = [
-  { chave: "rotina:sefaz-hora", nome: "Busca de notas na SEFAZ (de hora em hora)", atraso: 40 * MIN },
-  { chave: "rotina:sefaz-completar", nome: "Busca dos itens das notas manifestadas", atraso: 20 * MIN },
-  { chave: "rotina:contagem", nome: "Contagens agendadas", atraso: 50 * MIN },
-  { chave: "rotina:fiscal-conferir", nome: "Conferência das NFC-e na Focus", atraso: 75 * MIN },
-  { chave: "rotina:whatsapp-disparos", nome: "Campanhas e gatilhos do WhatsApp", atraso: 20 * MIN },
-  { chave: "rotina:delivery-pix", nome: "Pix do app de pedidos (confere e lança no caixa)", atraso: 20 * MIN },
-  { chave: "rotina:avisos-manha", nome: "Resumo da manhã no celular da equipe", atraso: 26 * HORA },
-  { chave: "rotina:entrega-limpar", nome: "Limpeza das posições dos entregadores", atraso: 26 * HORA },
+// "de" = módulos da empresa que usam a peça (basta um). Quem não tem nenhum
+// deles (ex.: a hamburgueria só com Compras + Equipe) nem vê a peça — senão o
+// aviso vermelho de "agente de impressão" aparece pra quem nunca imprime.
+const VENDA: ModuloKey[] = ["salao", "pdv", "delivery"];
+const ROTINAS: { chave: string; nome: string; atraso: number; de: ModuloKey[] }[] = [
+  { chave: "rotina:sefaz-hora", nome: "Busca de notas na SEFAZ (de hora em hora)", atraso: 40 * MIN, de: ["notas"] },
+  { chave: "rotina:sefaz-completar", nome: "Busca dos itens das notas manifestadas", atraso: 20 * MIN, de: ["notas"] },
+  { chave: "rotina:contagem", nome: "Contagens agendadas", atraso: 50 * MIN, de: ["contagem"] },
+  { chave: "rotina:fiscal-conferir", nome: "Conferência das NFC-e na Focus", atraso: 75 * MIN, de: VENDA },
+  { chave: "rotina:whatsapp-disparos", nome: "Campanhas e gatilhos do WhatsApp", atraso: 20 * MIN, de: VENDA },
+  { chave: "rotina:delivery-pix", nome: "Pix do app de pedidos (confere e lança no caixa)", atraso: 20 * MIN, de: ["delivery"] },
+  { chave: "rotina:avisos-manha", nome: "Resumo da manhã no celular da equipe", atraso: 26 * HORA, de: ["colaboradores"] },
+  { chave: "rotina:entrega-limpar", nome: "Limpeza das posições dos entregadores", atraso: 26 * HORA, de: ["delivery"] },
 ];
+
+const usa = (modulos: ModulosEmpresa, de: ModuloKey[]) => de.some((k) => empresaTem(modulos, k));
 
 type Sinal = { chave: string; ok: boolean; detalhe: string | null; ultima_em: string; ultima_ok_em: string | null; falha_em: string | null };
 
@@ -76,7 +84,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
   const umMinAtras = new Date(agora - MIN).toISOString();
   const umDiaAtras = new Date(agora - 24 * HORA).toISOString();
 
-  const [imp, fila, bal, tef, sinais, sefaz, wpp, erros] = await Promise.all([
+  const [imp, fila, bal, tef, sinais, sefaz, wpp, erros, modulos] = await Promise.all([
     admin.from("impressao_config").select("hostname, visto_em, versao, rodada_em").eq("empresa_id", empresaId).maybeSingle(),
     admin
       .from("impressao_fila")
@@ -106,13 +114,18 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
     opts?.comErros
       ? admin.from("erros_sistema").select("onde, mensagem, criado_em").or(`empresa_id.is.null,empresa_id.eq.${empresaId}`).gte("criado_em", umDiaAtras).order("criado_em", { ascending: false }).limit(30)
       : Promise.resolve({ data: [] }),
+    modulosDaEmpresa(empresaId),
   ]);
+  const imprime = usa(modulos, [...VENDA, "impressao", "etiquetas"]);
+  const balanca = usa(modulos, ["salao"]);
+  const pinpad = usa(modulos, ["salao", "pdv"]);
+  const avisoPedido = usa(modulos, ["delivery"]);
 
   const itens: ItemSaude[] = [];
   const sinalDe = new Map(((sinais.data as Sinal[]) ?? []).map((s) => [s.chave, s]));
 
   // 1) Agente de impressão (PC central).
-  {
+  if (imprime) {
     const c = imp.data as { hostname: string | null; visto_em: string | null; versao: string | null; rodada_em: string | null } | null;
     if (!c?.visto_em) {
       itens.push({ chave: "impressao", nome: "Agente de impressão", estado: "parado", resumo: "Impressão: o agente nunca deu sinal", quando: null });
@@ -145,7 +158,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
       motivo: f.retido_em ? "retida" : (f.tentativas ?? 0) >= 5 ? "falhando" : "esperando",
     };
   });
-  {
+  if (imprime) {
     const falhando = filaProb.filter((f) => f.motivo === "falhando").length;
     const retidas = filaProb.filter((f) => f.motivo === "retida").length;
     const esperando = filaProb.filter((f) => f.motivo === "esperando").length;
@@ -164,7 +177,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
   // 3) Balança do buffet.
   {
     const b = bal.data as { hostname: string | null; visto_em: string | null; fila_pendente: number; versao: string | null; erros: number; erros_lista: { ts?: string; numero?: number; peso?: number; erro?: string }[] | null } | null;
-    if (b) {
+    if (b && balanca) {
       const semSinal = b.visto_em ? agora - new Date(b.visto_em).getTime() : Infinity;
       const fora = semSinal > 3 * MIN;
       let estado: Estado = "ok";
@@ -185,7 +198,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
   }
 
   // 4) Pinpads (agente TEF, um por PC de caixa).
-  for (const t of (tef.data as { terminal: string; hostname: string | null; versao: string | null; gerenciador: boolean; etapa: string | null; visto_em: string | null }[]) ?? []) {
+  if (pinpad) for (const t of (tef.data as { terminal: string; hostname: string | null; versao: string | null; gerenciador: boolean; etapa: string | null; visto_em: string | null }[]) ?? []) {
     const fora = !t.visto_em || agora - new Date(t.visto_em).getTime() > 3 * MIN;
     const semGer = !fora && !t.gerenciador;
     itens.push({
@@ -251,6 +264,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
 
   // 7) Rotinas automáticas.
   for (const r of ROTINAS) {
+    if (!usa(modulos, r.de)) continue;
     const s = sinalDe.get(r.chave);
     if (!s) { itens.push({ chave: r.chave, nome: r.nome, estado: "neutro", resumo: `${r.nome}: sem registro ainda` }); continue; }
     const atrasada = agora - new Date(s.ultima_em).getTime() > r.atraso;
@@ -264,7 +278,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
     });
   }
   // Kern: segunda a sábado às 08:35. Depois das 08:50, tem que ter rodado hoje.
-  {
+  if (avisoPedido) {
     const s = sinalDe.get("rotina:kern");
     const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(agoraD);
     const dia = p.find((x) => x.type === "weekday")?.value;
@@ -283,7 +297,7 @@ export async function lerSaude(empresaId: string, opts?: { comErros?: boolean })
   // 8) WhatsApp (avisos do delivery).
   {
     const msgs = (wpp.data as { status: string; erro: string | null; criado_em: string }[]) ?? [];
-    if (msgs.length > 0) {
+    if (msgs.length > 0 && avisoPedido) {
       const falhas = msgs.filter((m) => m.status === "failed" || m.status === "falha");
       const ultimas = msgs.slice(0, 5);
       const todasFalharam = ultimas.length >= 3 && ultimas.every((m) => m.status === "failed" || m.status === "falha");
