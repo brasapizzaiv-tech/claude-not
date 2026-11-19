@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { empresaAtualId } from "@/lib/empresa";
 import { exigirAcesso } from "@/lib/permissoes-server";
 
 const ehCor = (v: unknown): v is string => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
@@ -18,14 +19,20 @@ export async function salvarCoresEmpresa(fd: FormData) {
     return { ok: false as const, mensagem: "Cor inválida. Use o seletor de cor." };
   }
 
-  const supabase = await createClient();
-  const { data: emp } = await supabase.from("empresas").select("id").limit(1).maybeSingle();
-  if (!emp) return { ok: false as const, mensagem: "Empresa não encontrada." };
+  // A tabela empresas não tem regra de escrita pra sessão (só leitura, 0185):
+  // gravar pela sessão "dava certo" sem mudar nada. Grava pela chave
+  // administrativa, SÓ na empresa de quem está logado (o dono, conferido acima).
+  const empresaId = await empresaAtualId();
+  if (!empresaId) return { ok: false as const, mensagem: "Empresa não encontrada." };
 
-  await supabase
+  const { data: gravou, error } = await createAdminClient()
     .from("empresas")
     .update({ cor_primaria: primaria, cor_escuro: escuro, cor_sobre_escuro: sobreEscuro })
-    .eq("id", emp.id);
+    .eq("id", empresaId)
+    .select("id");
+  if (error || !gravou?.length) {
+    return { ok: false as const, mensagem: "Não deu pra salvar as cores. Confira a internet e tente de novo." };
+  }
 
   // A cor entra em TODA tela, então o sistema inteiro precisa ser redesenhado.
   revalidatePath("/", "layout");
