@@ -107,6 +107,7 @@ async function main() {
     "cep", "endereco", "endereco_numero", "bairro", "cidade", "uf", "telefone", "telefone_emergencia",
     "nome_pai", "nome_mae", "genero", "tipo_sanguineo", "conjuge", "filhos",
     "salario_base", "valor_dia", "valor_noite", "valor_free", "numero_folha",
+    "pix_tipo", "pix_chave",
   ];
   const SECRETAS = {
     colaboradores: ["token", "pin", "codigo", ...(r0295.length ? PESSOAIS : [])],

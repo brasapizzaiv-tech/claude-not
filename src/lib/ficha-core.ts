@@ -16,6 +16,7 @@ export const CNH_CATEGORIAS = ["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"];
 export const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
 export const GENEROS = ["Feminino", "Masculino", "Outro", "Prefere não dizer"];
 export const TIPOS_SANGUE = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+export const TIPOS_PIX = ["CPF", "Celular", "E-mail", "Chave aleatória", "CNPJ"];
 export const TIPOS_DOCUMENTO = ["Contrato de trabalho", "Exame admissional", "Exame periódico", "Exame demissional", "Documento pessoal", "CNH", "Termo", "Advertência", "Outro"];
 
 /** Aba Informações gerais (além de departamento, cargo e superior, que são listas). */
@@ -48,6 +49,9 @@ export const CAMPOS_PESSOAIS: CampoFicha[] = [
   { k: "nome_mae", rotulo: "Nome da mãe" },
   { k: "genero", rotulo: "Gênero", tipo: "opcoes", opcoes: GENEROS },
   { k: "tipo_sanguineo", rotulo: "Tipo sanguíneo", tipo: "opcoes", opcoes: TIPOS_SANGUE },
+  // Pra pagar a pessoa (0323).
+  { k: "pix_tipo", rotulo: "Tipo da chave Pix", tipo: "opcoes", opcoes: TIPOS_PIX },
+  { k: "pix_chave", rotulo: "Chave Pix", dica: "Pra pagar a pessoa quando precisar." },
 ];
 
 /** Colunas que a ficha pode gravar (texto livre, data ou id de lista). */
