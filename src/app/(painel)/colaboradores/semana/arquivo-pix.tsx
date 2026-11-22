@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Janela } from "@/components/janela";
 import { Icone } from "@/components/icone";
 import { brl } from "@/lib/equipe";
-import { gerarArquivoPix, lerPixLote, salvarPixLoteConfig, type ArquivoGerado, type ConfigPixLote } from "./pix-lote-actions";
+import { gerarArquivoPix, lerComprovantesPix, lerPixLote, salvarPixLoteConfig, type ArquivoGerado, type ConfigPixLote, type PagoConfirmado, type PixPago } from "./pix-lote-actions";
 
 export type CandidatoPix = {
   id: string;
@@ -37,7 +37,19 @@ function hojeLocal() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string; candidatos: CandidatoPix[]; onFechar: () => void }) {
+const dataBR = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
+
+export function ArquivoPix({ segunda, candidatos, onPagos, onFechar }: {
+  segunda: string;
+  candidatos: CandidatoPix[];
+  /** Lança na semana quem o banco confirmou e ainda não foi lançado. Devolve o recado. */
+  onPagos: (pagos: PagoConfirmado[]) => Promise<string>;
+  onFechar: () => void;
+}) {
+  const [pagos, setPagos] = useState<Map<string, PixPago>>(new Map());
+  const [comprovante, setComprovante] = useState<File | null>(null);
+  const [previa, setPrevia] = useState<{ encontrados: PagoConfirmado[]; problemas: string[]; jaRegistrados: number } | null>(null);
+  const [recado, setRecado] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [config, setConfig] = useState<ConfigPixLote | null>(null);
   const [pronta, setPronta] = useState(false);
@@ -56,24 +68,64 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
     setPronta(r.pronta);
     setPodeEditar(r.podeEditar);
     setUltimos(r.ultimos);
+    // Quem o banco já confirmou que recebeu nesta semana sai da lista marcada.
+    const m = new Map(r.pagos.map((p) => [p.colaborador_id, p]));
+    setPagos(m);
+    setMarcados((s) => new Set([...s].filter((id) => !m.has(id))));
     setForm(Object.fromEntries(CAMPOS.map((c) => [c.k, String(r.config?.[c.k] ?? "")])));
     setEditando(!r.pronta && r.podeEditar);
     setCarregando(false);
   }
   async function recarregar() {
-    aplicar(await lerPixLote());
+    aplicar(await lerPixLote(segunda));
   }
   useEffect(() => {
     let vivo = true;
-    lerPixLote()
+    lerPixLote(segunda)
       .then((r) => { if (vivo) aplicar(r); })
       .catch(() => { if (vivo) { setErro("Não deu pra abrir. Confira a internet e tente de novo."); setCarregando(false); } });
     return () => { vivo = false; };
-  }, []);
+  }, [segunda]);
 
-  const escolhidos = useMemo(() => candidatos.filter((c) => marcados.has(c.id) && pode(c) && c.valor > 0.005), [candidatos, marcados]);
+  const entra = (c: CandidatoPix) => pode(c) && !pagos.has(c.id);
+  const escolhidos = useMemo(() => candidatos.filter((c) => marcados.has(c.id) && pode(c) && !pagos.has(c.id) && c.valor > 0.005), [candidatos, marcados, pagos]);
   const total = escolhidos.reduce((s, c) => s + c.valor, 0);
   const semChave = candidatos.filter((c) => !pode(c) && c.valor > 0.005);
+
+  function comprovanteForm(gravar: boolean) {
+    const fd = new FormData();
+    fd.set("segunda", segunda);
+    fd.set("gravar", gravar ? "1" : "0");
+    if (comprovante) fd.set("arquivo", comprovante);
+    return fd;
+  }
+  function lerComprovante() {
+    setErro(null);
+    setRecado(null);
+    setPrevia(null);
+    start(async () => {
+      const r = await lerComprovantesPix(comprovanteForm(false));
+      if (!r.ok) { setErro(r.erro); return; }
+      setPrevia(r);
+    });
+  }
+  function confirmarComprovante() {
+    setErro(null);
+    start(async () => {
+      const r = await lerComprovantesPix(comprovanteForm(true));
+      if (!r.ok) { setErro(r.erro); return; }
+      const lancar = r.encontrados.filter((e) => !e.jaLancado);
+      const msgLanc = lancar.length ? await onPagos(lancar) : "";
+      setRecado([
+        `${r.encontrados.length} Pix confirmado(s).`,
+        r.contasPagas ? `${r.contasPagas} conta(s) que já estavam lançadas agora estão pagas em Pix.` : "",
+        msgLanc,
+      ].filter(Boolean).join(" "));
+      setPrevia(null);
+      setComprovante(null);
+      await recarregar();
+    });
+  }
   const jaTemArquivoHoje = ultimos.some((u) => u.data_pagamento === data);
 
   function salvarConfig() {
@@ -174,16 +226,18 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
                         <input
                           type="checkbox"
                           aria-label={`Incluir ${c.nome}`}
-                          disabled={!pode(c)}
-                          checked={pode(c) && marcados.has(c.id)}
+                          disabled={!entra(c)}
+                          checked={entra(c) && marcados.has(c.id)}
                           onChange={(e) => setMarcados((s) => { const n = new Set(s); if (e.target.checked) n.add(c.id); else n.delete(c.id); return n; })}
                           className="h-5 w-5"
                         />
                       </td>
                       <td className="px-2 py-1.5">
-                        <div className={pode(c) ? "text-texto" : "text-texto-fraco"}>{c.nome}</div>
+                        <div className={entra(c) ? "text-texto" : "text-texto-fraco"}>{c.nome}</div>
                         <div className="text-mini text-texto-fraco">
-                          {!c.temChave ? "sem chave Pix no cadastro" : !c.temCpf ? "sem CPF no cadastro (o banco exige)" : `Pix ${c.tipoChave ?? ""}`}
+                          {pagos.has(c.id) ? (
+                            <span className="pilula pilula-ok">recebeu o Pix em {dataBR(pagos.get(c.id)!.pago_em)}</span>
+                          ) : !c.temChave ? "sem chave Pix no cadastro" : !c.temCpf ? "sem CPF no cadastro (o banco exige)" : `Pix ${c.tipoChave ?? ""}`}
                           {c.jaLancado ? " · já lançado no contas a pagar" : ""}
                           {c.emDinheiro ? " · marcado pra sair do cofre" : ""}
                         </div>
@@ -220,6 +274,61 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
                 {feito.fora.length > 0 && <p className="mt-1 text-aviso-texto">Ficaram de fora: {feito.fora.join("; ")}.</p>}
               </div>
             )}
+
+            {/* Depois de aprovar no banco: o PDF dos comprovantes confirma quem recebeu. */}
+            <div className="mt-6 border-t border-borda pt-5">
+              <p className="rotulo">Já pagou no banco?</p>
+              <p className="mt-1 text-sm text-texto-suave">
+                Envie o PDF dos comprovantes do Sicoob (CNAB → Comprovantes). O sistema confere cada pessoa pelo CPF e pelo valor, lança como pago em Pix e tira do próximo arquivo.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="btn-secundario cursor-pointer text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--marca-primaria)]">
+                  <Icone nome="enviar" tamanho={16} className="mr-1.5" />
+                  {comprovante ? comprovante.name : "Escolher o PDF"}
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="sr-only"
+                    onChange={(e) => { setComprovante(e.target.files?.[0] ?? null); setPrevia(null); setRecado(null); }}
+                  />
+                </label>
+                <button type="button" onClick={lerComprovante} disabled={pending || !comprovante} className="btn-secundario text-sm disabled:opacity-50">
+                  {pending && !previa ? "Lendo…" : "Conferir comprovantes"}
+                </button>
+              </div>
+
+              {previa && (
+                <div className="mt-3 rounded-controle bg-superficie-suave p-4 text-sm">
+                  {previa.encontrados.length > 0 ? (
+                    <>
+                      <p className="font-semibold text-texto">Achei {previa.encontrados.length} Pix pago(s):</p>
+                      <ul className="mt-1 space-y-0.5">
+                        {previa.encontrados.map((e) => (
+                          <li key={e.colaboradorId} className="flex flex-wrap justify-between gap-2 text-texto">
+                            <span>{e.nome} <span className="text-texto-fraco">· arquivo {String(e.nsa).padStart(4, "0")}{e.jaLancado ? " · já lançado, marca como pago" : ""}</span></span>
+                            <span className="font-numero">{brl(e.valor)} · {dataBR(e.data)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="text-texto">Nenhum Pix novo pra confirmar nesse PDF.</p>
+                  )}
+                  {previa.jaRegistrados > 0 && <p className="mt-2 text-texto-suave">{previa.jaRegistrados} comprovante(s) desse PDF já tinham sido confirmados antes.</p>}
+                  {previa.problemas.length > 0 && (
+                    <ul className="mt-2 space-y-0.5 text-aviso-texto">
+                      {previa.problemas.map((p) => <li key={p}>{p}</li>)}
+                    </ul>
+                  )}
+                  {previa.encontrados.length > 0 && (
+                    <button type="button" onClick={confirmarComprovante} disabled={pending} className="btn-principal mt-3 text-sm">
+                      {pending ? "Lançando…" : `Confirmar e lançar como pago (${brl(previa.encontrados.reduce((s, e) => s + e.valor, 0))})`}
+                    </button>
+                  )}
+                </div>
+              )}
+              {recado && <p role="status" className="mt-3 rounded-controle bg-destaque p-3 text-sm text-texto">{recado}</p>}
+            </div>
 
             {ultimos.length > 0 && (
               <div className="mt-5">

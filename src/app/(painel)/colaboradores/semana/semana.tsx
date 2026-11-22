@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
 import { EnvelopeCofre } from "./envelope-cofre";
 import { ArquivoPix, type CandidatoPix } from "./arquivo-pix";
+import type { PagoConfirmado } from "./pix-lote-actions";
 import { descreverQuantidades, envelopeAceito, montarEnvelope, montarEnvelopes, tetoDoEnvelope, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, tirarDoCofrePagos, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 import { repartirDez } from "@/lib/dez-repartir";
@@ -612,6 +613,55 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     w.document.close();
   }
 
+  // Uma pessoa no formato do lançamento (o mesmo pro botão "Lançar" e pro Pix confirmado).
+  const itemLancar = (x: (typeof calc.porPessoa)[number], cofre: Quantidades | null) => ({
+    colaboradorId: x.p.id,
+    nome: x.p.nome,
+    valor: Math.round(x.total * 100) / 100,
+    detalhe: [
+      x.nDias ? `${x.nDias} dia${x.nDias > 1 ? "s" : ""}` : "",
+      x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
+      x.nFree ? `${x.nFree} free${x.nFree > 1 ? "s" : ""} fora da escala` : "",
+      x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
+      x.extra > 0.005 ? `extra ${x.extraTurno === "dia" ? "dia" : "noite"} ${fmtNum(x.extra)}${x.extraMotivo ? ` ${x.extraMotivo}` : ""}` : "",
+      x.descontoSem > 0.005 ? `desconto ${fmtNum(x.descontoSem)}${x.descontoMotivo ? ` ${x.descontoMotivo}` : ""}` : "",
+    ].filter(Boolean).join(", "),
+    descontarFiado: descontar.has(x.p.id),
+    fiadoValor: fiadoDe(x.p.id, x.total, adiantDe(x.p.id, x.total)),
+    descontarAdiantamento: descontarAdiant.has(x.p.id),
+    cofre,
+  });
+
+  // Pix que o banco confirmou (comprovante lido na janela Arquivo Pix): lança
+  // como pago em Pix, na data do comprovante. Só quem o "em mãos" de agora bate
+  // com o que foi pago; o resto fica pra lançar à mão (fiado/adiantamento mudou).
+  async function lancarPagosPix(lista: PagoConfirmado[]): Promise<string> {
+    const porId = new Map(calc.porPessoa.map((x) => [x.p.id, x]));
+    const porData = new Map<string, (typeof calc.porPessoa)[number][]>();
+    const fora: string[] = [];
+    for (const p of lista) {
+      const x = porId.get(p.colaboradorId);
+      if (!x || pagoDe.has(p.colaboradorId)) continue;
+      const agora = emMaosDe(x.p.id, x.total);
+      if (Math.abs(agora - p.valor) > 0.009) {
+        fora.push(`${x.p.nome} (pago ${brl(p.valor)}, em mãos agora ${brl(agora)})`);
+        continue;
+      }
+      porData.set(p.data, [...(porData.get(p.data) ?? []), x]);
+    }
+    let n = 0;
+    for (const [data, xs] of porData) {
+      const r = await lancarPagamentosSemana(segunda, xs.map((x) => itemLancar(x, null)), { jaPago: true, data, forma: "Pix" });
+      if (r.erro) return `Parte não foi lançada: ${r.erro}`;
+      n += r.n ?? 0;
+    }
+    router.refresh();
+    return [
+      n ? `${n} pagamento(s) lançado(s) como pagos em Pix.` : "",
+      fora.length ? `Lance à mão (o valor mudou desde o arquivo): ${fora.join("; ")}.` : "",
+    ].filter(Boolean).join(" ");
+  }
+
   async function lancar() {
     if (!aLancar.length) return;
     const semNotas = aLancar.filter((x) => doCofre(x.p.id) && !envelopes[x.p.id]);
@@ -626,23 +676,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     start(async () => {
       const r = await lancarPagamentosSemana(
         segunda,
-        aLancar.map((x) => ({
-          colaboradorId: x.p.id,
-          nome: x.p.nome,
-          valor: Math.round(x.total * 100) / 100,
-          detalhe: [
-            x.nDias ? `${x.nDias} dia${x.nDias > 1 ? "s" : ""}` : "",
-            x.nNoites ? `${x.nNoites} noite${x.nNoites > 1 ? "s" : ""}` : "",
-            x.nFree ? `${x.nFree} free${x.nFree > 1 ? "s" : ""} fora da escala` : "",
-            x.dez10 > 0.005 ? `10% ${fmtNum(x.dez10)}` : "",
-            x.extra > 0.005 ? `extra ${x.extraTurno === "dia" ? "dia" : "noite"} ${fmtNum(x.extra)}${x.extraMotivo ? ` ${x.extraMotivo}` : ""}` : "",
-            x.descontoSem > 0.005 ? `desconto ${fmtNum(x.descontoSem)}${x.descontoMotivo ? ` ${x.descontoMotivo}` : ""}` : "",
-          ].filter(Boolean).join(", "),
-          descontarFiado: descontar.has(x.p.id),
-          fiadoValor: fiadoDe(x.p.id, x.total, adiantDe(x.p.id, x.total)),
-          descontarAdiantamento: descontarAdiant.has(x.p.id),
-          cofre: doCofre(x.p.id) ? envelopes[x.p.id] : null,
-        })),
+        aLancar.map((x) => itemLancar(x, doCofre(x.p.id) ? envelopes[x.p.id] ?? null : null)),
         { jaPago, data: dataPag, forma: formaPag || null },
       );
       if (r.erro) setErro(r.erro);
@@ -679,7 +713,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
 
   return (
     <div className="pagina">
-      {pixAberto && <ArquivoPix segunda={segunda} candidatos={candidatosPix} onFechar={() => setPixAberto(false)} />}
+      {pixAberto && <ArquivoPix segunda={segunda} candidatos={candidatosPix} onPagos={lancarPagosPix} onFechar={() => setPixAberto(false)} />}
       {ajustando && cofreSaldo && (
         <EnvelopeCofre
           titulo={ajustando.id === "__adiant" ? "Adiantamento" : ajustando.nome}
