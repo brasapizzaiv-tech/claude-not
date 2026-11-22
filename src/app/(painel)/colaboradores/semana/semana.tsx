@@ -697,8 +697,23 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         };
         break;
       }
+      // Pagou MENOS que o total de agora (marcou um dia depois do arquivo, ex.:
+      // Vinicios 22/11): lança o que o banco pagou; o resto aparece em "Lançar
+      // diferença" na tabela, pra pagar à parte.
+      if (!item && p.valor > 0.005 && p.valor < total - 0.005) {
+        const base = itemLancar(x, null);
+        item = {
+          ...base,
+          valor: Math.round(p.valor * 100) / 100,
+          detalhe: `${base.detalhe} · pago no Pix; falta ${fmtNum(total - p.valor)} (lançar diferença)`,
+          descontarAdiantamento: false,
+          descontarFiado: false,
+          fiadoValor: 0,
+        };
+        fora.push(`${x.p.nome}: lançado o que foi pago (${brl(p.valor)}); falta ${brl(total - p.valor)}, use "Lançar diferença" na tabela`);
+      }
       if (!item) {
-        fora.push(`${x.p.nome} (pago ${brl(p.valor)}, total da semana agora ${brl(total)})`);
+        fora.push(`${x.p.nome} (pago ${brl(p.valor)}, total da semana agora ${brl(total)}): lance à mão`);
         continue;
       }
       porData.set(p.data, [...(porData.get(p.data) ?? []), item]);
@@ -712,7 +727,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     router.refresh();
     return [
       n ? `${n} pagamento(s) lançado(s) como pagos em Pix.` : "",
-      fora.length ? `Lance à mão (o valor mudou desde o arquivo): ${fora.join("; ")}.` : "",
+      fora.length ? `Atenção: ${fora.join("; ")}.` : "",
     ].filter(Boolean).join(" ");
   }
 
