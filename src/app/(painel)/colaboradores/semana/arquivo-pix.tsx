@@ -37,7 +37,9 @@ function hojeLocal() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const dataBR = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
+// Dia em Brasília (o pago_em vem do banco em UTC).
+const diaSP = (iso: string) => (iso.length <= 10 ? iso : new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
+const dataBR = (iso: string) => diaSP(iso).split("-").reverse().join("/");
 
 export function ArquivoPix({ segunda, candidatos, onPagos, onFechar }: {
   segunda: string;
@@ -91,6 +93,22 @@ export function ArquivoPix({ segunda, candidatos, onPagos, onFechar }: {
   const escolhidos = useMemo(() => candidatos.filter((c) => marcados.has(c.id) && pode(c) && !pagos.has(c.id) && c.valor > 0.005), [candidatos, marcados, pagos]);
   const total = escolhidos.reduce((s, c) => s + c.valor, 0);
   const semChave = candidatos.filter((c) => !pode(c) && c.valor > 0.005);
+
+  // Pix confirmados pelo banco que ainda não viraram lançamento na semana
+  // (ex.: ficaram de fora porque a marcação do fiado sumiu). Lança sem o PDF.
+  const faltaLancar: PagoConfirmado[] = candidatos
+    .filter((c) => pagos.has(c.id) && !c.jaLancado)
+    .map((c) => {
+      const p = pagos.get(c.id)!;
+      return { colaboradorId: c.id, nome: c.nome, valor: p.valor, data: diaSP(p.pago_em), nsa: 0, jaLancado: false };
+    });
+  function lancarFaltam() {
+    setErro(null);
+    setRecado(null);
+    start(async () => {
+      setRecado((await onPagos(faltaLancar)) || "Nada pra lançar.");
+    });
+  }
 
   function comprovanteForm(gravar: boolean) {
     const fd = new FormData();
@@ -325,6 +343,17 @@ export function ArquivoPix({ segunda, candidatos, onPagos, onFechar }: {
                       {pending ? "Lançando…" : `Confirmar e lançar como pago (${brl(previa.encontrados.reduce((s, e) => s + e.valor, 0))})`}
                     </button>
                   )}
+                </div>
+              )}
+              {faltaLancar.length > 0 && !previa && (
+                <div className="mt-3 rounded-controle bg-destaque p-4 text-sm text-texto">
+                  <p>
+                    <b>{faltaLancar.length} Pix confirmado(s) pelo banco ainda não estão lançados</b> na semana:{" "}
+                    {faltaLancar.map((f) => f.nome).join(", ")}.
+                  </p>
+                  <button type="button" onClick={lancarFaltam} disabled={pending} className="btn-principal mt-3 text-sm">
+                    {pending ? "Lançando…" : `Lançar como pago (${brl(faltaLancar.reduce((s, f) => s + f.valor, 0))})`}
+                  </button>
                 </div>
               )}
               {recado && <p role="status" className="mt-3 rounded-controle bg-destaque p-3 text-sm text-texto">{recado}</p>}

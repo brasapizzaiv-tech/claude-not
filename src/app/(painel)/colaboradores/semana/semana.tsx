@@ -4,7 +4,7 @@ import { Icone } from "@/components/icone";
 import { CopiarPix } from "@/components/copiar-pix";
 import { avisar, confirmar } from "@/components/dialogo";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
@@ -202,6 +202,30 @@ export function SemanaClient({
   const [descontar, setDescontar] = useState<Set<string>>(new Set()); // de quem descontar o fiado (opcional)
   // Quanto do fiado descontar (texto digitado); sem nada digitado = tudo que couber.
   const [descontarValor, setDescontarValor] = useState<Record<string, string>>({});
+  // A marcação do fiado fica guardada NESTE computador, por semana: o F5 não
+  // apaga mais o que foi marcado (Rafael, 22/11). Some depois de lançar.
+  const chaveFiado = `semana-fiado:${segunda}`;
+  const fiadoCarregado = useRef(false);
+  useEffect(() => {
+    let vivo = true;
+    queueMicrotask(() => {
+      if (!vivo) return;
+      try {
+        const salvo = JSON.parse(localStorage.getItem(chaveFiado) ?? "null") as { ids?: string[]; valores?: Record<string, string> } | null;
+        if (salvo?.ids?.length) setDescontar(new Set(salvo.ids));
+        if (salvo?.valores) setDescontarValor(salvo.valores);
+      } catch { /* sem armazenamento: segue sem lembrar */ }
+      fiadoCarregado.current = true;
+    });
+    return () => { vivo = false; };
+  }, [chaveFiado]);
+  useEffect(() => {
+    if (!fiadoCarregado.current) return;
+    try {
+      if (descontar.size || Object.keys(descontarValor).length) localStorage.setItem(chaveFiado, JSON.stringify({ ids: [...descontar], valores: descontarValor }));
+      else localStorage.removeItem(chaveFiado);
+    } catch { /* sem armazenamento */ }
+  }, [chaveFiado, descontar, descontarValor]);
   const [jaPago, setJaPago] = useState(false);
   const [dataPag, setDataPag] = useState(() => {
     const d = new Date();
@@ -632,26 +656,56 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     cofre,
   });
 
+  // Adiantamentos inteiros que cabem no valor (do mais antigo), como o servidor faz.
+  const adiantInteiros = (id: string, total: number) => {
+    let soma = 0;
+    for (const a of adiantamentos) {
+      if (a.colaborador_id !== id) continue;
+      const v = Number(a.valor) || 0;
+      if (soma + v > total + 0.005) break;
+      soma = Math.round((soma + v) * 100) / 100;
+    }
+    return soma;
+  };
+
   // Pix que o banco confirmou (comprovante lido na janela Arquivo Pix): lança
-  // como pago em Pix, na data do comprovante. Só quem o "em mãos" de agora bate
-  // com o que foi pago; o resto fica pra lançar à mão (fiado/adiantamento mudou).
+  // como pago em Pix, na data do comprovante. O desconto do fiado é tirado do
+  // próprio valor pago (total − adiantamento − pago), porque a marcação de
+  // "descontar" da tela pode ter mudado desde o arquivo. Só fica de fora quem
+  // não fecha nem assim (o total da semana mudou): esse vai à mão.
   async function lancarPagosPix(lista: PagoConfirmado[]): Promise<string> {
     const porId = new Map(calc.porPessoa.map((x) => [x.p.id, x]));
-    const porData = new Map<string, (typeof calc.porPessoa)[number][]>();
+    const porData = new Map<string, ReturnType<typeof itemLancar>[]>();
     const fora: string[] = [];
     for (const p of lista) {
       const x = porId.get(p.colaboradorId);
       if (!x || pagoDe.has(p.colaboradorId)) continue;
-      const agora = emMaosDe(x.p.id, x.total);
-      if (Math.abs(agora - p.valor) > 0.009) {
-        fora.push(`${x.p.nome} (pago ${brl(p.valor)}, em mãos agora ${brl(agora)})`);
+      const total = Math.round(x.total * 100) / 100;
+      const aberto = fiadoPor[x.p.id]?.valor ?? 0;
+      // Primeiro como a tela está; depois com o adiantamento ao contrário.
+      const tentativas = [descontarAdiant.has(x.p.id), !descontarAdiant.has(x.p.id)];
+      let item: ReturnType<typeof itemLancar> | null = null;
+      for (const comAdiant of tentativas) {
+        const a = comAdiant ? adiantInteiros(x.p.id, total) : 0;
+        const fiado = Math.round((total - a - p.valor) * 100) / 100;
+        if (fiado < -0.009 || fiado > aberto + 0.009) continue;
+        item = {
+          ...itemLancar(x, null),
+          descontarAdiantamento: comAdiant,
+          descontarFiado: fiado > 0.005,
+          fiadoValor: fiado > 0.005 ? fiado : 0,
+        };
+        break;
+      }
+      if (!item) {
+        fora.push(`${x.p.nome} (pago ${brl(p.valor)}, total da semana agora ${brl(total)})`);
         continue;
       }
-      porData.set(p.data, [...(porData.get(p.data) ?? []), x]);
+      porData.set(p.data, [...(porData.get(p.data) ?? []), item]);
     }
     let n = 0;
-    for (const [data, xs] of porData) {
-      const r = await lancarPagamentosSemana(segunda, xs.map((x) => itemLancar(x, null)), { jaPago: true, data, forma: "Pix" });
+    for (const [data, itens] of porData) {
+      const r = await lancarPagamentosSemana(segunda, itens, { jaPago: true, data, forma: "Pix" });
       if (r.erro) return `Parte não foi lançada: ${r.erro}`;
       n += r.n ?? 0;
     }
