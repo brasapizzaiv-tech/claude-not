@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { brl, rotuloDia, rotuloSemana, somarDias, deYmd, segundaDe, vinculoDoTurno } from "@/lib/equipe";
 import { EnvelopeCofre } from "./envelope-cofre";
+import { ArquivoPix, type CandidatoPix } from "./arquivo-pix";
 import { descreverQuantidades, envelopeAceito, montarEnvelope, montarEnvelopes, tetoDoEnvelope, valorDe, valorDoEnvelope, type Quantidades } from "@/lib/cofre";
 import { criarEsporadico, excluirAdiantamento, excluirDezPorCento, lancarComplementoSemana, lancarPagamentosSemana, marcarPresenca, preencherEscalaFixa, registrarAdiantamento, salvarDescontoDez, tirarDoCofrePagos, salvarDezPorCento, salvarExtra, type Turno } from "./actions";
 import { repartirDez } from "@/lib/dez-repartir";
@@ -206,6 +207,7 @@ export function SemanaClient({
   });
   const [formaPag, setFormaPag] = useState("Dinheiro");
   const [msg, setMsg] = useState<string | null>(null);
+  const [pixAberto, setPixAberto] = useState(false);
   const horasPonto = useMemo(() => {
     const m = new Map<string, string[]>();
     for (const b of batidasPonto) {
@@ -653,10 +655,29 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
     });
   }
 
+  // Arquivo Pix em lote (0324): o que vai na mão de cada um. Já lançado = o que
+  // foi lançado menos o descontado; senão, o "em mãos" de agora.
+  const candidatosPix: CandidatoPix[] = calc.porPessoa
+    .filter((x) => x.total > 0.005)
+    .map((x) => {
+      const pg = pagoDe.get(x.p.id);
+      const valor = pg ? Math.max(0, Math.round((pg.valor - pg.desconto) * 100) / 100) : emMaosDe(x.p.id, x.total);
+      return {
+        id: x.p.id,
+        nome: x.p.nome,
+        valor,
+        temChave: !!x.p.pix_chave?.trim(),
+        tipoChave: x.p.pix_tipo ?? null,
+        jaLancado: !!pg,
+        emDinheiro: !pg && doCofre(x.p.id),
+      };
+    });
+
   const ajusteInicial = ajustando ? (ajustando.id === "__adiant" ? adiantEnv : envelopes[ajustando.id] ?? envelopesRetro[ajustando.id] ?? null) : null;
 
   return (
     <div className="pagina">
+      {pixAberto && <ArquivoPix segunda={segunda} candidatos={candidatosPix} onFechar={() => setPixAberto(false)} />}
       {ajustando && cofreSaldo && (
         <EnvelopeCofre
           titulo={ajustando.id === "__adiant" ? "Adiantamento" : ajustando.nome}
@@ -716,6 +737,13 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
           title="Dinheiro dado antes do acerto; sai do valor em mãos na próxima semana lançada"
         >
           <Icone nome="dinheiro" tamanho={15} className="mr-1.5" /> Adiantamento{adiantamentos.length > 0 ? ` (${adiantamentos.length})` : ""}
+        </button>
+        <button
+          onClick={() => setPixAberto(true)}
+          className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave"
+          title="Monta o arquivo pra pagar todo mundo por Pix de uma vez no Internet Banking"
+        >
+          <Icone nome="dinheiro" tamanho={15} className="mr-1.5" /> Arquivo Pix
         </button>
         <button onClick={baixarCsv} className="rounded-controle border border-borda-forte px-3 py-1.5 hover:bg-superficie-suave">
           <Icone nome="baixar" tamanho={15} className="mr-1.5" /> Planilha (CSV)
