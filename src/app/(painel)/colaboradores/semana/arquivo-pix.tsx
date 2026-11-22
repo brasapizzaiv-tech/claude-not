@@ -14,6 +14,7 @@ export type CandidatoPix = {
   nome: string;
   valor: number; // o que vai na mão da pessoa (já sem adiantamento/fiado)
   temChave: boolean;
+  temCpf: boolean; // o Sicoob exige o CPF de quem recebe, mesmo com chave de celular/e-mail
   tipoChave: string | null;
   jaLancado: boolean;
   emDinheiro: boolean; // vai sair do cofre (envelope): começa desmarcado
@@ -29,6 +30,8 @@ const CAMPOS: { k: keyof ConfigPixLote; rotulo: string; dica?: string; largura?:
   { k: "conta_dv", rotulo: "Dígito da conta" },
 ];
 
+const pode = (c: CandidatoPix) => c.temChave && c.temCpf;
+
 function hojeLocal() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -43,7 +46,7 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [data, setData] = useState(hojeLocal);
-  const [marcados, setMarcados] = useState<Set<string>>(() => new Set(candidatos.filter((c) => c.temChave && !c.emDinheiro && c.valor > 0.005).map((c) => c.id)));
+  const [marcados, setMarcados] = useState<Set<string>>(() => new Set(candidatos.filter((c) => pode(c) && !c.emDinheiro && c.valor > 0.005).map((c) => c.id)));
   const [erro, setErro] = useState<string | null>(null);
   const [feito, setFeito] = useState<{ nome: string; qtd: number; total: number; fora: string[] } | null>(null);
   const [pending, start] = useTransition();
@@ -68,9 +71,9 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
     return () => { vivo = false; };
   }, []);
 
-  const escolhidos = useMemo(() => candidatos.filter((c) => marcados.has(c.id) && c.temChave && c.valor > 0.005), [candidatos, marcados]);
+  const escolhidos = useMemo(() => candidatos.filter((c) => marcados.has(c.id) && pode(c) && c.valor > 0.005), [candidatos, marcados]);
   const total = escolhidos.reduce((s, c) => s + c.valor, 0);
-  const semChave = candidatos.filter((c) => !c.temChave && c.valor > 0.005);
+  const semChave = candidatos.filter((c) => !pode(c) && c.valor > 0.005);
   const jaTemArquivoHoje = ultimos.some((u) => u.data_pagamento === data);
 
   function salvarConfig() {
@@ -171,16 +174,16 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
                         <input
                           type="checkbox"
                           aria-label={`Incluir ${c.nome}`}
-                          disabled={!c.temChave}
-                          checked={c.temChave && marcados.has(c.id)}
+                          disabled={!pode(c)}
+                          checked={pode(c) && marcados.has(c.id)}
                           onChange={(e) => setMarcados((s) => { const n = new Set(s); if (e.target.checked) n.add(c.id); else n.delete(c.id); return n; })}
                           className="h-5 w-5"
                         />
                       </td>
                       <td className="px-2 py-1.5">
-                        <div className={c.temChave ? "text-texto" : "text-texto-fraco"}>{c.nome}</div>
+                        <div className={pode(c) ? "text-texto" : "text-texto-fraco"}>{c.nome}</div>
                         <div className="text-mini text-texto-fraco">
-                          {!c.temChave ? "sem chave Pix no cadastro" : `Pix ${c.tipoChave ?? ""}`}
+                          {!c.temChave ? "sem chave Pix no cadastro" : !c.temCpf ? "sem CPF no cadastro (o banco exige)" : `Pix ${c.tipoChave ?? ""}`}
                           {c.jaLancado ? " · já lançado no contas a pagar" : ""}
                           {c.emDinheiro ? " · marcado pra sair do cofre" : ""}
                         </div>
@@ -193,7 +196,7 @@ export function ArquivoPix({ segunda, candidatos, onFechar }: { segunda: string;
             </div>
             {semChave.length > 0 && (
               <p className="mt-2 text-mini text-aviso-texto">
-                {semChave.length} pessoa(s) sem chave Pix ficam de fora. A chave entra no cadastro rápido de Colaboradores.
+                {semChave.length} pessoa(s) sem chave Pix ou sem CPF ficam de fora. Os dois entram no cadastro rápido de Colaboradores.
               </p>
             )}
             {jaTemArquivoHoje && (

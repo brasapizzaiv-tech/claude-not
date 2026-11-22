@@ -111,6 +111,13 @@ export async function gerarArquivoPix(entrada: {
       fora.push(`${col.nome}: ${col.pix_chave ? "chave Pix não confere com o tipo" : "sem chave Pix"}`);
       continue;
     }
+    // O Sicoob exige o CPF/CNPJ de quem recebe (segmento B, posição 18–32),
+    // mesmo quando a chave é celular ou e-mail.
+    const doc = chave.tipo === "cpf" || chave.tipo === "cnpj" ? chave.chave : String(col.cpf ?? "").replace(/\D/g, "");
+    if (doc.length !== 11 && doc.length !== 14) {
+      fora.push(`${col.nome}: sem CPF no cadastro (o banco exige)`);
+      continue;
+    }
     itens.push({
       colaboradorId: col.id,
       nome: col.nome,

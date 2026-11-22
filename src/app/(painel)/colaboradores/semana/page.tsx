@@ -23,7 +23,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     // Salário e diária: pela visão que só abre pra quem tem Colaboradores (SEC-04).
     supabase
       .from("colaboradores_dados")
-      .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, valor_free, dias_dia, dias_noite, salario_base, recebe_10, peso_10, esporadico, ativo, bate_ponto, pix_tipo, pix_chave")
+      .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, valor_free, dias_dia, dias_noite, salario_base, recebe_10, peso_10, esporadico, ativo, bate_ponto, pix_tipo, pix_chave, cpf")
       .eq("ativo", true)
       .order("nome"),
     // 10%: noites pagas NESTA semana (normalmente da semana passada) + noites desta semana (pagas na próxima).
@@ -125,7 +125,12 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
   // 12/10/2026); as semanas antes disso seguem calculando como foram pagas.
   const { data: cfgPonto } = await supabase.from("assiduidade_config").select("inicio").maybeSingle();
   const inicioPonto = String((cfgPonto as { inicio: string | null } | null)?.inicio ?? "9999-12-31").slice(0, 10);
-  const pessoasDaSemana = ((colabs ?? []) as Pessoa[]).map((c) => ({ ...c, bate_ponto: !!c.bate_ponto && fim >= inicioPonto }));
+  // O CPF não vai pra tela: só se tem (o arquivo Pix do Sicoob exige o CPF de quem recebe).
+  const pessoasDaSemana = ((colabs ?? []) as (Pessoa & { cpf?: string | null })[]).map(({ cpf, ...c }) => ({
+    ...c,
+    bate_ponto: !!c.bate_ponto && fim >= inicioPonto,
+    tem_cpf: String(cpf ?? "").replace(/\D/g, "").length === 11,
+  }));
 
   const fiadoPor: Record<string, { valor: number; n: number }> = {};
   for (const r of (fiado ?? []) as { colaborador_id: string | null; valor: number }[]) {

@@ -34,6 +34,7 @@ export type Pessoa = {
   ativo: boolean;
   pix_tipo?: string | null;     // chave Pix pra pagar (0323)
   pix_chave?: string | null;
+  tem_cpf?: boolean;            // o arquivo Pix exige o CPF de quem recebe
 };
 
 type Presenca = { colaborador_id: string; data: string; turno: Turno };
@@ -667,6 +668,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
         nome: x.p.nome,
         valor,
         temChave: !!x.p.pix_chave?.trim(),
+        temCpf: !!x.p.tem_cpf || x.p.pix_tipo === "CPF",
         tipoChave: x.p.pix_tipo ?? null,
         jaLancado: !!pg,
         emDinheiro: !pg && doCofre(x.p.id),

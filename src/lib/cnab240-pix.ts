@@ -143,6 +143,8 @@ export function montarRemessaSicoob(conta: ContaEmpresa, itens: ItemPix[], opts:
     const cpf = it.tipo === "cpf" ? it.chave : so(it.cpf);
     const temCpf = cpf.length === 11;
     const temCnpj = it.tipo === "cnpj";
+    // O Sicoob recusa a linha sem CPF/CNPJ do favorecido ("Tipo de Inscrição inválido").
+    if (!temCnpj && !temCpf) throw new Error(`${it.nome} está sem CPF: o banco exige.`);
 
     // Segmento A: câmara 009 (Pix), banco/agência/conta zerados (o Pix acha pela chave).
     // Informação 2 (G031, obrigatório pro Pix): 38 brancos + tipo da conta de destino (01 = corrente).
@@ -157,7 +159,7 @@ export function montarRemessaSicoob(conta: ContaEmpresa, itens: ItemPix[], opts:
     seq++;
     linhas.push(
       BANCO + "0001" + "3" + num(seq, 5) + "B" + alfa(FORMA_INICIACAO[it.tipo], 3) +
-      (temCnpj ? "2" + num(it.chave, 14) : temCpf ? "1" + num(cpf, 14) : "0" + num(0, 14)) +
+      (temCnpj ? "2" + num(it.chave, 14) : "1" + num(cpf, 14)) +
       brancos(35) + brancos(60) + chaveCampo(it.chave, 99) + "000000" + brancos(8),
     );
   }
