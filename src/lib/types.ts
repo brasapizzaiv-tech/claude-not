@@ -50,6 +50,8 @@ export type Colaborador = {
   bate_ponto?: boolean;
   cpf?: string | null;
   valor_free?: number | null;
+  pix_tipo?: string | null;   // chave Pix pra pagar (0323)
+  pix_chave?: string | null;
   checklist_setores?: string[] | null;
   desligado_em?: string | null;
   desligado_motivo?: string | null;

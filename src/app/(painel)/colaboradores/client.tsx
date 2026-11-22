@@ -11,6 +11,7 @@ import QRCode from "qrcode";
 import Link from "next/link";
 import { GarcomAvulso } from "./garcom-avulso";
 import type { Colaborador } from "@/lib/types";
+import { TIPOS_PIX } from "@/lib/ficha-core";
 import { GRUPOS, GRUPO_KEYS, DIAS, type GrupoKey } from "@/lib/folgas";
 import { TURNOS, aniversarioBR, vinculoDoTurno } from "@/lib/equipe";
 import {
@@ -590,6 +591,20 @@ function EditModal({ editando, onClose, setoresChecklist = [], horarios = [], mo
               <div>
                 <label className={lbl}>Função</label>
                 <input aria-label="Garçom, Forno" name="funcao_c" placeholder="Garçom, Forno…" defaultValue={editando?.funcao ?? ""} className={inputCls} />
+              </div>
+            </div>
+            {/* Chave Pix pra pagar (0323): sai no botão "Copiar Pix" da Semana. */}
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div>
+                <label className={lbl}>Tipo da chave Pix</label>
+                <select name="pix_tipo" defaultValue={editando?.pix_tipo ?? ""} className={inputCls}>
+                  <option value="">—</option>
+                  {TIPOS_PIX.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className={lbl}>Chave Pix</label>
+                <input name="pix_chave" aria-label="Chave Pix" placeholder="CPF, celular, e-mail ou chave aleatória" defaultValue={editando?.pix_chave ?? ""} className={inputCls} />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm">

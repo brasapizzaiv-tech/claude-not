@@ -64,6 +64,13 @@ export async function salvarColaborador(formData: FormData) {
     // Ponto (migration 0221): quem bate no relógio tem a presença marcada pelas batidas.
     bate_ponto: formData.get("bate_ponto") === "on",
     cpf: (() => { const d = String(formData.get("cpf") ?? "").replace(/\D/g, ""); return d.length === 11 ? d : null; })(),
+    // Chave Pix (0323): só mexe se o formulário mandou o campo.
+    ...(formData.has("pix_chave")
+      ? {
+          pix_chave: String(formData.get("pix_chave") ?? "").trim().slice(0, 140) || null,
+          pix_tipo: String(formData.get("pix_tipo") ?? "").trim().slice(0, 30) || null,
+        }
+      : {}),
   };
 
   let colaboradorId = id;
