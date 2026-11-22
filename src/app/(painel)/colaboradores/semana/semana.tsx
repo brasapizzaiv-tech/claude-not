@@ -1,6 +1,7 @@
 "use client";
 
 import { Icone } from "@/components/icone";
+import { CopiarPix } from "@/components/copiar-pix";
 import { avisar, confirmar } from "@/components/dialogo";
 
 import { useMemo, useState, useTransition } from "react";
@@ -30,6 +31,8 @@ export type Pessoa = {
   peso_10: number;
   esporadico: boolean;
   ativo: boolean;
+  pix_tipo?: string | null;     // chave Pix pra pagar (0323)
+  pix_chave?: string | null;
 };
 
 type Presenca = { colaborador_id: string; data: string; turno: Turno };
@@ -759,6 +762,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
               <option value="">Pessoa…</option>
               {pessoas.filter((p) => p.turno !== "proprietario").map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
+            {(() => { const p = pessoas.find((x) => x.id === adiantPessoa); return p ? <CopiarPix tipo={p.pix_tipo} chave={p.pix_chave} /> : null; })()}
             <input aria-label="R$ valor" value={adiantValor} onChange={(e) => setAdiantValor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="R$ valor" inputMode="decimal" className={`${inputCls} w-28`} />
             <input type="date" value={adiantData} onChange={(e) => setAdiantData(e.target.value)} className={inputCls} />
             <input aria-label="motivo (opcional)" value={adiantMotivo} onChange={(e) => setAdiantMotivo(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") registrarAdiant(); }} placeholder="motivo (opcional)" className={`${inputCls} w-48`} />
@@ -1173,6 +1177,7 @@ ${Math.abs(calc.totalPool - calc.totalDez) > 0.01 ? `<div class="mini" style="ma
                         {rotuloVinculo}{p.funcao ? ` · ${p.funcao}` : ""}
                         {pagoDe.has(p.id) && <span className="ml-1 text-ok-texto">· lançado no contas a pagar ({brl(Number(pagoDe.get(p.id)!.valor))}{pagoDe.get(p.id)!.n > 1 ? `, ${pagoDe.get(p.id)!.n} lançamentos` : ""})</span>}
                       </div>
+                      <CopiarPix tipo={p.pix_tipo} chave={p.pix_chave} className="-ml-2" />
                       {pagoDe.has(p.id) && total - pagoDe.get(p.id)!.valor > 0.005 && (
                         <button
                           type="button"

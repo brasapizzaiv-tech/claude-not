@@ -23,7 +23,7 @@ export default async function SemanaPage({ searchParams }: { searchParams: Promi
     // Salário e diária: pela visão que só abre pra quem tem Colaboradores (SEC-04).
     supabase
       .from("colaboradores_dados")
-      .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, valor_free, dias_dia, dias_noite, salario_base, recebe_10, peso_10, esporadico, ativo, bate_ponto")
+      .select("id, nome, turno, vinculo, vinculo_noite, funcao, valor_dia, valor_noite, valor_free, dias_dia, dias_noite, salario_base, recebe_10, peso_10, esporadico, ativo, bate_ponto, pix_tipo, pix_chave")
       .eq("ativo", true)
       .order("nome"),
     // 10%: noites pagas NESTA semana (normalmente da semana passada) + noites desta semana (pagas na próxima).
