@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { empresaAtualId } from "@/lib/empresa";
 import * as core from "@/lib/cofre-core";
-import type { MovimentoNovo, Quantidades } from "@/lib/cofre";
+import type { MovimentoNovo, PagarContaNova, Quantidades } from "@/lib/cofre";
 
 async function ctx(): Promise<core.Ctx> {
   await exigirAcesso("/cofre");
@@ -29,7 +29,7 @@ export async function registrarMovimento(d: MovimentoNovo) {
   return r;
 }
 
-export async function pagarConta(d: { quantidades: Quantidades; descricao: string; categoriaId?: string | null; lancamentoId?: string | null }) {
+export async function pagarConta(d: PagarContaNova) {
   const r = await core.pagarConta(await ctx(), d);
   revalidatePath("/cofre");
   revalidatePath("/financeiro/contas");

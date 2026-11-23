@@ -4,7 +4,7 @@
 // do banco, então toda consulta aqui filtra pela empresa.
 import { buscarTodas } from "@/lib/supabase/todas";
 import { categoriasDeSangria } from "@/lib/sangria-financeiro";
-import { contagemDoCaixa, limpar, negar, valorDe, TIPOS, type DadosCofre, type MovimentoNovo, type Pendente, type Quantidades } from "@/lib/cofre";
+import { contagemDoCaixa, limpar, negar, valorDe, TIPOS, type DadosCofre, type MovimentoNovo, type PagarContaNova, type Pendente, type Quantidades } from "@/lib/cofre";
 import type { createClient } from "@/lib/supabase/server";
 import { explicarErro } from "@/lib/erro-amigavel";
 import { moedaBR } from "@/lib/format";
@@ -120,15 +120,23 @@ export async function registrarMovimento(ctx: Ctx, d: MovimentoNovo) {
 
 /** Conta paga com dinheiro do cofre: dá baixa numa conta aberta do Contas a
  *  Pagar ou cria a conta já paga (origem 'cofre'). */
-export async function pagarConta(ctx: Ctx, d: { quantidades: Quantidades; descricao: string; categoriaId?: string | null; lancamentoId?: string | null }) {
+export async function pagarConta(ctx: Ctx, d: PagarContaNova) {
   const { db, empresaId, quem } = ctx;
-  const q = negar(limpar(Object.fromEntries(Object.entries(d.quantidades).map(([k, v]) => [k, Math.abs(Number(v))]))));
-  if (Object.keys(q).length === 0) return { ok: false as const, mensagem: "Coloque as notas/moedas que saíram do cofre." };
-  const valor = -valorDe(q);
-  const descricao = d.descricao.trim().slice(0, 200);
-  if (!descricao) return { ok: false as const, mensagem: "Escreva o que foi pago." };
+  const saiu = negar(limpar(Object.fromEntries(Object.entries(d.quantidades).map(([k, v]) => [k, Math.abs(Number(v))]))));
+  if (Object.keys(saiu).length === 0) return { ok: false as const, mensagem: "Coloque as notas/moedas que saíram do cofre." };
+  // Troco que voltou pro cofre (ex.: saiu 1 de R$ 100, voltou 1 de R$ 20 → conta de R$ 80).
+  const voltou = limpar(Object.fromEntries(Object.entries(d.troco ?? {}).map(([k, v]) => [k, Math.abs(Number(v))])));
+  const valorTroco = valorDe(voltou);
+  const valor = Math.round((-valorDe(saiu) - valorTroco) * 100) / 100;
+  if (valor <= 0) return { ok: false as const, mensagem: "O troco não pode ser igual ou maior que o dinheiro que saiu. Confira as notas." };
+  const q: Quantidades = { ...saiu };
+  for (const [k, v] of Object.entries(voltou)) q[k] = (q[k] ?? 0) + v;
+  for (const k of Object.keys(q)) if (!q[k]) delete q[k];
+  const base = d.descricao.trim().slice(0, 200);
+  if (!base) return { ok: false as const, mensagem: "Escreva o que foi pago." };
+  const descricao = (valorTroco > 0 ? `${base} (troco ${moedaBR(valorTroco)})` : base).slice(0, 200);
   const saldo = await saldoAtual(ctx);
-  if (faltaNoCofre(saldo, q).length) return { ok: false as const, mensagem: "Não tem essa quantidade no cofre. Confira as notas/moedas que saíram." };
+  if (faltaNoCofre(saldo, saiu).length) return { ok: false as const, mensagem: "Não tem essa quantidade no cofre. Confira as notas/moedas que saíram." };
   const dia = hojeSP();
   let lancamentoId: string | null = null;
   if (d.lancamentoId) {
@@ -145,7 +153,7 @@ export async function pagarConta(ctx: Ctx, d: { quantidades: Quantidades; descri
     const { data: l, error } = await db.from("lancamentos").insert({
       empresa_id: empresaId,
       data: dia, emissao: dia, vencimento: dia, pago: true, pago_em: dia,
-      descricao: `Pago pelo cofre: ${descricao}`.slice(0, 200), categoria_id: d.categoriaId,
+      descricao: `Pago pelo cofre: ${base}`.slice(0, 200), categoria_id: d.categoriaId,
       valor, forma_pagamento: "Dinheiro", origem: "cofre",
     }).select("id").single();
     if (error || !l) return { ok: false as const, mensagem: explicarErro(error, "Não consegui criar a conta.") };

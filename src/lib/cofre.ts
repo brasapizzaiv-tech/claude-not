@@ -35,12 +35,22 @@ export type MovimentoNovo = {
   pedidoId?: string | null;
 };
 
+/** Conta paga com dinheiro do cofre. `quantidades` = notas que SAÍRAM;
+ *  `troco` = notas que VOLTARAM (as duas positivas). A conta vale a diferença. */
+export type PagarContaNova = {
+  quantidades: Quantidades;
+  troco?: Quantidades;
+  descricao: string;
+  categoriaId?: string | null;
+  lancamentoId?: string | null;
+};
+
 type Resultado = { ok: true } | { ok: false; mensagem: string };
 
 /** O que a tela do Cofre pede ao servidor. O painel e o app entregam as suas. */
 export type AcoesCofre = {
   registrarMovimento: (d: MovimentoNovo) => Promise<Resultado>;
-  pagarConta: (d: { quantidades: Quantidades; descricao: string; categoriaId?: string | null; lancamentoId?: string | null }) => Promise<Resultado>;
+  pagarConta: (d: PagarContaNova) => Promise<Resultado>;
   buscarContasAbertas: (termo: string) => Promise<{ id: string; descricao: string; valor: number; vencimento: string | null }[]>;
   conferirCofre: (d: { contado: Quantidades; motivo?: string }) => Promise<Resultado>;
   salvarFaixas: (faixas: { centavos: number; minimo: number; maximo: number }[]) => Promise<Resultado>;

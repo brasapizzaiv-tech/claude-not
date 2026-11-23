@@ -279,7 +279,11 @@ function FormPagar({ acoes, d, onFechar, onFeito }: { acoes: AcoesCofre; d: Dado
   const [busca, setBusca] = useState("");
   const [contas, setContas] = useState<{ id: string; descricao: string; valor: number; vencimento: string | null }[] | null>(null);
   const [conta, setConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
-  const total = valorDe(q);
+  const [comTroco, setComTroco] = useState(false);
+  const [troco, setTroco] = useState<Quantidades>({});
+  const saiu = valorDe(q);
+  const voltou = comTroco ? valorDe(troco) : 0;
+  const total = Math.round((saiu - voltou) * 100) / 100;
   return (
     <div>
       <Cabecalho titulo="Pagar uma conta com dinheiro do cofre" onFechar={onFechar} />
@@ -329,13 +333,32 @@ function FormPagar({ acoes, d, onFechar, onFeito }: { acoes: AcoesCofre; d: Dado
             </label>
           </div>
         )}
-        <span className="rotulo block">Notas e moedas que saíram do cofre</span>
+        <span className="rotulo block">Notas e moedas que saíram do cofre · {moedaBR(saiu)}</span>
         <Contagem valor={q} onChange={setQ} saldo={d.saldo} mostrarSaldo />
+        {comTroco ? (
+          <div className="rounded-controle bg-superficie-suave p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="rotulo">Troco que voltou pro cofre · {moedaBR(voltou)}</span>
+              <button type="button" className="btn-secundario text-sm" onClick={() => { setComTroco(false); setTroco({}); }}>
+                <Icone nome="fechar" tamanho={14} /> Tirar o troco
+              </button>
+            </div>
+            <div className="mt-2"><Contagem valor={troco} onChange={setTroco} /></div>
+          </div>
+        ) : (
+          <button type="button" className="btn-secundario text-sm" onClick={() => setComTroco(true)}>
+            <Icone nome="novo" tamanho={15} /> Voltou troco?
+          </button>
+        )}
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="flex items-center gap-2"><span className={`text-xl ${TITULO}`}>{moedaBR(total)}</span>{conta && <Diferenca total={total} esperado={conta.valor} />}</span>
+        <span className="flex flex-wrap items-center gap-2">
+          {voltou > 0 && <span className="rotulo">Valor da conta</span>}
+          <span className={`text-xl ${TITULO}`}>{moedaBR(total)}</span>
+          {conta && <Diferenca total={total} esperado={conta.valor} />}
+        </span>
         <BotaoAcao className="btn-principal text-sm" aoClicar={async () => {
-          const r = await acoes.pagarConta({ quantidades: q, descricao: desc, categoriaId: cat || null, lancamentoId: conta?.id ?? null });
+          const r = await acoes.pagarConta({ quantidades: q, troco: comTroco ? troco : {}, descricao: desc, categoriaId: cat || null, lancamentoId: conta?.id ?? null });
           if (!r.ok) return avisar(r.mensagem);
           onFeito();
         }}>{conta ? "Pagar e dar baixa" : "Pagar e lançar no financeiro"}</BotaoAcao>

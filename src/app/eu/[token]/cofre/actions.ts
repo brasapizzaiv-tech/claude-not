@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pinConfere } from "@/lib/pin-colaborador";
 import * as core from "@/lib/cofre-core";
-import type { MovimentoNovo, Quantidades } from "@/lib/cofre";
+import type { MovimentoNovo, PagarContaNova, Quantidades } from "@/lib/cofre";
 
 const SEM_PERMISSAO = { ok: false as const, mensagem: "Sem permissão. Entre com o PIN de novo ou peça a liberação ao responsável." };
 
@@ -51,7 +51,7 @@ export async function registrarMovimentoApp(token: string, d: MovimentoNovo) {
   return r;
 }
 
-export async function pagarContaApp(token: string, d: { quantidades: Quantidades; descricao: string; categoriaId?: string | null; lancamentoId?: string | null }) {
+export async function pagarContaApp(token: string, d: PagarContaNova) {
   const c = await ctx(token);
   if (!c) return SEM_PERMISSAO;
   const r = await core.pagarConta(c, d);
