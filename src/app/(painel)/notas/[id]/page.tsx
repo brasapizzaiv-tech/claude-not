@@ -243,6 +243,8 @@ export default async function NotaDetalhePage({
                         itemId={i.id}
                         produtoId={i.produto_id}
                         produtos={produtos}
+                        descricao={i.descricao ?? ""}
+                        unidade={i.unidade ?? ""}
                       />
                       {i.produto_id && tamanhosDe.has(i.produto_id) && (
                         <ItemTamanho

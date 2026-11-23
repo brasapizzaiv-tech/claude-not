@@ -1072,3 +1072,70 @@ export async function salvarRascunho(d: {
   revalidatePath("/notas");
   return { ok: true, notaId: nota.id as string };
 }
+
+// ── Produto novo direto da nota (pedido do Rafael, 23/11/2026) ───────────────
+// Item da nota sem produto no cadastro: cria o produto ali mesmo e já liga o
+// item, sem sair da nota. O fornecedor da nota passa a vender o produto (e os
+// que atendem a categoria também, igual ao "+ Adicionar" de Produtos).
+const UNIDADES_PRODUTO = ["un", "kg", "g", "L", "ml", "cx", "pct", "fardo", "dz", "saco", "bandeja"];
+
+export async function categoriasDeEstoque() {
+  await exigirAcesso("/notas");
+  const supabase = await createClient();
+  const { data } = await supabase.from("categorias").select("id, nome").order("nome").limit(1000);
+  return ((data as { id: string; nome: string }[]) ?? []);
+}
+
+export async function criarProdutoDoItem(
+  itemId: string,
+  d: { nome: string; categoriaId: string; unidade: string },
+): Promise<{ ok: true; produtoId: string } | { ok: false; erro: string; parecido?: { id: string; nome: string } }> {
+  await exigirAcesso("/notas");
+  const nome = (d.nome ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  if (nome.length < 2) return { ok: false, erro: "Escreva o nome do produto." };
+  if (!d.categoriaId) return { ok: false, erro: "Escolha a categoria do estoque." };
+  if (!UNIDADES_PRODUTO.includes(d.unidade)) return { ok: false, erro: "Escolha a unidade em que ele é contado." };
+  const supabase = await createClient();
+
+  const { data: item } = await supabase
+    .from("nota_itens")
+    .select("id, notas_fiscais(fornecedor_id, situacao)")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!item) return { ok: false, erro: "Item da nota não encontrado. Atualize a tela." };
+  type NF = { fornecedor_id: string | null; situacao: string | null };
+  const nfR = (item as unknown as { notas_fiscais: NF | NF[] | null }).notas_fiscais;
+  const nf = Array.isArray(nfR) ? nfR[0] : nfR;
+
+  // Não duplica: mesmo nome (sem diferença de maiúscula) já cadastrado.
+  const { data: igual } = await supabase
+    .from("produtos")
+    .select("id, nome")
+    .eq("ativo", true)
+    .ilike("nome", nome.replace(/[\\%_]/g, (c) => `\\${c}`))
+    .limit(1);
+  const ja = (igual as { id: string; nome: string }[] | null)?.[0];
+  if (ja) return { ok: false, erro: `Já existe o produto "${ja.nome}". Ligue o item a ele.`, parecido: ja };
+
+  const { data: novo, error } = await supabase
+    .from("produtos")
+    .insert({ nome, unidade: d.unidade, categoria_id: d.categoriaId })
+    .select("id")
+    .single();
+  if (error || !novo) return { ok: false, erro: explicarErro(error, "Não consegui cadastrar o produto.") };
+  const produtoId = novo.id as string;
+
+  // Quem vende: o fornecedor desta nota + os que atendem a categoria.
+  const { data: forns } = await supabase.from("fornecedores").select("id").contains("categoria_ids", [d.categoriaId]).eq("ativo", true);
+  const fornIds = new Set(((forns as { id: string }[]) ?? []).map((f) => f.id));
+  if (nf?.fornecedor_id) fornIds.add(nf.fornecedor_id);
+  if (fornIds.size) {
+    await supabase
+      .from("fornecedor_produto")
+      .upsert([...fornIds].map((fornecedor_id) => ({ fornecedor_id, produto_id: produtoId })), { onConflict: "fornecedor_id,produto_id", ignoreDuplicates: true });
+  }
+
+  await vincularItemProduto(itemId, produtoId);
+  revalidatePath("/produtos");
+  return { ok: true, produtoId };
+}
