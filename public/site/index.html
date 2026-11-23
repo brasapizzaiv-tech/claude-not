@@ -858,6 +858,21 @@ footer{padding:54px 0 70px}
      então não existe nenhuma chave de banco aqui no código do site. */
   var API="/api/reservas";
 
+  /* Por onde a pessoa chegou: lido do endereço da página na hora de reservar,
+     sem guardar nada no aparelho. Vai só um rótulo, nunca o código do clique. */
+  function canalDaVisita(){
+    var q=location.search||"";
+    var m=/[?&]utm_source=([^&#]+)/.exec(q);
+    if(m){
+      var u=""; try{ u=decodeURIComponent(m[1]); }catch(e){}
+      u=u.toLowerCase().replace(/[^a-z0-9_.-]/g,"").slice(0,40);
+      if(u) return u;
+    }
+    if(/[?&](gclid|gbraid|wbraid)=/.test(q)) return "anuncio_google";
+    if(/[?&]fbclid=/.test(q)) return "instagram_facebook";
+    return null;
+  }
+
   var FONE="5551980229859";
   var data=document.getElementById("r-data"),
       horario=document.getElementById("r-horario"),
@@ -1043,7 +1058,8 @@ footer{padding:54px 0 70px}
         nome:nome, telefone:fone, data:dia, turno:turno,
         chegada:chegada.value, adultos:adultos, criancas:criancas,
         lugar:valor("r-lugar"), ocasiao:valor("r-ocasiao"),
-        nascimento:valor("r-nasc")||null, observacao:valor("r-obs")||null
+        nascimento:valor("r-nasc")||null, observacao:valor("r-obs")||null,
+        canal:canalDaVisita()
       })
     }).then(function(r){
       return r.json().catch(function(){return {};}).then(function(d){

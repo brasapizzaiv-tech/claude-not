@@ -36,6 +36,7 @@ export type Reserva = {
   observacao: string | null;
   status: string;
   origem: string;
+  canal?: string | null;
   chegou_em: string | null;
 };
 export type Bloqueio = {
@@ -76,6 +77,14 @@ function diaSemana(iso: string) {
   return SEMANA[new Date(Date.UTC(a, m - 1, d)).getUTCDay()];
 }
 // Telefone no formato do WhatsApp: só dígitos, com o 55 na frente.
+// Por onde a pessoa chegou ao site, quando deu pra saber (migration 0326).
+function canalTexto(canal?: string | null) {
+  if (!canal) return "";
+  if (canal === "anuncio_meta") return " pelo anúncio do Instagram";
+  if (canal === "anuncio_google") return " pelo anúncio do Google";
+  if (canal === "instagram_facebook") return " por link do Instagram/Facebook";
+  return ` por ${canal}`;
+}
 function foneWhats(t: string) {
   const n = (t || "").replace(/\D/g, "");
   return n.startsWith("55") ? n : "55" + n;
@@ -357,7 +366,7 @@ function CartaoReserva({
         {r.adultos ?? r.pessoas} adultos
         {r.criancas ? ` e ${r.criancas} crianças` : ""} · {r.telefone} ·{" "}
         {r.lugar ?? "Tanto faz"} ·{" "}
-        {r.origem === "site" ? "veio do site" : "contato direto"}
+        {r.origem === "site" ? `veio do site${canalTexto(r.canal)}` : "contato direto"}
         {r.nascimento ? ` · nasc. ${dataBR(r.nascimento)}` : ""}
       </p>
       {r.observacao && (

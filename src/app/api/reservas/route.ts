@@ -17,6 +17,12 @@ const ehData = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 const hojeBR = () =>
   new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
 const agoraHHMM = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(11, 16);
+// Por onde a pessoa chegou ao site (anúncio, Instagram...). Vem do navegador,
+// então só passa um rótulo curto e simples; qualquer outra coisa vira vazio.
+const canalDe = (v: unknown) => {
+  const c = texto(v, 40).toLowerCase();
+  return /^[a-z0-9_.-]+$/.test(c) ? c : null;
+};
 // Até que horas dá pra reservar pro MESMO dia (igual ao site).
 const LIMITE_HOJE: Record<string, string> = { "Almoço": "11:45", "Rodízio": "18:45" };
 
@@ -201,6 +207,7 @@ export async function POST(req: NextRequest) {
     observacao: texto(corpo.observacao, 500) || null,
     status,
     origem: "site",
+    canal: canalDe(corpo.canal),
   }).select("id").single();
   if (error || !nova) return NextResponse.json({ erro: "Não consegui registrar. Tente de novo ou nos chame no WhatsApp." }, { status: 500 });
 
