@@ -21,6 +21,8 @@ export async function pedirFolga(token: string, data: string, motivo: string, gr
   const eu = await funcDoToken(token);
   if (!eu) return { ok: false as const, mensagem: "Link inválido." };
   if (!data) return { ok: false as const, mensagem: "Escolha a data." };
+  const porque = (motivo || "").trim();
+  if (porque.length < 3) return { ok: false as const, mensagem: "Escreva o motivo da folga." };
 
   const trava = (await admin.from("folgas_bloqueios").select("motivo").eq("empresa_id", eu.empresa_id).eq("data", data).maybeSingle()).data;
   if (trava?.motivo) return { ok: false as const, mensagem: `Data travada: ${trava.motivo}` };
@@ -33,7 +35,7 @@ export async function pedirFolga(token: string, data: string, motivo: string, gr
     empresa_id: eu.empresa_id,
     funcionario_id: eu.id,
     data,
-    motivo: motivo?.trim() || null,
+    motivo: porque.slice(0, 300),
     status: "Pendente",
     origem: "app",
     grupo_alvo: grupoAlvo || null,

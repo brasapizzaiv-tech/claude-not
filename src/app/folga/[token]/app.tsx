@@ -39,6 +39,7 @@ export function FolgaApp({
   const [sel, setSel] = useState<string | null>(null);
   const [turno, setTurno] = useState<string | "">("");
   const [motivo, setMotivo] = useState("");
+  const [semMotivo, setSemMotivo] = useState(false);
   const [aviso, setAviso] = useState<{ ok: boolean; txt: string } | null>(null);
 
   const limites: Limites = useMemo(() => {
@@ -86,11 +87,15 @@ export function FolgaApp({
   }
 
   function abrir(data: string) {
-    setSel(data); setTurno(""); setMotivo(""); setAviso(null);
+    setSel(data); setTurno(""); setMotivo(""); setSemMotivo(false); setAviso(null);
   }
 
   function enviar() {
     if (!sel) return;
+    if (motivo.trim().length < 3) {
+      setSemMotivo(true);
+      return;
+    }
     const postos = postosDe(sel);
     const alvo = postos.length > 1 ? (turno || "") : "";
     start(async () => {
@@ -214,12 +219,16 @@ export function FolgaApp({
               {foraPrazo && <p className="mt-2 text-xs text-amber-500">Faltam menos de {DIAS_ANTECEDENCIA} dias — o pedido vai marcado como fora do prazo.</p>}
               {temPedido(sel) && <p className="mt-2 text-xs text-blue-500">Você já tem um pedido nesse dia.</p>}
 
-              <input aria-label="Motivo (opcional)"
+              <input aria-label="Motivo da folga"
+                required
+                maxLength={300}
                 value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                placeholder="Motivo (opcional)"
-                className="mt-3 w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm"
+                onChange={(e) => { setMotivo(e.target.value); setSemMotivo(false); }}
+                placeholder="Motivo da folga (obrigatório)"
+                aria-invalid={semMotivo}
+                className={`mt-3 w-full rounded-controle border bg-transparent px-3 py-2 text-sm ${semMotivo ? "border-red-500" : "border-borda-forte"}`}
               />
+              {semMotivo && <p role="alert" className="mt-1 text-xs text-urgente-texto">Escreva o motivo da folga pra poder pedir.</p>}
               <button
                 disabled={proc}
                 onClick={enviar}
