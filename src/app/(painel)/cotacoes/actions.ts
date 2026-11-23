@@ -661,3 +661,85 @@ export async function salvarMsgCotacao(texto: string) {
     .not("empresa_id", "is", null);
   return error ? { ok: false as const } : { ok: true as const };
 }
+
+// ── Mexer no pedido já gerado (pedido do Rafael, 23/11/2026) ─────────────────
+// Na tela "Pedidos" da cotação dá pra corrigir a quantidade, tirar um item ou
+// excluir o pedido inteiro, enquanto ele não chegou nem foi conferido.
+// Quantidade e item tirado também mudam a COTAÇÃO: senão "Gerar pedidos
+// exclusivos" / "Gerar pedidos" leriam a cotação de novo e desfariam a correção.
+
+async function pedidoDoItem(supabase: Supa, itemId: string) {
+  const { data } = await supabase
+    .from("pedido_itens")
+    .select("id, produto_id, pedidos!inner(id, cotacao_id, status, conferido_em, conf_colab_em)")
+    .eq("id", itemId)
+    .maybeSingle();
+  type P = { id: string; cotacao_id: string | null; status: string | null; conferido_em: string | null; conf_colab_em: string | null };
+  const r = data as unknown as { id: string; produto_id: string; pedidos: P | P[] } | null;
+  if (!r) return null;
+  const p = Array.isArray(r.pedidos) ? r.pedidos[0] : r.pedidos;
+  return p ? { itemId: r.id, produtoId: r.produto_id, pedido: p } : null;
+}
+
+const JA_CHEGOU = "Esse pedido já chegou ou foi conferido: corrija na Conferência.";
+
+export async function alterarQtdItemPedido(itemId: string, qtd: number) {
+  await exigirAcesso("/cotacoes");
+  if (!Number.isFinite(qtd) || qtd <= 0) return { ok: false as const, erro: "A quantidade tem que ser maior que zero. Pra tirar o item, use o ✕." };
+  const supabase = await createClient();
+  const x = await pedidoDoItem(supabase, itemId);
+  if (!x) return { ok: false as const, erro: "Item não encontrado. Atualize a tela." };
+  if (!pedidoMexivel(x.pedido)) return { ok: false as const, erro: JA_CHEGOU };
+  const q = Math.round(qtd * 1000) / 1000;
+  const { error } = await supabase.from("pedido_itens").update({ qtd: q }).eq("id", itemId);
+  if (error) return { ok: false as const, erro: explicarErro(error) };
+  if (x.pedido.cotacao_id) {
+    await supabase.from("cotacao_itens").update({ qtd: q }).eq("cotacao_id", x.pedido.cotacao_id).eq("produto_id", x.produtoId);
+    revalidatePath(`/cotacoes/${x.pedido.cotacao_id}`);
+    revalidatePath(`/cotacoes/${x.pedido.cotacao_id}/pedidos`);
+  }
+  return { ok: true as const };
+}
+
+export async function tirarItemPedido(itemId: string) {
+  await exigirAcesso("/cotacoes");
+  const supabase = await createClient();
+  const x = await pedidoDoItem(supabase, itemId);
+  if (!x) return { ok: false as const, erro: "Item não encontrado. Atualize a tela." };
+  if (!pedidoMexivel(x.pedido)) return { ok: false as const, erro: JA_CHEGOU };
+  const { error } = await supabase.from("pedido_itens").delete().eq("id", itemId);
+  if (error) return { ok: false as const, erro: explicarErro(error) };
+  // Pedido que ficou sem nenhum item some.
+  const { count } = await supabase.from("pedido_itens").select("id", { count: "exact", head: true }).eq("pedido_id", x.pedido.id);
+  if ((count ?? 0) === 0) await supabase.from("pedidos").delete().eq("id", x.pedido.id);
+  if (x.pedido.cotacao_id) {
+    await supabase.from("cotacao_itens").delete().eq("cotacao_id", x.pedido.cotacao_id).eq("produto_id", x.produtoId);
+    revalidatePath(`/cotacoes/${x.pedido.cotacao_id}`);
+    revalidatePath(`/cotacoes/${x.pedido.cotacao_id}/pedidos`);
+  }
+  return { ok: true as const, pedidoSumiu: (count ?? 0) === 0 };
+}
+
+/** Exclui o pedido inteiro. Os itens continuam na cotação. */
+export async function excluirPedidoDaCotacao(pedidoId: string) {
+  await exigirAcesso("/cotacoes");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pedidos")
+    .select("id, cotacao_id, status, conferido_em, conf_colab_em")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  const p = data as { id: string; cotacao_id: string | null; status: string | null; conferido_em: string | null; conf_colab_em: string | null } | null;
+  if (!p) return { ok: false as const, erro: "Pedido não encontrado. Atualize a tela." };
+  if (!pedidoMexivel(p)) return { ok: false as const, erro: JA_CHEGOU };
+  const { data: nota } = await supabase.from("notas_fiscais").select("id").eq("pedido_id", pedidoId).limit(1).maybeSingle();
+  if (nota) return { ok: false as const, erro: "Esse pedido está ligado a uma nota. Tire a nota do pedido antes de excluir." };
+  const { error } = await supabase.from("pedidos").delete().eq("id", pedidoId);
+  if (error) return { ok: false as const, erro: explicarErro(error, "Não consegui excluir o pedido. Tente de novo.") };
+  if (p.cotacao_id) {
+    revalidatePath(`/cotacoes/${p.cotacao_id}`);
+    revalidatePath(`/cotacoes/${p.cotacao_id}/pedidos`);
+    revalidatePath(`/cotacoes/${p.cotacao_id}/comparar`);
+  }
+  return { ok: true as const };
+}
