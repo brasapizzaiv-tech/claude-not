@@ -24,6 +24,14 @@ type Linha = {
 };
 
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+const somarDias = (iso: string, n: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+/** Segunda-feira da semana do dia (semana do CMV: segunda → domingo). */
+const segundaDe = (iso: string) => somarDias(iso, -((new Date(`${iso}T12:00:00Z`).getUTCDay() + 6) % 7));
+const ddmm = (iso: string) => iso.split("-").reverse().slice(0, 2).join("/");
 const paraTexto = (n: number, casas: number) =>
   n ? n.toLocaleString("pt-BR", { minimumFractionDigits: casas === 3 ? 0 : 2, maximumFractionDigits: casas }) : "";
 const paraNumero = (s: string) => {
@@ -34,20 +42,27 @@ const paraNumero = (s: string) => {
   return Number.isFinite(n) ? n : NaN;
 };
 
-/** Foto do celular é grande: reduz pra caber no envio (lado maior 1800 px, JPG). */
-async function reduzir(arquivo: File): Promise<Blob> {
+const MAX_FOLHAS = 4;
+// A server action aceita até 1 MB por envio: as folhas dividem esse espaço.
+const LIMITE_ENVIO = 950_000;
+
+/** Foto do celular é grande: reduz pra caber no envio (JPG; diminui até caber). */
+async function reduzir(arquivo: File, maxBytes: number): Promise<Blob> {
   const img = await createImageBitmap(arquivo);
-  const escala = Math.min(1, 1800 / Math.max(img.width, img.height));
-  const w = Math.round(img.width * escala);
-  const h = Math.round(img.height * escala);
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
-  img.close();
-  for (const q of [0.85, 0.75, 0.65]) {
-    const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, "image/jpeg", q));
-    if (blob && blob.size < 900_000) return blob;
+  try {
+    for (const lado of [1800, 1500, 1250]) {
+      const escala = Math.min(1, lado / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * escala);
+      canvas.height = Math.round(img.height * escala);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      for (const q of [0.85, 0.75, 0.65]) {
+        const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, "image/jpeg", q));
+        if (blob && blob.size < maxBytes) return blob;
+      }
+    }
+  } finally {
+    img.close();
   }
   throw new Error("grande");
 }
@@ -58,44 +73,66 @@ export function LerRascunho({ fornecedores }: { fornecedores: { id: string; nome
   const router = useRouter();
   const opcoes: ComboOpt[] = fornecedores.map((f) => ({ value: f.id, label: f.nome }));
   const [fornecedor, setFornecedor] = useState(() => opcoes.find((o) => /horti|frut/i.test(o.label) && !/inativo/.test(o.label))?.value ?? "");
-  const [data, setData] = useState(hojeSP);
+  // O rascunho chega no fim de semana: até terça, o padrão é a semana passada.
+  const [semana, setSemana] = useState(() => segundaDe(somarDias(hojeSP(), -2)));
+  const semanas = Array.from({ length: 8 }, (_, i) => somarDias(segundaDe(hojeSP()), -7 * i));
+  const [folhas, setFolhas] = useState<{ id: number; arquivo: File; url: string }[]>([]);
   const [linhas, setLinhas] = useState<Linha[]>([]);
-  const [totais, setTotais] = useState<number[]>([]);
-  const [observacoes, setObservacoes] = useState<string[]>([]);
-  const [lendo, setLendo] = useState<string | null>(null);
+  const [totalEscrito, setTotalEscrito] = useState<number | null>(null);
+  const [observacao, setObservacao] = useState<string | null>(null);
+  const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  async function lerFotos(arquivos: FileList | null) {
-    if (!arquivos || arquivos.length === 0) return;
+  function juntarFolhas(arquivos: FileList | null) {
+    if (!arquivos) return;
     setErro(null);
-    const lista = [...arquivos];
-    for (let i = 0; i < lista.length; i++) {
-      setLendo(lista.length > 1 ? `Lendo a foto ${i + 1} de ${lista.length}…` : "Lendo a foto…");
-      try {
-        const fd = new FormData();
-        fd.append("foto", await reduzir(lista[i]), "rascunho.jpg");
-        const r = await lerRascunhoFoto(fd);
-        if (!r.ok) { setErro(r.erro); continue; }
-        const novas: Linha[] = r.leitura.linhas.map((l) => ({
-          id: proximoId++,
-          escrito: l.escrito,
-          descricao: l.descricao,
-          produto: l.produto,
-          qtd: paraTexto(l.qtd, 3),
-          unidade: l.unidade,
-          valor_unit: paraTexto(l.valor_unit, 2),
-          valor_total: paraTexto(l.valor_total, 2),
-          duvida: l.duvida,
-        }));
-        setLinhas((v) => [...v, ...novas]);
-        if (r.leitura.totalEscrito) setTotais((v) => [...v, r.leitura.totalEscrito as number]);
-        if (r.leitura.observacao) setObservacoes((v) => [...v, r.leitura.observacao as string]);
-        if (r.leitura.data && r.leitura.data <= hojeSP()) setData(r.leitura.data);
-      } catch {
-        setErro("Não consegui abrir essa foto. Tire de novo (JPG ou PNG) e tente outra vez.");
-      }
+    const novas = [...arquivos].map((arquivo) => ({ id: proximoId++, arquivo, url: URL.createObjectURL(arquivo) }));
+    setFolhas((v) => {
+      const todas = [...v, ...novas];
+      if (todas.length > MAX_FOLHAS) setErro(`No máximo ${MAX_FOLHAS} folhas por rascunho.`);
+      for (const f of todas.slice(MAX_FOLHAS)) URL.revokeObjectURL(f.url);
+      return todas.slice(0, MAX_FOLHAS);
+    });
+  }
+
+  function tirarFolha(id: number) {
+    setFolhas((v) => {
+      const f = v.find((x) => x.id === id);
+      if (f) URL.revokeObjectURL(f.url);
+      return v.filter((x) => x.id !== id);
+    });
+  }
+
+  /** Todas as folhas vão juntas numa leitura só (o total da última vale pelo rascunho). */
+  async function lerFolhas() {
+    if (folhas.length === 0) return;
+    if (linhas.length && !(await confirmar("Ler de novo? As linhas lidas e corrigidas até agora serão trocadas.", { okTexto: "Ler de novo" }))) return;
+    setErro(null);
+    setLendo(true);
+    try {
+      const fd = new FormData();
+      for (const f of folhas) fd.append("foto", await reduzir(f.arquivo, Math.floor(LIMITE_ENVIO / folhas.length)), "folha.jpg");
+      const r = await lerRascunhoFoto(fd);
+      if (!r.ok) { setErro(r.erro); return; }
+      setLinhas(r.leitura.linhas.map((l) => ({
+        id: proximoId++,
+        escrito: l.escrito,
+        descricao: l.descricao,
+        produto: l.produto,
+        qtd: paraTexto(l.qtd, 3),
+        unidade: l.unidade,
+        valor_unit: paraTexto(l.valor_unit, 2),
+        valor_total: paraTexto(l.valor_total, 2),
+        duvida: l.duvida,
+      })));
+      setTotalEscrito(r.leitura.totalEscrito);
+      setObservacao(r.leitura.observacao);
+      if (r.leitura.data && r.leitura.data <= hojeSP()) setSemana(segundaDe(r.leitura.data));
+    } catch {
+      setErro("Não consegui abrir as fotos. Tire de novo (JPG ou PNG) e tente outra vez.");
+    } finally {
+      setLendo(false);
     }
-    setLendo(null);
   }
 
   const mudar = (id: number, campo: keyof Linha, valor: string) =>
@@ -109,7 +146,6 @@ export function LerRascunho({ fornecedores }: { fornecedores: { id: string; nome
     return { qtd, unit, total, ok, conta: Math.round(qtd * unit * 100) / 100 };
   });
   const soma = Math.round(contas.reduce((s, c) => s + (Number.isFinite(c.total) ? c.total : 0), 0) * 100) / 100;
-  const totalEscrito = totais.length ? totais[totais.length - 1] : null;
   const difTotal = totalEscrito != null ? Math.round((soma - totalEscrito) * 100) / 100 : null;
   const problemas = contas.filter((c) => !c.ok).length;
 
@@ -125,7 +161,7 @@ export function LerRascunho({ fornecedores }: { fornecedores: { id: string; nome
     }
     const r = await salvarRascunho({
       fornecedorId: fornecedor,
-      data,
+      semana,
       linhas: linhas.map((l, i): LinhaRascunho => ({
         escrito: l.escrito,
         descricao: l.descricao,
@@ -143,35 +179,71 @@ export function LerRascunho({ fornecedores }: { fornecedores: { id: string; nome
 
   return (
     <div className="mt-6 space-y-5">
-      <div className="cartao grid gap-4 p-5 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)]">
+      <div className="cartao grid gap-4 p-5 md:grid-cols-2">
         <div>
           <span className="rotulo block">Fornecedor</span>
           <Combobox options={opcoes} value={fornecedor} onChange={setFornecedor} placeholder="Buscar fornecedor…" className="mt-1" />
         </div>
         <label className="block">
-          <span className="rotulo block">Dia da entrega</span>
-          <input type="date" value={data} max={hojeSP()} onChange={(e) => setData(e.target.value)} className="campo mt-1 w-full" />
+          <span className="rotulo block">Semana do rascunho</span>
+          <select value={semana} onChange={(e) => setSemana(e.target.value)} className="campo mt-1 w-full">
+            {semanas.map((s, i) => (
+              <option key={s} value={s}>
+                {ddmm(s)} a {ddmm(somarDias(s, 6))}{i === 0 ? " (esta semana)" : i === 1 ? " (semana passada)" : ""}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-texto-fraco">A compra entra no CMV dessa semana (segunda a domingo).</span>
         </label>
-        <div>
-          <span className="rotulo block">Foto da folha</span>
-          <label className={`btn-principal mt-1 inline-flex cursor-pointer items-center gap-2 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 ${lendo ? "pointer-events-none opacity-60" : ""}`}>
-            <Icone nome={lendo ? "esperando" : "camera"} tamanho={16} className={lendo ? "animate-spin" : ""} />
-            {lendo ?? (linhas.length ? "Ler mais uma folha" : "Tirar / escolher foto")}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              disabled={!!lendo}
-              onChange={(e) => { void lerFotos(e.target.files); e.target.value = ""; }}
-            />
-          </label>
-          <p className="mt-1 text-xs text-texto-fraco">Pode escolher as duas folhas de uma vez. Foto de cima, com luz, a folha inteira.</p>
+
+        <div className="md:col-span-2">
+          <span className="rotulo block">Folhas do rascunho</span>
+          <div className="mt-2 flex flex-wrap items-start gap-3">
+            {folhas.map((f, i) => (
+              <figure key={f.id} className="relative w-28">
+                {/* eslint-disable-next-line @next/next/no-img-element -- prévia local da foto escolhida */}
+                <img src={f.url} alt={`Folha ${i + 1}`} className="h-36 w-28 rounded-controle object-cover" />
+                <figcaption className="mt-1 text-center text-xs text-texto-suave">Folha {i + 1}</figcaption>
+                <button
+                  type="button"
+                  aria-label={`Tirar a folha ${i + 1}`}
+                  onClick={() => tirarFolha(f.id)}
+                  disabled={lendo}
+                  className="btn-secundario absolute right-1 top-1 min-h-11 px-3 text-sm"
+                >
+                  <Icone nome="fechar" tamanho={14} />
+                </button>
+              </figure>
+            ))}
+            {folhas.length < MAX_FOLHAS && (
+              <label className={`btn-secundario flex h-36 w-28 cursor-pointer flex-col items-center justify-center gap-2 text-center text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 ${lendo ? "pointer-events-none opacity-60" : ""}`}>
+                <Icone nome="camera" tamanho={22} />
+                {folhas.length ? "Mais uma folha" : "Tirar / escolher foto"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  disabled={lendo}
+                  onChange={(e) => { juntarFolhas(e.target.files); e.target.value = ""; }}
+                />
+              </label>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-texto-fraco">
+            Coloque todas as folhas da semana (uma foto por folha, de cima, com luz, a folha inteira). Elas são lidas juntas, como um rascunho só.
+          </p>
+          {folhas.length > 0 && (
+            <button type="button" onClick={() => void lerFolhas()} disabled={lendo} className="btn-principal mt-3 inline-flex items-center gap-2 text-sm">
+              <Icone nome={lendo ? "esperando" : "ver"} tamanho={16} className={lendo ? "animate-spin" : ""} />
+              {lendo ? "Lendo… (até 1 minuto)" : folhas.length > 1 ? `Ler as ${folhas.length} folhas` : "Ler a folha"}
+            </button>
+          )}
         </div>
       </div>
 
       {erro && <p role="alert" className="pilula pilula-urgente">{erro}</p>}
-      {observacoes.map((o, i) => <p key={i} className="pilula pilula-info">{o}</p>)}
+      {observacao && <p className="pilula pilula-info">{observacao}</p>}
 
       {linhas.length > 0 && (
         <div className="cartao overflow-x-auto p-0">
@@ -248,7 +320,7 @@ export function LerRascunho({ fornecedores }: { fornecedores: { id: string; nome
 
       {linhas.length > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <button type="button" className="btn-secundario text-sm" onClick={async () => { if (await confirmar("Tirar todas as linhas lidas?")) { setLinhas([]); setTotais([]); setObservacoes([]); } }}>
+          <button type="button" className="btn-secundario text-sm" onClick={async () => { if (await confirmar("Tirar todas as linhas lidas?")) { setLinhas([]); setTotalEscrito(null); setObservacao(null); } }}>
             Começar de novo
           </button>
           <BotaoAcao className="btn-principal text-sm" aoClicar={salvar}>

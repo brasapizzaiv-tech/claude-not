@@ -941,14 +941,15 @@ export async function fornecedoresDoRascunho() {
   };
 }
 
-/** Lê UMA foto do rascunho com a IA. Não grava nada. */
+/** Lê as fotos (folhas) de UM rascunho com a IA, numa leitura só. Não grava nada. */
 export async function lerRascunhoFoto(formData: FormData): Promise<{ ok: true; leitura: LeituraRascunho } | { ok: false; erro: string }> {
   await exigirAcesso("/notas");
   if (!iaConfigurada()) return { ok: false, erro: "A leitura por IA ainda não está ligada neste sistema." };
-  const foto = formData.get("foto");
-  if (!(foto instanceof File) || foto.size === 0) return { ok: false, erro: "Escolha a foto do rascunho." };
-  if (!(TIPOS_FOTO as readonly string[]).includes(foto.type)) return { ok: false, erro: "Mande a foto em JPG ou PNG." };
-  if (foto.size > 4_500_000) return { ok: false, erro: "Foto grande demais. Tire de novo ou mande menor." };
+  const fotos = formData.getAll("foto").filter((f): f is File => f instanceof File && f.size > 0);
+  if (fotos.length === 0) return { ok: false, erro: "Escolha a foto do rascunho." };
+  if (fotos.length > 4) return { ok: false, erro: "Mande no máximo 4 folhas por rascunho." };
+  if (fotos.some((f) => !(TIPOS_FOTO as readonly string[]).includes(f.type))) return { ok: false, erro: "Mande as fotos em JPG ou PNG." };
+  if (fotos.some((f) => f.size > 4_500_000)) return { ok: false, erro: "Foto grande demais. Tire de novo ou mande menor." };
   const [{ user }, perfil] = await Promise.all([usuarioDaSessao(), perfilDaSessao()]);
   const empresaId = perfil?.empresa_id as string | undefined;
   if (!empresaId) return { ok: false, erro: "Seu login não está ligado a uma empresa." };
@@ -959,9 +960,11 @@ export async function lerRascunhoFoto(formData: FormData): Promise<{ ok: true; l
   );
   const nomes = [...new Set(prods.map((p) => (p.nome ?? "").trim()).filter(Boolean))];
   try {
-    const base64 = Buffer.from(await foto.arrayBuffer()).toString("base64");
-    const leitura = await lerRascunho({ base64, tipo: foto.type as (typeof TIPOS_FOTO)[number] }, nomes, { empresaId, userId: user?.id ?? null });
-    if (leitura.linhas.length === 0) return { ok: false, erro: "Não achei nenhuma linha de produto nessa foto. Tire de novo, de cima e com luz." };
+    const imagens = await Promise.all(
+      fotos.map(async (f) => ({ base64: Buffer.from(await f.arrayBuffer()).toString("base64"), tipo: f.type as (typeof TIPOS_FOTO)[number] })),
+    );
+    const leitura = await lerRascunho(imagens, nomes, { empresaId, userId: user?.id ?? null });
+    if (leitura.linhas.length === 0) return { ok: false, erro: "Não achei nenhuma linha de produto nas fotos. Tire de novo, de cima e com luz." };
     return { ok: true, leitura };
   } catch {
     return { ok: false, erro: "A leitura não deu certo agora. Confira a internet e tente de novo." };
@@ -971,13 +974,18 @@ export async function lerRascunhoFoto(formData: FormData): Promise<{ ok: true; l
 /** Grava o rascunho conferido como nota pendente. */
 export async function salvarRascunho(d: {
   fornecedorId: string;
-  data: string;
+  /** Segunda-feira da semana do rascunho (a fruteira manda um por semana). */
+  semana: string;
   linhas: LinhaRascunho[];
 }): Promise<{ ok: true; notaId: string } | { ok: false; erro: string }> {
   await exigirAcesso("/notas");
   if (!d.fornecedorId) return { ok: false, erro: "Escolha o fornecedor." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.data ?? "")) return { ok: false, erro: "Escolha a data da entrega." };
-  if (d.data > hojeSP()) return { ok: false, erro: "A data não pode ser no futuro." };
+  // A compra entra no CMV pela data de emissão: a segunda da semana põe o
+  // rascunho na semana certa (o CMV é sempre segunda → domingo).
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.semana ?? "") || new Date(`${d.semana}T12:00:00Z`).getUTCDay() !== 1) {
+    return { ok: false, erro: "Escolha a semana do rascunho." };
+  }
+  if (d.semana > hojeSP()) return { ok: false, erro: "A semana não pode ser no futuro." };
   const linhas = (d.linhas ?? [])
     .map((l) => ({
       descricao: String(l.descricao ?? "").trim().slice(0, 120),
@@ -1002,17 +1010,17 @@ export async function salvarRascunho(d: {
   // sem CNPJ no cadastro, uma marca fixa por fornecedor faz o mesmo papel.
   const emitCnpj = soDigitos(f.cnpj ?? "") || `rascunho:${f.id}`;
 
-  // Mesmo fornecedor, mesmo dia e mesmo valor: provavelmente já foi lançado.
+  // Mesmo fornecedor, mesma semana e mesmo valor: provavelmente já foi lançado.
   const valor = Math.round(linhas.reduce((s, l) => s + l.valor_total, 0) * 100) / 100;
   const { data: igual } = await supabase
     .from("notas_fiscais")
     .select("id")
     .eq("modelo", MODELO_RASCUNHO)
     .eq("fornecedor_id", f.id)
-    .eq("data_emissao", d.data)
+    .eq("data_emissao", d.semana)
     .eq("valor", valor)
     .limit(1);
-  if ((igual ?? []).length > 0) return { ok: false, erro: "Esse rascunho já entrou (mesmo fornecedor, dia e valor). Veja na lista de notas." };
+  if ((igual ?? []).length > 0) return { ok: false, erro: "Esse rascunho já entrou (mesmo fornecedor, semana e valor). Veja na lista de notas." };
 
   // Produto que a IA reconheceu pelo nome do cadastro.
   const nomesProd = [...new Set(linhas.map((l) => l.produto).filter((x): x is string => !!x))];
@@ -1026,14 +1034,14 @@ export async function salvarRascunho(d: {
     .from("notas_fiscais")
     .insert({
       chave: `RASCUNHO-${crypto.randomUUID()}`,
-      numero: d.data.split("-").reverse().slice(0, 2).join("/"),
+      numero: `sem. ${d.semana.split("-").reverse().slice(0, 2).join("/")}`,
       serie: null,
       modelo: MODELO_RASCUNHO,
       emit_cnpj: emitCnpj,
       emit_nome: f.nome,
       valor,
-      data_emissao: d.data,
-      vencimento: d.data,
+      data_emissao: d.semana,
+      vencimento: hojeSP(),
       fornecedor_id: f.id,
     })
     .select("id")

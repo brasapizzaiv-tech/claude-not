@@ -155,7 +155,9 @@ export default async function NotaDetalhePage({
       </h1>
       <p className="mt-1 text-sm text-texto-suave">
         {nota.modelo === MODELO_RASCUNHO ? "Rascunho à mão (sem nota fiscal)" : `NF ${nota.numero} · série ${nota.serie}`} ·{" "}
-        {nota.data_emissao ? dataBR(nota.data_emissao) : "—"} ·{" "}
+        {nota.modelo === MODELO_RASCUNHO && nota.data_emissao
+          ? `semana de ${dataBR(nota.data_emissao)} a ${dataBR(new Date(new Date(`${nota.data_emissao}T12:00:00Z`).getTime() + 6 * 864e5).toISOString().slice(0, 10))}`
+          : nota.data_emissao ? dataBR(nota.data_emissao) : "—"} ·{" "}
         {moeda(Number(nota.valor))}
         {nota.valor_boleto != null
           ? ` · boleto ${moeda(Number(nota.valor_boleto))}`

@@ -14,6 +14,7 @@ const PRECO = { entrada: 4, saida: 20 };
 export const iaConfigurada = () => !!process.env.ANTHROPIC_API_KEY;
 
 const INSTRUCOES = `Você lê fotos de RASCUNHOS ESCRITOS À MÃO de um fornecedor de hortifrúti (fruteira) de um restaurante no Rio Grande do Sul (Brasil). A folha tem colunas: produto | quantidade | preço unitário (R$) | total da linha (R$). No fim pode ter o total geral.
+Pode vir MAIS DE UMA FOTO: são as folhas do MESMO rascunho, na ordem (a 2ª continua a 1ª). Devolva todas as linhas de todas as folhas numa lista só; o total geral costuma estar só na última folha e vale pelo rascunho inteiro. Se a mesma folha aparecer duas vezes, leia uma vez só e avise em "observacao".
 
 Regras de leitura:
 - Uma linha por produto, na ordem da folha. Ignore linhas riscadas/canceladas, cabeçalhos, logotipos impressos do caderno e os dias da semana (D S T Q Q S S).
@@ -64,9 +65,9 @@ const num = (v: unknown) => {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 1000) / 1000 : 0;
 };
 
-/** Lê UMA foto do rascunho. `produtos` = nomes do cadastro (pra devolver o nome igual). */
+/** Lê as fotos (folhas) de UM rascunho numa leitura só. `produtos` = nomes do cadastro (pra devolver o nome igual). */
 export async function lerRascunho(
-  foto: { base64: string; tipo: TipoImagem },
+  fotos: { base64: string; tipo: TipoImagem }[],
   produtos: string[],
   quem: { empresaId: string; userId: string | null },
 ): Promise<LeituraRascunho> {
@@ -89,8 +90,11 @@ export async function lerRascunho(
         {
           role: "user",
           content: [
-            { type: "image", source: { type: "base64", media_type: foto.tipo, data: foto.base64 } },
-            { type: "text", text: "Leia este rascunho." },
+            ...fotos.flatMap((foto, i) => [
+              ...(fotos.length > 1 ? [{ type: "text" as const, text: `Folha ${i + 1} de ${fotos.length}:` }] : []),
+              { type: "image" as const, source: { type: "base64" as const, media_type: foto.tipo, data: foto.base64 } },
+            ]),
+            { type: "text", text: fotos.length > 1 ? "Leia este rascunho (todas as folhas)." : "Leia este rascunho." },
           ],
         },
       ],
@@ -131,7 +135,7 @@ export async function lerRascunho(
       await createAdminClient().from("ajudante_uso").insert({
         empresa_id: quem.empresaId,
         user_id: quem.userId,
-        pergunta: "[notas] leitura de rascunho à mão (foto)",
+        pergunta: `[notas] leitura de rascunho à mão (${fotos.length} foto(s))`,
         tela: "/notas",
         modelo: MODELO,
         tokens_entrada: Math.round(uso.entrada),
