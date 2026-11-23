@@ -11,6 +11,10 @@ import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { moedaBR } from "@/lib/format";
 import { exigirAcesso } from "@/lib/permissoes-server";
 import { explicarErro } from "@/lib/erro-amigavel";
+import { iaConfigurada, lerRascunho } from "@/lib/rascunho-ia";
+import { linhaFecha, MODELO_RASCUNHO, UNIDADES_RASCUNHO, type LeituraRascunho, type LinhaRascunho } from "@/lib/rascunho";
+import { buscarTodas } from "@/lib/supabase/todas";
+import { perfilDaSessao, usuarioDaSessao } from "@/lib/sessao";
 
 // Primeiro dia do mês atual (AAAA-MM-01) — nota anterior a isso entra como paga.
 function inicioDoMes() {
@@ -46,7 +50,7 @@ type ItemNota = {
 //    ("Uva" não casa mais com "LUVA", nem "Mel" com "CARAMELO").
 async function comProdutoVinculado(
   supabase: SupabaseClient,
-  itens: ItemNota[],
+  itens: (ItemNota & { produto_id?: string | null })[],
   cnpj: string | null,
 ) {
   const descricoes = [...new Set(itens.map((i) => (i.descricao ?? "").trim()).filter(Boolean))];
@@ -79,6 +83,8 @@ async function comProdutoVinculado(
     .sort((a, b) => b.n.length - a.n.length);
   return itens.map((i) => {
     if (aprendidas.has((i.descricao ?? "").trim().toLowerCase())) return { ...i, produto_id: null };
+    // Já veio com o produto (rascunho lido pela IA com o nome do cadastro).
+    if (i.produto_id) return i;
     const d = ` ${norm(i.descricao)} `;
     const m = lista.find((p) => d.includes(` ${p.n} `));
     return { ...i, produto_id: m?.id ?? null };
@@ -328,7 +334,7 @@ export async function lancarNota(
   const supabase = await createClient();
   const { data: nota } = await supabase
     .from("notas_fiscais")
-    .select("id, numero, emit_nome, valor, data_emissao, vencimento, fornecedor_id, situacao, tipo, dre_categoria_id")
+    .select("id, numero, modelo, emit_nome, valor, data_emissao, vencimento, fornecedor_id, situacao, tipo, dre_categoria_id")
     .eq("id", notaId)
     .maybeSingle();
   if (!nota || nota.situacao === "lancada") return { ok: false };
@@ -377,7 +383,9 @@ export async function lancarNota(
   // a conciliação media a distância errada: a NF 666 da Ovos venceu 21/08, foi
   // gravada como paga em 01/08 e o débito de 21/08 aparecia a "20 dias".
   const pagoEm = pago ? vencimento ?? dataLanc : null;
-  const descricao = `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`;
+  const descricao = (nota as { modelo?: string | null }).modelo === MODELO_RASCUNHO
+    ? `Rascunho ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`
+    : `NF ${nota.numero ?? ""} — ${nota.emit_nome ?? "fornecedor"}`;
 
   // Itens da nota (com o produto vinculado → conta do DRE).
   const { data: itensData } = await supabase
@@ -908,4 +916,151 @@ export async function adicionarTamanhoProduto(produtoId: string, tamanho: number
   const { error } = await supabase.from("produtos").update({ tamanhos: novos }).eq("id", produtoId);
   revalidatePath("/produtos");
   return error ? { ok: false as const } : { ok: true as const };
+}
+
+// ── Rascunho à mão (fruteira paga em dinheiro, sem nota) ─────────────────────
+// Pedido do Rafael, 23/11/2026. A foto da folha vai pra IA, a pessoa confere as
+// linhas na tela e a compra entra em Notas como nota PENDENTE (modelo
+// "rascunho", chave inventada só pra ser única). Daí pra frente é igual: liga
+// os produtos, lança no financeiro e entra no CMV/preço de referência.
+
+const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+
+/** Fornecedores pra escolher de quem é o rascunho (ativos primeiro). */
+export async function fornecedoresDoRascunho() {
+  await exigirAcesso("/notas");
+  const supabase = await createClient();
+  const forns = await buscarTodas<{ id: string; nome: string; ativo: boolean }>((de, ate) =>
+    supabase.from("fornecedores").select("id, nome, ativo").order("nome").range(de, ate),
+  );
+  return {
+    ia: iaConfigurada(),
+    fornecedores: forns
+      .sort((a, b) => Number(b.ativo) - Number(a.ativo))
+      .map((f) => ({ id: f.id, nome: f.ativo ? f.nome : `${f.nome} (inativo)` })),
+  };
+}
+
+/** Lê UMA foto do rascunho com a IA. Não grava nada. */
+export async function lerRascunhoFoto(formData: FormData): Promise<{ ok: true; leitura: LeituraRascunho } | { ok: false; erro: string }> {
+  await exigirAcesso("/notas");
+  if (!iaConfigurada()) return { ok: false, erro: "A leitura por IA ainda não está ligada neste sistema." };
+  const foto = formData.get("foto");
+  if (!(foto instanceof File) || foto.size === 0) return { ok: false, erro: "Escolha a foto do rascunho." };
+  if (!(TIPOS_FOTO as readonly string[]).includes(foto.type)) return { ok: false, erro: "Mande a foto em JPG ou PNG." };
+  if (foto.size > 4_500_000) return { ok: false, erro: "Foto grande demais. Tire de novo ou mande menor." };
+  const [{ user }, perfil] = await Promise.all([usuarioDaSessao(), perfilDaSessao()]);
+  const empresaId = perfil?.empresa_id as string | undefined;
+  if (!empresaId) return { ok: false, erro: "Seu login não está ligado a uma empresa." };
+
+  const supabase = await createClient();
+  const prods = await buscarTodas<{ nome: string }>((de, ate) =>
+    supabase.from("produtos").select("nome").eq("ativo", true).order("nome").range(de, ate),
+  );
+  const nomes = [...new Set(prods.map((p) => (p.nome ?? "").trim()).filter(Boolean))];
+  try {
+    const base64 = Buffer.from(await foto.arrayBuffer()).toString("base64");
+    const leitura = await lerRascunho({ base64, tipo: foto.type as (typeof TIPOS_FOTO)[number] }, nomes, { empresaId, userId: user?.id ?? null });
+    if (leitura.linhas.length === 0) return { ok: false, erro: "Não achei nenhuma linha de produto nessa foto. Tire de novo, de cima e com luz." };
+    return { ok: true, leitura };
+  } catch {
+    return { ok: false, erro: "A leitura não deu certo agora. Confira a internet e tente de novo." };
+  }
+}
+
+/** Grava o rascunho conferido como nota pendente. */
+export async function salvarRascunho(d: {
+  fornecedorId: string;
+  data: string;
+  linhas: LinhaRascunho[];
+}): Promise<{ ok: true; notaId: string } | { ok: false; erro: string }> {
+  await exigirAcesso("/notas");
+  if (!d.fornecedorId) return { ok: false, erro: "Escolha o fornecedor." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.data ?? "")) return { ok: false, erro: "Escolha a data da entrega." };
+  if (d.data > hojeSP()) return { ok: false, erro: "A data não pode ser no futuro." };
+  const linhas = (d.linhas ?? [])
+    .map((l) => ({
+      descricao: String(l.descricao ?? "").trim().slice(0, 120),
+      produto: l.produto ? String(l.produto) : null,
+      qtd: Math.round(Number(l.qtd) * 1000) / 1000,
+      unidade: (UNIDADES_RASCUNHO as readonly string[]).includes(l.unidade) ? l.unidade : "UN",
+      valor_unit: Math.round(Number(l.valor_unit) * 10000) / 10000,
+      valor_total: Math.round(Number(l.valor_total) * 100) / 100,
+    }))
+    .filter((l) => l.descricao);
+  if (linhas.length === 0) return { ok: false, erro: "Não tem nenhuma linha pra salvar." };
+  const ruim = linhas.find((l) => !(l.qtd > 0) || !(l.valor_total > 0) || !(l.valor_unit >= 0));
+  if (ruim) return { ok: false, erro: `Confira "${ruim.descricao}": quantidade e total têm que ser maiores que zero.` };
+  const naoFecha = linhas.find((l) => !linhaFecha(l));
+  if (naoFecha) return { ok: false, erro: `Em "${naoFecha.descricao}" quantidade × preço não dá o total. Corrija antes de salvar.` };
+
+  const supabase = await createClient();
+  const { data: forn } = await supabase.from("fornecedores").select("id, nome, cnpj").eq("id", d.fornecedorId).maybeSingle();
+  const f = forn as { id: string; nome: string; cnpj: string | null } | null;
+  if (!f) return { ok: false, erro: "Fornecedor não encontrado." };
+  // O "aprendizado" da ligação item → produto (0205/0210) é por emit_cnpj:
+  // sem CNPJ no cadastro, uma marca fixa por fornecedor faz o mesmo papel.
+  const emitCnpj = soDigitos(f.cnpj ?? "") || `rascunho:${f.id}`;
+
+  // Mesmo fornecedor, mesmo dia e mesmo valor: provavelmente já foi lançado.
+  const valor = Math.round(linhas.reduce((s, l) => s + l.valor_total, 0) * 100) / 100;
+  const { data: igual } = await supabase
+    .from("notas_fiscais")
+    .select("id")
+    .eq("modelo", MODELO_RASCUNHO)
+    .eq("fornecedor_id", f.id)
+    .eq("data_emissao", d.data)
+    .eq("valor", valor)
+    .limit(1);
+  if ((igual ?? []).length > 0) return { ok: false, erro: "Esse rascunho já entrou (mesmo fornecedor, dia e valor). Veja na lista de notas." };
+
+  // Produto que a IA reconheceu pelo nome do cadastro.
+  const nomesProd = [...new Set(linhas.map((l) => l.produto).filter((x): x is string => !!x))];
+  const idPorNome = new Map<string, string>();
+  if (nomesProd.length) {
+    const { data: ps } = await supabase.from("produtos").select("id, nome").eq("ativo", true).in("nome", nomesProd);
+    for (const p of (ps as { id: string; nome: string }[]) ?? []) idPorNome.set(p.nome, p.id);
+  }
+
+  const { data: nota, error } = await supabase
+    .from("notas_fiscais")
+    .insert({
+      chave: `RASCUNHO-${crypto.randomUUID()}`,
+      numero: d.data.split("-").reverse().slice(0, 2).join("/"),
+      serie: null,
+      modelo: MODELO_RASCUNHO,
+      emit_cnpj: emitCnpj,
+      emit_nome: f.nome,
+      valor,
+      data_emissao: d.data,
+      vencimento: d.data,
+      fornecedor_id: f.id,
+    })
+    .select("id")
+    .single();
+  if (error || !nota) return { ok: false, erro: explicarErro(error, "Não consegui salvar o rascunho.") };
+
+  const itens = await comProdutoVinculado(
+    supabase,
+    linhas.map((l, i) => ({
+      cprod: String(i + 1),
+      descricao: l.descricao,
+      ncm: "",
+      ean: "",
+      unidade: l.unidade,
+      qtd: l.qtd,
+      valor_unit: l.valor_unit,
+      valor_total: l.valor_total,
+      produto_id: l.produto ? idPorNome.get(l.produto) ?? null : null,
+    })),
+    emitCnpj,
+  );
+  const { error: eItens } = await supabase.from("nota_itens").insert(itens.map((i) => ({ ...i, nota_id: nota.id })));
+  if (eItens) {
+    await supabase.from("notas_fiscais").delete().eq("id", nota.id);
+    return { ok: false, erro: explicarErro(eItens, "Não consegui salvar os itens do rascunho.") };
+  }
+  await aplicarPadraoFornecedor(supabase, nota.id, f.id);
+  revalidatePath("/notas");
+  return { ok: true, notaId: nota.id as string };
 }

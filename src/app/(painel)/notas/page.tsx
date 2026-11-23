@@ -4,6 +4,7 @@ import { empresaAtualId } from "@/lib/empresa";
 import { lerConfigSefaz } from "@/lib/sefaz/busca";
 import { UploadNota } from "./upload";
 import { LerCupom } from "./ler-cupom";
+import { Icone } from "@/components/icone";
 import { BuscarNotas } from "./buscar-notas";
 import { ManifestarLote } from "./manifestar-lote";
 import { NotasLista, type NotaLinha } from "./notas-lista";
@@ -114,7 +115,7 @@ export default async function NotasPage() {
             Notas Fiscais
           </h1>
           <p className="mt-1 text-texto-suave">
-            Importe o XML da NF-e ou leia o QR code do cupom do mercado. Ela vira
+            Importe o XML da NF-e, leia o QR code do cupom do mercado ou a foto do rascunho à mão. Ela vira
             conta a pagar e pode ser cruzada com o pedido.
           </p>
         </div>
@@ -127,6 +128,13 @@ export default async function NotasPage() {
               SEFAZ automático
             </Link>
           )}
+          <Link
+            href="/notas/rascunho"
+            className="btn-secundario inline-flex min-h-11 items-center gap-2 text-sm"
+            title="Compra sem nota: foto da folha escrita à mão (ex.: fruteira)"
+          >
+            <Icone nome="caderno" tamanho={16} /> Rascunho à mão
+          </Link>
           <LerCupom />
           <UploadNota />
         </div>

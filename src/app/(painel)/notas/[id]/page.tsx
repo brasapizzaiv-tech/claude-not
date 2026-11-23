@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MODELO_RASCUNHO } from "@/lib/rascunho";
 import { createClient } from "@/lib/supabase/server";
 import { dataBR } from "@/lib/format";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
@@ -153,7 +154,7 @@ export default async function NotaDetalhePage({
         {nota.emit_nome}
       </h1>
       <p className="mt-1 text-sm text-texto-suave">
-        NF {nota.numero} · série {nota.serie} ·{" "}
+        {nota.modelo === MODELO_RASCUNHO ? "Rascunho à mão (sem nota fiscal)" : `NF ${nota.numero} · série ${nota.serie}`} ·{" "}
         {nota.data_emissao ? dataBR(nota.data_emissao) : "—"} ·{" "}
         {moeda(Number(nota.valor))}
         {nota.valor_boleto != null
