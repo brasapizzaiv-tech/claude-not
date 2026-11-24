@@ -3,7 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ligarNotaAoPedido, recalcularDoItemNota, type Db as DbConf } from "@/lib/conferencia-core";
+import { ligarNotaAoPedido, ligarPedidoProvavelANota, recalcularDoItemNota, type Db as DbConf } from "@/lib/conferencia-core";
 import { lerNfe, type NfeLida, lerResumo, soDigitos } from "@/lib/nfe";
 import { buscarCupomNfce } from "@/lib/nfce-consulta";
 import { ajustarTotalBoleto, aplicarValorBoletoNota } from "@/lib/boleto";
@@ -230,6 +230,8 @@ async function gravarNotaLida(supabase: SupabaseClient, nf: NfeLida) {
   }
   await salvarParcelas(supabase, nota.id, nf.parcelas);
   await aplicarPadraoFornecedor(supabase, nota.id, fornecedor?.id ?? null);
+  // Pedido já conferido (com conta provisória) esperando esta nota: liga.
+  await ligarPedidoProvavelANota(supabase as unknown as DbConf, nota.id).catch(() => null);
 
   // A nota entra como PENDENTE. Só vira conta a pagar quando o usuário lançar.
   revalidatePath("/notas");
@@ -273,6 +275,7 @@ export async function importarResumo(
     .single();
   if (!nota) return { ok: false };
   await aplicarPadraoFornecedor(supabase, nota.id, fornecedor?.id ?? null);
+  await ligarPedidoProvavelANota(supabase as unknown as DbConf, nota.id).catch(() => null);
 
   // A nota entra como PENDENTE (não vira conta automaticamente).
   return { ok: true };
@@ -338,6 +341,8 @@ export async function lancarNota(
     .eq("id", notaId)
     .maybeSingle();
   if (!nota || nota.situacao === "lancada") return { ok: false };
+  // Lançar a nota de um pedido já conferido sem ligar duplicaria a conta: liga antes.
+  await ligarPedidoProvavelANota(supabase as unknown as DbConf, notaId).catch(() => null);
   const ehServico = (nota as { tipo?: string }).tipo === "servico";
 
   // Parcelas (duplicatas) da nota — quando o usuário optar por lançar parcelado,

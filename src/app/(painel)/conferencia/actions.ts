@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { ligarNotaAoPedido, recalcularDivergencias, type Db as DbConf } from "@/lib/conferencia-core";
+import { ligarNotaAoPedido, ligarNotaProvavelAoPedido, recalcularDivergencias, type Db as DbConf } from "@/lib/conferencia-core";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 
 type ItemConf = {
@@ -217,6 +217,9 @@ async function lancarPedidoNoFinanceiro(
     .eq("id", pedidoId)
     .maybeSingle();
   if (!ped) return;
+
+  // Nota que já chegou e ninguém ligou: liga sozinha quando bate (24/11/2026).
+  await ligarNotaProvavelAoPedido(supabase as unknown as DbConf, pedidoId).catch(() => null);
 
   // Pedido com nota do fornecedor ligada: a conta a pagar é a da NOTA. A
   // conferência não lança outra (antes duplicava: 12 contas, R$ 7.031, 11/11/2026).

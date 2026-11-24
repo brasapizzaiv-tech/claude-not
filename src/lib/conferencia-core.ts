@@ -171,6 +171,132 @@ export async function ligarNotaAoPedido(db: Db, notaId: string, pedidoId: string
   return { ok: true as const };
 }
 
+// ── Ligação automática nota × pedido ─────────────────────────────────────────
+// Conferir um pedido sem nota ligada cria uma conta provisória "Compra
+// conferida"; se a nota já tinha chegado (ou chega depois) e ninguém liga, a
+// conta sai em dobro quando a nota é lançada (5 contas, R$ 2.243, 24/11/2026).
+// Regra: mesmo fornecedor, nota emitida de 1 dia antes a 4 dias depois do
+// pedido (assim foram as 78 ligações de 25/10 a 24/11). Sendo a ÚNICA nota e o
+// ÚNICO pedido nessa janela, liga. Com mais de um, só liga se o valor apontar
+// um só (diferença até R$ 3 ou 1%) — o valor sozinho não serve, porque o
+// pedido tem o preço cotado e a nota quase sempre vem diferente.
+
+function valorBate(a: number, b: number) {
+  return a > 0 && b > 0 && Math.abs(a - b) <= Math.max(3, 0.01 * Math.max(a, b));
+}
+
+function somarDias(data: string, dias: number) {
+  const [a, m, d] = data.slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
+}
+
+type ItemTotal = { qtd: number; preco_unit: number | null; qtd_recebida: number | null; preco_recebido: number | null };
+const totalPedido = (itens: ItemTotal[] | null) =>
+  (itens ?? []).reduce((s, i) => s + Number(i.qtd_recebida ?? i.qtd ?? 0) * Number(i.preco_recebido ?? i.preco_unit ?? 0), 0);
+
+// Pedidos do fornecedor na janela de uma nota, ainda sem nota ligada.
+async function pedidosSemNota(db: Db, fornecedorId: string, emissao: string) {
+  const { data: rows } = await db
+    .from("pedidos")
+    .select("id, pedido_itens(qtd, preco_unit, qtd_recebida, preco_recebido)")
+    .eq("fornecedor_id", fornecedorId)
+    .gte("data", somarDias(emissao, -4))
+    .lte("data", somarDias(emissao, 1))
+    .limit(20);
+  const peds = (rows as { id: string; pedido_itens: ItemTotal[] | null }[]) ?? [];
+  if (peds.length === 0) return [];
+  const { data: ligadas } = await db.from("notas_fiscais").select("pedido_id").in("pedido_id", peds.map((p) => p.id));
+  const comNota = new Set(((ligadas as { pedido_id: string }[]) ?? []).map((n) => n.pedido_id));
+  return peds.filter((p) => !comNota.has(p.id)).map((p) => ({ id: p.id, total: totalPedido(p.pedido_itens) }));
+}
+
+// Pedido sendo conferido sem nota: procura a nota pendente que é dele.
+export async function ligarNotaProvavelAoPedido(db: Db, pedidoId: string): Promise<string | null> {
+  const { data: jaTem } = await db.from("notas_fiscais").select("id").eq("pedido_id", pedidoId).limit(1).maybeSingle();
+  if (jaTem) return null;
+  const { data: ped } = await db
+    .from("pedidos")
+    .select("data, fornecedor_id, pedido_itens(qtd, preco_unit, qtd_recebida, preco_recebido)")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  const p = ped as { data: string | null; fornecedor_id: string | null; pedido_itens: ItemTotal[] | null } | null;
+  if (!p?.fornecedor_id || !p.data) return null;
+  const { data: rows } = await db
+    .from("notas_fiscais")
+    .select("id, valor, data_emissao, tipo, situacao")
+    .eq("fornecedor_id", p.fornecedor_id)
+    .is("pedido_id", null)
+    .gte("data_emissao", somarDias(p.data, -1))
+    .lte("data_emissao", somarDias(p.data, 4))
+    .limit(20);
+  const notas = ((rows as { id: string; valor: number; data_emissao: string; tipo: string | null; situacao: string | null }[]) ?? []).filter(
+    (n) => n.tipo !== "servico" && n.situacao !== "cancelada",
+  );
+  if (notas.length === 0) return null;
+  let escolhida: string | null = null;
+  if (notas.length === 1) {
+    // A nota só é "dele" se ele for o único pedido sem nota na janela dela.
+    const rivais = await pedidosSemNota(db, p.fornecedor_id, notas[0].data_emissao);
+    if (rivais.length === 1 && rivais[0].id === pedidoId) escolhida = notas[0].id;
+    else if (valorBate(Number(notas[0].valor), totalPedido(p.pedido_itens))) escolhida = notas[0].id;
+  } else {
+    const total = totalPedido(p.pedido_itens);
+    const batem = notas.filter((n) => valorBate(Number(n.valor), total));
+    if (batem.length === 1) escolhida = batem[0].id;
+  }
+  if (!escolhida) return null;
+  const r = await ligarNotaAoPedido(db, escolhida, pedidoId);
+  return r.ok ? escolhida : null;
+}
+
+// Nota que chegou (ou vai ser lançada) sem pedido: procura o pedido já
+// conferido do mesmo fornecedor que ficou com conta provisória.
+export async function ligarPedidoProvavelANota(db: Db, notaId: string): Promise<string | null> {
+  const { data: n } = await db
+    .from("notas_fiscais")
+    .select("valor, data_emissao, fornecedor_id, pedido_id, tipo, situacao")
+    .eq("id", notaId)
+    .maybeSingle();
+  const nota = n as { valor: number; data_emissao: string | null; fornecedor_id: string | null; pedido_id: string | null; tipo: string | null; situacao: string | null } | null;
+  if (!nota || nota.pedido_id || !nota.fornecedor_id || !nota.data_emissao) return null;
+  if (nota.tipo === "servico" || nota.situacao === "cancelada") return null;
+  const { data: rows } = await db
+    .from("lancamentos")
+    .select("pedido_id, valor")
+    .eq("origem", "pedido")
+    .eq("fornecedor_id", nota.fornecedor_id)
+    .gte("data", somarDias(nota.data_emissao, -4))
+    .lte("data", somarDias(nota.data_emissao, 1))
+    .limit(100);
+  const porPedido = new Map<string, number>();
+  for (const l of (rows as { pedido_id: string | null; valor: number }[]) ?? []) {
+    if (!l.pedido_id) continue;
+    porPedido.set(l.pedido_id, (porPedido.get(l.pedido_id) ?? 0) + Number(l.valor));
+  }
+  const conferidos = [...porPedido.entries()];
+  if (conferidos.length === 0) return null;
+  let escolhido: string | null = null;
+  if (conferidos.length === 1) {
+    // Outra nota pendente do fornecedor na mesma janela? Aí só pelo valor.
+    const { data: outras } = await db
+      .from("notas_fiscais")
+      .select("id")
+      .eq("fornecedor_id", nota.fornecedor_id)
+      .is("pedido_id", null)
+      .neq("id", notaId)
+      .gte("data_emissao", somarDias(nota.data_emissao, -3))
+      .lte("data_emissao", somarDias(nota.data_emissao, 3))
+      .limit(1);
+    if (!(outras ?? []).length || valorBate(conferidos[0][1], Number(nota.valor))) escolhido = conferidos[0][0];
+  } else {
+    const batem = conferidos.filter(([, v]) => valorBate(v, Number(nota.valor)));
+    if (batem.length === 1) escolhido = batem[0][0];
+  }
+  if (!escolhido) return null;
+  const r = await ligarNotaAoPedido(db, notaId, escolhido);
+  return r.ok ? escolhido : null;
+}
+
 // Notas do mesmo fornecedor perto da data do pedido, ainda sem pedido — pra
 // sugerir a ligação na tela da conferência.
 export async function notasSugeridas(db: Db, fornecedorId: string | null, data: string, dias = 12) {
