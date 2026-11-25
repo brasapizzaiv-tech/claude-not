@@ -89,6 +89,20 @@ function foneWhats(t: string) {
   const n = (t || "").replace(/\D/g, "");
   return n.startsWith("55") ? n : "55" + n;
 }
+// Cada mensagem pode ter um texto por turno (sugestão da Luana, 25/11/2026: a
+// confirmação do almoço saía com os horários do rodízio). Chave
+// "msg_confirmacao__almoco"; sem texto próprio do turno, vale o geral.
+const TIPOS_MSG = [
+  ["confirmacao", "Confirmação"],
+  ["aguardando", "Aguardando mesa"],
+  ["sem_mesa", "Sem mesa"],
+] as const;
+function slugTurno(turno: string) {
+  return turno.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+function modeloDoTurno(mensagens: Record<string, string>, tipo: string, turno: string) {
+  return mensagens[`msg_${tipo}__${slugTurno(turno)}`] || mensagens[`msg_${tipo}`] || "";
+}
 function montarMsg(modelo: string, r: Reserva) {
   return (modelo || "")
     .replaceAll("{nome}", r.nome)
@@ -311,7 +325,7 @@ function CartaoReserva({
     "rounded-full border border-borda px-2 py-0.5 text-mini text-texto-suave dark:border-borda-forte";
   const zap = (chave: string) =>
     `https://web.whatsapp.com/send?phone=${foneWhats(r.telefone)}&text=${encodeURIComponent(
-      montarMsg(mensagens["msg_" + chave] ?? "", r),
+      montarMsg(modeloDoTurno(mensagens, chave, r.turno), r),
     )}`;
 
   return (
@@ -858,10 +872,11 @@ function Ajustes({
   acao: (fn: () => Promise<unknown>) => void;
 }) {
   const [l, setL] = useState(lim);
-  const [m, setM] = useState({
-    msg_confirmacao: mensagens.msg_confirmacao ?? "",
-    msg_aguardando: mensagens.msg_aguardando ?? "",
-    msg_sem_mesa: mensagens.msg_sem_mesa ?? "",
+  const [m, setM] = useState<Record<string, string>>(() => {
+    const ini: Record<string, string> = {};
+    for (const [tipo] of TIPOS_MSG)
+      for (const t of TURNOS) ini[`msg_${tipo}__${slugTurno(t)}`] = modeloDoTurno(mensagens, tipo, t);
+    return ini;
   });
   const [msg, setMsg] = useState<string | null>(null);
   const setLim = (t: string, k: keyof Limite, v: string) =>
@@ -900,24 +915,27 @@ function Ajustes({
 
         <div className="space-y-2 border-t border-borda pt-3">
           <p className="text-xs text-texto-suave">
-            Mensagens do WhatsApp. Use {"{nome}"}, {"{data}"}, {"{turno}"} e{" "}
+            Mensagens do WhatsApp, uma para cada turno. Use {"{nome}"}, {"{data}"}, {"{turno}"} e{" "}
             {"{pessoas}"} — trocamos pelos dados da reserva.
           </p>
-          {(
-            [
-              ["msg_confirmacao", "Confirmação"],
-              ["msg_aguardando", "Aguardando mesa"],
-              ["msg_sem_mesa", "Sem mesa"],
-            ] as const
-          ).map(([chave, nome]) => (
-            <div key={chave}>
-              <label className={rotulo}>{nome}</label>
-              <textarea
-                rows={2}
-                value={m[chave]}
-                onChange={(e) => setM((s) => ({ ...s, [chave]: e.target.value }))}
-                className={`${campo} w-full`}
-              />
+          {TIPOS_MSG.map(([tipo, nome]) => (
+            <div key={tipo} className="space-y-2">
+              <p className="text-xs font-semibold text-texto">{nome}</p>
+              {TURNOS.map((t) => {
+                const chave = `msg_${tipo}__${slugTurno(t)}`;
+                return (
+                  <div key={chave}>
+                    <label htmlFor={chave} className={rotulo}>{nome} · {t}</label>
+                    <textarea
+                      id={chave}
+                      rows={3}
+                      value={m[chave] ?? ""}
+                      onChange={(e) => setM((s) => ({ ...s, [chave]: e.target.value }))}
+                      className={`${campo} w-full`}
+                    />
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>

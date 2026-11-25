@@ -26,15 +26,26 @@ const badge: Record<string, string> = {
     "bg-green-100 text-ok-texto dark:bg-green-950 dark:text-green-300",
 };
 
-export default async function ConferenciaPage() {
+export default async function ConferenciaPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const supabase = await createClient();
+  // Busca pelo nome do fornecedor (sugestão da Luana, 25/11/2026): filtra no
+  // banco, não na tela (limite de 1000 linhas).
+  const q = ((await searchParams).q ?? "").trim().slice(0, 60);
+  let fornIds: string[] | null = null;
+  if (q) {
+    const termo = q.replace(/[\\%_]/g, (c) => `\\${c}`);
+    const { data: fs } = await supabase.from("fornecedores").select("id").ilike("nome", `%${termo}%`).limit(200);
+    fornIds = ((fs as { id: string }[] | null) ?? []).map((f) => f.id);
+  }
 
-  const { data } = await supabase
+  let consulta = supabase
     .from("pedidos")
     .select(
       "id, data, status, conf_colab_em, conf_colab_por, divergencias, divergencias_n, fornecedores(nome), cotacoes(descricao), pedido_itens(qtd, preco_unit), notas_fiscais(id)",
     )
     .order("criado_em", { ascending: false });
+  if (fornIds) consulta = consulta.in("fornecedor_id", fornIds.length ? fornIds : ["00000000-0000-0000-0000-000000000000"]);
+  const { data } = await consulta;
 
   type Ped = {
     id: string;
@@ -80,9 +91,18 @@ export default async function ConferenciaPage() {
         </div>
       </div>
 
+      <form action="/conferencia" className="mt-5 flex flex-wrap items-center gap-2">
+        <input name="q" defaultValue={q} placeholder="Buscar pelo fornecedor" aria-label="Buscar pelo nome do fornecedor" className="campo w-72" />
+        <button type="submit" className="btn-secundario px-4"><Icone nome="buscar" tamanho={16} /> Buscar</button>
+        {q && (
+          <Link href="/conferencia" className="btn-secundario px-4"><Icone nome="fechar" tamanho={16} /> Limpar</Link>
+        )}
+        {q && <span className="text-sm text-texto-suave">{pedidos.length} pedido{pedidos.length === 1 ? "" : "s"} de “{q}”</span>}
+      </form>
+
       {pedidos.length === 0 ? (
         <div className="mt-6 rounded-cartao bg-painel-cartao p-12 text-center text-texto-suave">
-          Nenhum pedido ainda. Gere pedidos numa cotação para conferir aqui.
+          {q ? <>Nenhum pedido de fornecedor com “{q}” no nome. Confira a escrita ou <Link href="/conferencia" className="text-texto-marca underline">veja todos</Link>.</> : "Nenhum pedido ainda. Gere pedidos numa cotação para conferir aqui."}
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-cartao bg-painel-cartao">
