@@ -20,6 +20,10 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     backgroundColor: "#0B0D0C",
   },
+  plugins: {
+    // Avisos no celular (Firebase): com o app aberto, o iPhone também mostra.
+    FirebaseMessaging: { presentationOptions: ["badge", "sound", "alert"] },
+  },
 };
 
 export default config;

@@ -12,6 +12,7 @@
 //   public/icons/teimofit-{aluno,professor}-fg-512.png  frente do ícone adaptativo (Android)
 //   public/play/teimofit-{aluno,professor}-capa-1024x500.png      capa da Play
 //   public/play/teimofit-{aluno,professor}-cabecalho-3840x1646.png cabeçalho da App Store
+//   public/icons/teimofit-notificacao-96.png            ícone dos avisos (Android)
 // Uso: node scripts/teimofit-graficos.mjs
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
@@ -76,3 +77,9 @@ for (const [app, fundo, cor, titulo, frase] of [
   await capa(`public/play/teimofit-${app}-capa-1024x500.png`, 1024, 500, fundo, cor, titulo, frase, 1);
   await capa(`public/play/teimofit-${app}-cabecalho-3840x1646.png`, 3840, 1646, fundo, cor, titulo, frase, 3.2);
 }
+
+// Ícone pequeno dos avisos no Android (barra de notificação): só a silhueta
+// em branco sobre transparente — o Android pinta com a cor do app. Um só
+// para os dois apps (é o mesmo "T").
+//   public/icons/teimofit-notificacao-96.png
+await icone("public/icons/teimofit-notificacao-96.png", 96, 0.84, { r: 0, g: 0, b: 0, alpha: 0 }, "#ffffff");

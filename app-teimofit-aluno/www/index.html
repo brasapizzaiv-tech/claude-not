@@ -141,6 +141,13 @@
   // O único endereço fixo que o app conhece: o site da marca, que traduz o
   // código e o celular no endereço da academia do aluno.
   var CENTRAL = "https://teimofit.com.br";
+  // Só abrimos dentro do app os nossos endereços (a mesma lista do
+  // capacitor.config.ts): toda academia é um subdomínio de teimofit.com.br.
+  var DOMINIOS = ["teimofit.com.br"];
+  function dominioNosso(host) {
+    var h = String(host || "").toLowerCase().replace(/:\d+$/, "");
+    return DOMINIOS.some(function (d) { return h === d || h.slice(-(d.length + 1)) === "." + d; });
+  }
   var $ = function (id) { return document.getElementById(id); };
   var aviso = $("aviso");
 
@@ -159,7 +166,7 @@
     // login tiver vencido, a própria academia pede o celular e o PIN de novo.
     try {
       var guardado = localStorage.getItem(CHAVE);
-      if (guardado && guardado.indexOf("https://") === 0) { irPara(guardado + "/aluno/inicio"); return; }
+      if (guardado && guardado.indexOf("https://") === 0 && dominioNosso(guardado.slice(8).split("/")[0])) { irPara(guardado + "/aluno/inicio"); return; }
     } catch (e) { /* aparelho sem armazenamento: segue pedindo */ }
   }
 
@@ -179,7 +186,7 @@
     if (!t) return null;
     if (t.indexOf("http") !== 0) t = "https://" + t.replace(/^\/+/, "");
     var m = t.match(/^https:\/\/([^\/\s?#]+)(\/a\/[0-9a-f]{32}\/?|\/entrar\/passe\?p=[^\s#]+)$/i);
-    if (!m) return null;
+    if (!m || !dominioNosso(m[1])) return null;
     return { origem: "https://" + m[1], url: "https://" + m[1] + m[2] };
   }
 

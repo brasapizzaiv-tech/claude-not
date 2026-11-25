@@ -17,7 +17,7 @@ env:
   # O identificador do app é PRA SEMPRE depois de publicado na loja.
   APP_ID: br.com.teimofit.aluno
   APP_NOME: TeimoFit
-  APP_VERSION_NAME: "1.0.0"
+  APP_VERSION_NAME: "1.0.1"
 
 jobs:
   apk:
@@ -60,6 +60,20 @@ jobs:
           npx cap sync android
           node scripts/patch-android.mjs
           chmod +x android/gradlew
+
+      # Avisos no celular: a configuração do Firebase (projeto "motelli", o
+      # mesmo arquivo serve os dois apps do TeimoFit) vem dos segredos. Sem
+      # ela o app compila igual, só não recebe notificação.
+      - name: Firebase (avisos no celular)
+        env:
+          FB_JSON_B64: ${{ secrets.FIREBASE_TEIMOFIT_ANDROID_JSON_B64 }}
+        run: |
+          if [ -n "$FB_JSON_B64" ]; then
+            echo "$FB_JSON_B64" | base64 -d > android/app/google-services.json
+            echo "ok google-services.json"
+          else
+            echo "Sem FIREBASE_TEIMOFIT_ANDROID_JSON_B64: app sem notificações."
+          fi
 
       - name: Compilar APK de teste
         run: cd android && ./gradlew assembleDebug --no-daemon

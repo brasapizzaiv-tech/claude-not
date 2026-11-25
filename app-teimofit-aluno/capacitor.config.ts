@@ -12,17 +12,22 @@ const config: CapacitorConfig = {
   appName: process.env.APP_NOME || "TeimoFit",
   webDir: "www",
   server: {
-    // As academias podem ter domínio próprio, que não existe na hora do
-    // build: a lista é aberta, e quem fecha a porta é a tela de entrada — só
-    // navega depois que o endereço responde /api/aluno/identidade dizendo
-    // que ali roda o TeimoFit.
-    allowNavigation: ["*"],
+    // Só o TeimoFit abre dentro do app, com a ponte nativa (avisos, câmera).
+    // Toda academia mora num subdomínio de teimofit.com.br; qualquer outro
+    // endereço (WhatsApp, YouTube, site de fora) abre fora, no app do
+    // celular. Academia com domínio próprio exigiria incluir aqui e publicar
+    // versão nova. A MESMA lista está em www/index.html (DOMINIOS).
+    allowNavigation: ["teimofit.com.br", "*.teimofit.com.br"],
     cleartext: false,
     androidScheme: "https",
   },
   android: {
     allowMixedContent: false,
     backgroundColor: "#0B0D0C",
+  },
+  plugins: {
+    // Avisos no celular (Firebase): com o app aberto, o iPhone também mostra.
+    FirebaseMessaging: { presentationOptions: ["badge", "sound", "alert"] },
   },
 };
 

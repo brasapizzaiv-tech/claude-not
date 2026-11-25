@@ -13,7 +13,7 @@ on:
 env:
   APP_ID: br.com.teimofit.professor
   APP_NOME: TeimoFit Professor
-  APP_VERSION_NAME: "1.0.0"
+  APP_VERSION_NAME: "1.0.1"
   # Conta Apple Developer (pessoa física) do Rafael.
   APPLE_TEAM_ID: NG2HMYU9Q7
   IOS_PROFILE_NAME: TeimoFit Professor App Store
@@ -64,6 +64,24 @@ jobs:
           set -x
           npx cap sync ios
           node scripts/patch-ios.mjs
+
+      # Avisos no celular: configuração do Firebase (dos segredos) entra no
+      # projeto, e o arquivo de permissões (push) passa a valer na assinatura.
+      # Também liga o gesto de voltar (MainViewController.swift).
+      - name: Firebase (avisos no celular)
+        if: steps.chave.outputs.tem == 'true'
+        env:
+          FB_PLIST_B64: ${{ secrets.FIREBASE_TEIMOFIT_PROFESSOR_IOS_PLIST_B64 }}
+        run: |
+          set -e
+          if [ -n "$FB_PLIST_B64" ]; then
+            echo "$FB_PLIST_B64" | base64 --decode > ios/App/App/GoogleService-Info.plist
+            echo "ok GoogleService-Info.plist"
+          else
+            echo "Sem FIREBASE_TEIMOFIT_PROFESSOR_IOS_PLIST_B64: app sem notificações."
+          fi
+          gem list -i xcodeproj > /dev/null || sudo gem install xcodeproj --no-document
+          ruby scripts/firebase-ios.rb
 
       - name: Certificado e perfil no Mac
         if: steps.chave.outputs.tem == 'true'

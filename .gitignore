@@ -82,6 +82,9 @@ backup-*.json
 # app nativo da equipe: node_modules e APK gerados no CI
 app-equipe/node_modules/
 app-equipe/*.apk
+# apps do TeimoFit: idem
+app-teimofit-aluno/node_modules/
+app-teimofit-professor/node_modules/
 # Firebase dos apps: vem dos segredos no build, nunca no git (repositório público)
 **/google-services.json
 **/GoogleService-Info.plist
