@@ -7,6 +7,7 @@ import { categoriasDeSangria, finDaSangria } from "@/lib/sangria-financeiro";
 import { FechamentoZ } from "./fechamento-z";
 import { AbrirCaixaForm } from "./abrir-caixa";
 import { ReceberComandas } from "./receber";
+import { lerConvenios } from "@/lib/convenios";
 import { NotasPendentes, type Pendente } from "./notas-pendentes";
 import { pixConfigurado } from "@/lib/pix";
 import { listarFormas } from "@/lib/formas-pagamento-server";
@@ -337,6 +338,7 @@ export default async function CaixaPage({
           pixAtivo={pixConfigurado()}
           nfceAuto={nfce.ligado && nfce.producao}
           colaboradores={colaboradores}
+          convenios={lerConvenios(cfg)}
         />
       </div>
 

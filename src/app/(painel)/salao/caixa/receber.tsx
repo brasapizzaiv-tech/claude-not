@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { rotuloConvenio, type Convenio } from "@/lib/convenios";
 import { avisar, confirmar as perguntarSeOk, perguntar } from "@/components/dialogo";
 import { useRouter } from "next/navigation";
 import { conferirVendaGravada, pagarSelecao, registrarTefAvulso, virarLivreComanda, removerItemCaixa, dividirItemCaixa, buscarClientesCaixa } from "../actions";
@@ -75,6 +76,7 @@ export function ReceberComandas({
   pixAtivo = false,
   nfceAuto = false,
   colaboradores = [],
+  convenios = [],
 }: {
   comandas: Comanda[];
   formas: FormaOpcao[];
@@ -84,6 +86,8 @@ export function ReceberComandas({
   pixAtivo?: boolean;
   nfceAuto?: boolean;
   colaboradores?: ColabMini[];
+  /** Convênios de empresa (pdv_config "convenios"): botão que dá o desconto. */
+  convenios?: Convenio[];
 }) {
   const router = useRouter();
   const fator = 1 + servPercent / 100;
@@ -148,6 +152,21 @@ export function ReceberComandas({
   }
   const [desconto, setDesconto] = useState("");
   const [descontoPct, setDescontoPct] = useState(false); // false = R$, true = %
+  // Convênio escolhido (ex.: MBRF 10%): preenche o desconto e não acumula com os 5% do dinheiro.
+  const [convenio, setConvenio] = useState<Convenio | null>(null);
+  function escolherConvenio(c: Convenio) {
+    if (convenio?.nome === c.nome) {
+      setConvenio(null);
+      setDesconto("");
+      setDescontoPct(false);
+      setDescDinheiroOn(true);
+      return;
+    }
+    setConvenio(c);
+    setDescontoPct(true);
+    setDesconto(String(c.pct).replace(".", ","));
+    setDescDinheiroOn(false);
+  }
   // 5% de desconto no dinheiro: só na parte do consumo paga em dinheiro, nunca
   // nos 10% dos garçons. Liga sozinho; o caixa desliga se não for o caso.
   const [descDinheiroOn, setDescDinheiroOn] = useState(true);
@@ -553,6 +572,7 @@ export function ReceberComandas({
           partesPayload.map((p) => ({ comandaId: p.comandaId, valor: p.valor })),
           // Sai na nota: desconto digitado + 5% do dinheiro, menos o acréscimo.
           Math.max(0, Math.round((desc + descDinheiro - acr) * 100) / 100),
+          convenio && desc > 0 ? rotuloConvenio(convenio) : null,
         );
       } catch {
         confirmandoRef.current = false;
@@ -622,6 +642,8 @@ export function ReceberComandas({
         setClienteSel(null);
         setDesconto("");
         setDescontoPct(false);
+        setConvenio(null);
+        setDescDinheiroOn(true);
         setAcrescimo("");
         setPagos([]);
         setPessoas("");
@@ -1124,19 +1146,40 @@ export function ReceberComandas({
                 <p className="my-auto text-center text-sm text-texto-fraco">Nenhum item para pagamento.</p>
               ) : (
                 <div className="mt-3 space-y-3">
+                  {convenios.length > 0 && (
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        {convenios.map((c) => {
+                          const ativo = convenio?.nome === c.nome;
+                          return (
+                            <button
+                              key={c.nome}
+                              type="button"
+                              aria-pressed={ativo}
+                              onClick={() => escolherConvenio(c)}
+                              className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold ${ativo ? "bg-texto text-painel-fundo" : "btn-secundario"}`}
+                            >
+                              <Icone nome={ativo ? "certo" : "cracha"} tamanho={15} /> {rotuloConvenio(c)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {convenio && <p className="mt-1 text-xs font-semibold text-texto-marca">Confira o crachá {convenio.nome} antes de receber. Não acumula com os 5% do dinheiro.</p>}
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <div className="mb-1 flex items-center justify-between">
                         <label className="text-xs text-texto-suave">Desconto</label>
                         <span className="flex overflow-hidden rounded-controle border border-borda-forte text-mini">
-                          <button type="button" onClick={() => setDescontoPct(false)} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>R$</button>
+                          <button type="button" onClick={() => { setDescontoPct(false); setConvenio(null); }} className={`px-2 py-0.5 ${!descontoPct ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>R$</button>
                           <button type="button" onClick={() => setDescontoPct(true)} className={`px-2 py-0.5 ${descontoPct ? "bg-orange-500 text-marca-sobre-primaria" : "text-texto-suave"}`}>%</button>
                         </span>
                       </div>
                       <input
                         inputMode="decimal"
                         value={desconto}
-                        onChange={(e) => setDesconto(e.target.value)}
+                        onChange={(e) => { setDesconto(e.target.value); setConvenio(null); }}
                         placeholder={descontoPct ? "0" : "0,00"}
                         className={`${inputCls} w-full text-right`}
                       />

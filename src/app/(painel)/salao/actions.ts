@@ -1121,6 +1121,8 @@ export async function pagarSelecao(
   partes: { comandaId: string; valor: number }[] = [],
   /** Desconto deste recebimento, sem os 10% (digitado + 5% do dinheiro): sai na NFC-e. */
   desconto = 0,
+  /** Convênio de empresa usado no desconto (ex.: "Convênio MBRF 10%"): vai na observação. */
+  convenio: string | null = null,
 ) {
   const supabase = await createClient();
   await exigirAcesso("/salao");
@@ -1380,7 +1382,7 @@ export async function pagarSelecao(
           comanda_id: primeiraComanda,
           comanda_ids: comandasDaVenda,
           bandeira: ((t?.bandeira || p.bandeira) || "").trim().slice(0, 30) || null,
-          observacao: ((baixa ? obsDaBaixa(baixa) : "") || (p.observacao || "").trim()).slice(0, 200) || null,
+          observacao: [((baixa ? obsDaBaixa(baixa) : "") || (p.observacao || "").trim()), (convenio || "").trim().slice(0, 60)].filter(Boolean).join(" · ").slice(0, 200) || null,
           tef_nsu: t?.nsu ?? null,
           tef_autorizacao: t?.autorizacao ?? null,
           tef_rede: t?.rede ?? null,
