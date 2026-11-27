@@ -230,7 +230,8 @@ export async function enfileirarCozinha(db: Db, lancamentoId: string, itemIds: s
 }
 
 // Reimprime (ou imprime pela 1ª vez) a comanda de um pedido já criado.
-export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
+// qual: "cozinha" (comanda), "entrega" (via do caixa) ou "ambas" (padrão).
+export async function imprimirComandaDoPedido(db: Db, pedidoId: string, qual: "cozinha" | "entrega" | "ambas" = "ambas") {
   const { data: ped } = await db.from("delivery_pedidos").select("comanda_id").eq("id", pedidoId).single();
   const comandaId = (ped as { comanda_id: string | null } | null)?.comanda_id;
   if (!comandaId) return 0;
@@ -238,7 +239,8 @@ export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
     .from("pdv_comanda_itens").select("lancamento_id").eq("comanda_id", comandaId).order("criado_em").limit(1).maybeSingle();
   const lanc = (item as { lancamento_id: string | null } | null)?.lancamento_id;
   if (!lanc) return 0;
-  const n = await enfileirarLancamento(db, lanc);
+  const n = qual === "entrega" ? 0 : await enfileirarLancamento(db, lanc);
+  if (qual === "cozinha") return n;
   // Via de entrega no caixa (impressora da NFC-e): cliente, endereço, valores
   // e o QR do motoboy — a comanda da cozinha não leva mais o QR (27/11/2026).
   const { data: caixas } = await db.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true).eq("recebe_comandas", false);

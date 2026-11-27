@@ -178,11 +178,12 @@ export async function enviarStatusWhatsapp(id: string) {
   return { ok: true as const, aviso: `Enviado no WhatsApp do cliente: ${nome}.` };
 }
 
-export async function reimprimirDelivery(id: string) {
+export async function reimprimirDelivery(id: string, qual: "cozinha" | "entrega" | "ambas" = "ambas") {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
-  const enviado = await imprimirComandaDoPedido(supabase, id);
-  return { ok: enviado > 0, enviado } as { ok: boolean; enviado: number };
+  const q = qual === "cozinha" || qual === "entrega" ? qual : "ambas";
+  const enviado = await imprimirComandaDoPedido(supabase, id, q);
+  return { ok: enviado > 0, enviado, ...(enviado === 0 ? { mensagem: "Nada foi pra impressora (sem impressora dessa via ligada?)." } : {}) } as { ok: boolean; enviado: number; mensagem?: string };
 }
 
 // ---------- Entregadores ----------

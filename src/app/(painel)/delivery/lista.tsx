@@ -69,7 +69,7 @@ export function ListaPedidos({
   avancar: (p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) => void;
   irPara: (p: PedidoBoard, status: string) => void;
   trocarEntregador: (p: PedidoBoard, id: string) => void;
-  imprimir: (p: PedidoBoard) => void;
+  imprimir: (p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") => void;
 }) {
   const [selId, setSelId] = useState<string | null>(null);
   // Sem escolha: o primeiro atrasado, senão o primeiro da lista.
@@ -180,7 +180,7 @@ function PainelPedido({ p, nowMs, proc, entregadores, avancar, irPara, trocarEnt
   avancar: (p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) => void;
   irPara: (p: PedidoBoard, status: string) => void;
   trocarEntregador: (p: PedidoBoard, id: string) => void;
-  imprimir: (p: PedidoBoard) => void;
+  imprimir: (p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") => void;
 }) {
   const [tempo, setTempo] = useState(40);
   const atrasado = pedidoAtrasado(p, nowMs);
@@ -290,8 +290,11 @@ function PainelPedido({ p, nowMs, proc, entregadores, avancar, irPara, trocarEnt
         ) : (
           <span className="btn-foco flex-1 text-[13px] opacity-50" aria-disabled>Sem telefone</span>
         )}
-        <button type="button" onClick={() => imprimir(p)} disabled={proc} className="btn-foco flex-1 text-[13px]">
-          <Icone nome="imprimir" tamanho={15} /> Imprimir
+        <button type="button" onClick={() => imprimir(p, "cozinha")} disabled={proc} className="btn-foco flex-1 text-[13px]">
+          <Icone nome="imprimir" tamanho={15} /> Cozinha
+        </button>
+        <button type="button" onClick={() => imprimir(p, "entrega")} disabled={proc} className="btn-foco flex-1 text-[13px]">
+          <Icone nome="imprimir" tamanho={15} /> Via do caixa
         </button>
       </div>
 

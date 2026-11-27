@@ -115,7 +115,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
   avancar: (p: PedidoBoard, extra?: { tempoMin?: number; motivo?: string }) => void;
   irPara: (p: PedidoBoard, status: string) => void;
   trocarEntregador: (p: PedidoBoard, id: string) => void;
-  imprimir: (p: PedidoBoard) => void;
+  imprimir: (p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") => void;
 }) {
   const st = ST[p.status] ?? ST.pendente;
   const [tempo, setTempo] = useState(40);
@@ -183,7 +183,20 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
           ) : (
             <span className="flex-1 text-center text-xs text-texto-fraco">{p.status === "entregue" ? "Concluído" : "—"}</span>
           )}
-          <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" aria-label="Reimprimir" className="btn-secundario flex min-h-11 shrink-0 items-center px-2.5"><Icone nome="imprimir" tamanho={15} titulo="Reimprimir" /></button>
+          {/* Escolhe a via: cozinha, via de entrega do caixa ou as duas. */}
+          <select
+            value=""
+            onChange={(e) => { const v = e.target.value as "cozinha" | "entrega" | "ambas" | ""; if (v) imprimir(p, v); }}
+            disabled={proc}
+            aria-label="Reimprimir"
+            title="Reimprimir"
+            className="min-h-11 w-[6.5rem] shrink-0 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs font-semibold text-texto"
+          >
+            <option value="">Imprimir…</option>
+            <option value="cozinha">Cozinha</option>
+            {p.tipo === "entrega" || p.tipo === "retirada" ? <option value="entrega">Via do caixa</option> : null}
+            <option value="ambas">As duas</option>
+          </select>
         </div>
         {(p.tipo === "entrega" || (st.proximo && p.status !== "pendente")) && (
           <div className="flex items-center gap-1.5">
@@ -373,8 +386,8 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
   function trocarEntregador(p: PedidoBoard, id: string) {
     start(async () => { await definirEntregador(p.id, id || null); router.refresh(); });
   }
-  function imprimir(p: PedidoBoard) {
-    start(async () => { await reimprimirDelivery(p.id); });
+  function imprimir(p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") {
+    start(async () => { await reimprimirDelivery(p.id, qual); });
   }
 
   const contagem = (k: string) => base.filter((FILTROS.find((x) => x.k === k) ?? FILTROS[0]).casa).length;
