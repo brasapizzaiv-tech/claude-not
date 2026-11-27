@@ -5,7 +5,7 @@ import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { definirStatusDelivery, definirEntregador, definirPagoDelivery, receberDelivery, reimprimirDelivery } from "../actions";
+import { definirStatusDelivery, definirEntregador, definirPagoDelivery, enviarStatusWhatsapp, receberDelivery, reimprimirDelivery } from "../actions";
 import { codigoDaForma, formaPelaBandeira, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import { emitirNfceComanda } from "../../salao/fiscal-actions";
@@ -104,6 +104,9 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
             </select>
           )}
           <button onClick={() => act(() => reimprimirDelivery(p.id))} disabled={proc} className="btn-secundario text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir</span></button>
+          {!cancelado && (
+            <button onClick={() => act(() => enviarStatusWhatsapp(p.id))} disabled={proc} className="btn-secundario text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="zap" tamanho={14} /> Enviar status no WhatsApp</span></button>
+          )}
           {p.comandaId && (
             <button
               onClick={async () => {

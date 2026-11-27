@@ -155,6 +155,22 @@ export async function definirPrevisao(id: string, previsaoISO: string | null) {
   return { ok: true as const };
 }
 
+// Botão "Enviar status no WhatsApp": manda de novo a mensagem da etapa atual
+// (confirmado sai com o resumo de agora — serve depois de mexer no pedido).
+export async function enviarStatusWhatsapp(id: string) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const { data } = await supabase.from("delivery_pedidos").select("status").eq("id", id).maybeSingle();
+  const status = (data as { status: string } | null)?.status;
+  if (!status) return { ok: false as const, mensagem: "Pedido não encontrado." };
+  if (status === "cancelado") return { ok: false as const, mensagem: "Pedido cancelado não tem mensagem de status." };
+  const evento = status === "pendente" ? "recebido" : status === "saiu" ? "saiu" : status === "entregue" ? "entregue" : "confirmado";
+  const r = await avisarPedido(id, evento, { forcar: true });
+  if (!r.ok) return { ok: false as const, mensagem: `Não enviou: ${r.erro ?? "erro"}` };
+  const nome = { recebido: "pedido recebido", confirmado: "pedido confirmado (com o resumo)", saiu: "saiu pra entrega", entregue: "pedido entregue" }[evento];
+  return { ok: true as const, aviso: `Enviado no WhatsApp do cliente: ${nome}.` };
+}
+
 export async function reimprimirDelivery(id: string) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();

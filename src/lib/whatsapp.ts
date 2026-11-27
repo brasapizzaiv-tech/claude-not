@@ -162,8 +162,10 @@ export async function resumoDoPedido(admin: ReturnType<typeof createAdminClient>
 
 // Manda o aviso de um evento do pedido, uma vez só (marca em wpp_avisos).
 // Nunca derruba a ação que chamou: erro vira registro na tabela e segue.
-export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
-  if (!whatsappConfigurado()) return;
+// forcar: botão "Enviar status no WhatsApp" do pedido — manda de novo, com o
+// resumo de agora (pedido mudou, cliente não recebeu).
+export async function avisarPedido(pedidoId: string, evento: EventoPedido, opts?: { forcar?: boolean }): Promise<{ ok: boolean; erro?: string }> {
+  if (!whatsappConfigurado()) return { ok: false, erro: "WhatsApp não configurado." };
   try {
     const admin = createAdminClient();
     const { data } = await admin
@@ -171,14 +173,14 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
       .select("id, nome, telefone, tipo, previsao_em, agendado_para, wpp_avisos, entregador_id, numero_turno, pdv_comandas(numero), entregadores(nome)")
       .eq("id", pedidoId)
       .maybeSingle();
-    if (!data) return;
+    if (!data) return { ok: false, erro: "Pedido não encontrado." };
     const p = data as {
       id: string; nome: string; telefone: string | null; tipo: string; previsao_em: string | null; agendado_para: string | null;
       wpp_avisos: Record<string, string> | null; pdv_comandas: { numero: number } | { numero: number }[] | null; entregadores: { nome: string } | { nome: string }[] | null;
     };
     const avisos = p.wpp_avisos ?? {};
-    if (avisos[evento]) return; // já foi
-    if (!p.telefone) return;
+    if (avisos[evento] && !opts?.forcar) return { ok: true }; // já foi
+    if (!p.telefone) return { ok: false, erro: "O pedido está sem telefone." };
     const com = Array.isArray(p.pdv_comandas) ? p.pdv_comandas[0] : p.pdv_comandas;
     const boy = Array.isArray(p.entregadores) ? p.entregadores[0] : p.entregadores;
     const numero = String((p as { numero_turno?: number | null }).numero_turno ?? com?.numero ?? "");
@@ -198,9 +200,11 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
     } else if (evento === "saiu") r = await enviarTemplate(p.telefone, "pedido_saiu", [numero, boy?.nome ?? "nosso entregador"], p.id);
     else r = await enviarTemplate(p.telefone, "pedido_finalizado", [numero], p.id);
     if (r.ok) await admin.from("delivery_pedidos").update({ wpp_avisos: { ...avisos, [evento]: new Date().toISOString() } }).eq("id", p.id);
+    return r.ok ? { ok: true } : { ok: false, erro: r.erro };
   } catch (e) {
     // Nunca derruba o pedido por causa do aviso, mas fica o rastro (COD-004).
     await registrarErro("whatsapp:aviso-pedido", e, { evento });
+    return { ok: false, erro: "Falha ao enviar. Tente de novo." };
   }
 }
 
