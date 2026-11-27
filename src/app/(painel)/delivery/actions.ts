@@ -110,6 +110,7 @@ export async function definirStatusDelivery(id: string, status: string, extra?: 
 
   // WhatsApp pro cliente (só com a API configurada; nunca trava o status).
   if (status === "aceito") await avisarPedido(id, "confirmado");
+  else if (status === "pronto") await avisarPedido(id, "pronto");
   else if (status === "saiu") await avisarPedido(id, "saiu");
   else if (status === "entregue") await avisarPedido(id, "entregue");
 
@@ -171,10 +172,12 @@ export async function enviarStatusWhatsapp(id: string) {
   const status = (data as { status: string } | null)?.status;
   if (!status) return { ok: false as const, mensagem: "Pedido não encontrado." };
   if (status === "cancelado") return { ok: false as const, mensagem: "Pedido cancelado não tem mensagem de status." };
-  const evento = status === "pendente" ? "recebido" : status === "saiu" ? "saiu" : status === "entregue" ? "entregue" : "confirmado";
+  const { data: tp } = await supabase.from("delivery_pedidos").select("tipo").eq("id", id).maybeSingle();
+  const retirada = (tp as { tipo?: string } | null)?.tipo === "retirada";
+  const evento = status === "pendente" ? "recebido" : status === "saiu" ? "saiu" : status === "entregue" ? "entregue" : status === "pronto" && retirada ? "pronto" : "confirmado";
   const r = await avisarPedido(id, evento, { forcar: true });
   if (!r.ok) return { ok: false as const, mensagem: `Não enviou: ${r.erro ?? "erro"}` };
-  const nome = { recebido: "pedido recebido", confirmado: "pedido confirmado (com o resumo)", saiu: "saiu pra entrega", entregue: "pedido entregue" }[evento];
+  const nome = { recebido: "pedido recebido", confirmado: "pedido confirmado (com o resumo)", pronto: "pronto pra retirar", saiu: "saiu pra entrega", entregue: "pedido entregue" }[evento];
   return { ok: true as const, aviso: `Enviado no WhatsApp do cliente: ${nome}.` };
 }
 

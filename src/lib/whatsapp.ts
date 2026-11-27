@@ -119,7 +119,8 @@ export async function enviarTexto(telefone: string, texto: string, pedidoId?: st
 //   pedido_saiu       {{1}} nº · {{2}} entregador
 //   pedido_finalizado {{1}} nº  (o antigo pedido_entregue ficou em inglês/Marketing na Meta, 27/11/2026)
 //   pedido_aguardando_pix {{1}} nome · {{2}} nº · {{3}} total · {{4}} Pix copia e cola · {{5}} link (27/11/2026)
-export type EventoPedido = "recebido" | "pix" | "confirmado" | "saiu" | "entregue";
+//   pedido_pronto_retirada {{1}} nome · {{2}} nº · {{3}} link (retirada, 27/11/2026)
+export type EventoPedido = "recebido" | "pix" | "confirmado" | "pronto" | "saiu" | "entregue";
 
 const hhmmSP = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
@@ -214,6 +215,10 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido, opts?
         ? await enviarTemplate(p.telefone, "pedido_confirmado_resumo", [primeiroNome, numero, resumo.itens, resumo.total, resumo.onde, link], p.id)
         : { ok: false, erro: "sem resumo" };
       if (!r.ok) r = await enviarTemplate(p.telefone, "pedido_confirmado", [numero, quando, link], p.id);
+    } else if (evento === "pronto") {
+      // Só retirada: "pronto pra retirar no balcão". Entrega não avisa o pronto (avisa o "saiu").
+      if (p.tipo !== "retirada") return { ok: true };
+      r = await enviarTemplate(p.telefone, "pedido_pronto_retirada", [primeiroNome, numero, link], p.id);
     } else if (evento === "saiu") r = await enviarTemplate(p.telefone, "pedido_saiu", [numero, boy?.nome ?? "nosso entregador"], p.id);
     else r = await enviarTemplate(p.telefone, "pedido_finalizado", [numero], p.id);
     if (r.ok) await admin.from("delivery_pedidos").update({ wpp_avisos: { ...avisos, [evento]: new Date().toISOString() } }).eq("id", p.id);
