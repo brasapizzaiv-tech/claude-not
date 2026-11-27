@@ -534,8 +534,10 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
         )
       ) : visao === "kanban" ? (
         <div className="flex gap-3 overflow-x-auto pb-3">
-          {KANBAN_COLS.map((col) => {
-            const doCol = ativos.filter((p) => p.status === col);
+          {/* O Quadro segue o filtro de cima: só as colunas que o filtro mostra
+              (Entregues vira uma coluna "Entregue"). */}
+          {[...KANBAN_COLS, "entregue"].filter((col) => filtroAtual.casa({ status: col } as PedidoBoard)).map((col) => {
+            const doCol = lista.filter((p) => p.status === col);
             const st = ST[col];
             return (
               <div key={col} className="w-72 shrink-0">
