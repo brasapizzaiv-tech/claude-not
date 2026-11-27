@@ -5,7 +5,7 @@ import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { definirStatusDelivery, definirEntregador, definirPagoDelivery, enviarStatusWhatsapp, receberDelivery, reimprimirDelivery } from "../actions";
+import { alterarTelefonePedido, definirStatusDelivery, definirEntregador, definirPagoDelivery, enviarStatusWhatsapp, receberDelivery, reimprimirDelivery } from "../actions";
 import { codigoDaForma, formaPelaBandeira, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
 import { emitirNfceComanda } from "../../salao/fiscal-actions";
@@ -172,7 +172,21 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
               <h2 className="flex items-center gap-1.5 font-bold"><Icone nome="pessoa" tamanho={15} /> {p.nome}</h2>
               {p.historicoCliente > 0 && <span className="rounded-full bg-superficie-suave px-2 py-0.5 text-xs text-texto-suave">{p.historicoCliente} pedido(s) antes</span>}
             </div>
-            <div className="text-sm text-texto-suave">{p.telefone}</div>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-texto-suave">
+              <span>{p.telefone}</span>
+              <button
+                type="button"
+                disabled={proc}
+                onClick={async () => {
+                  const novo = await perguntar("Telefone certo do cliente (com DDD):", p.telefone, { okTexto: "Salvar" });
+                  if (novo == null || !novo.trim()) return;
+                  act(() => alterarTelefonePedido(p.id, novo));
+                }}
+                className="inline-flex min-h-11 items-center gap-1 font-semibold text-texto-marca hover:underline"
+              >
+                <Icone nome="editar" tamanho={13} /> Alterar telefone
+              </button>
+            </div>
             {p.tipo === "entrega" ? (
               <div className="mt-2 text-sm">
                 <div className="flex items-start gap-1.5"><Icone nome="local" tamanho={14} className="mt-0.5" /> {[p.endereco.logradouro, p.endereco.numero].filter(Boolean).join(", ")}</div>

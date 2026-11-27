@@ -277,6 +277,25 @@ export async function calcularEntrega(endereco: {
 }
 
 // Salva a config do delivery e geocodifica o endereço do restaurante.
+// "Alterar telefone" no detalhe do pedido (cliente digitou errado no app).
+// Muda o do pedido e o do cadastro do cliente ligado; o WhatsApp pode ser
+// mandado de novo pelo "Enviar status no WhatsApp".
+export async function alterarTelefonePedido(id: string, telefone: string) {
+  await exigirAcesso("/delivery");
+  let d = String(telefone ?? "").replace(/D/g, "");
+  if ((d.length === 12 || d.length === 13) && d.startsWith("55")) d = d.slice(2);
+  if (d.length < 10 || d.length > 11) return { ok: false as const, mensagem: "Telefone com DDD, ex.: 51 99999-9999." };
+  const supabase = await createClient();
+  const { data: ped } = await supabase.from("delivery_pedidos").select("cliente_id").eq("id", id).maybeSingle();
+  const { error } = await supabase.from("delivery_pedidos").update({ telefone: d }).eq("id", id);
+  if (error) return { ok: false as const, mensagem: "Não consegui salvar. Tente de novo." };
+  const cli = (ped as { cliente_id: string | null } | null)?.cliente_id;
+  if (cli) await supabase.from("clientes").update({ telefone: d }).eq("id", cli);
+  revalidatePath(`/delivery/${id}`);
+  revalidatePath("/delivery");
+  return { ok: true as const, aviso: "Telefone alterado. Use \"Enviar status no WhatsApp\" pra mandar a mensagem pro número certo." };
+}
+
 // Botão "Fechar agora / Abrir o delivery" do topo do delivery (o mesmo
 // "Delivery ligado" da Config).
 export async function definirDeliveryAberto(aberto: boolean) {
