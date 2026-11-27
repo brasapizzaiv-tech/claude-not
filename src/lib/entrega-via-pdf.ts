@@ -44,13 +44,14 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
   doc.fillColor("#000");
   let y = 8;
   const linha = () => { doc.moveTo(pad, y).lineTo(W - pad, y).lineWidth(1).dash(2, { space: 2 }).stroke().undash(); y += 7; };
+  // Destaque em MOLDURA (não faixa preta): área grande preenchida sai rajada e
+  // apagada no térmico quando vai como PDF (27/11/2026).
   const faixa = (texto: string, tam = 12) => {
-    doc.font("Helvetica-Bold").fontSize(tam);
-    const alt = doc.heightOfString(texto, { width: cw }) + 4;
-    doc.rect(pad, y, cw, alt).fill("#000");
-    doc.fillColor("#fff").text(texto, pad, y + 2, { width: cw, align: "center" });
-    doc.fillColor("#000");
-    y += alt + 4;
+    doc.font("Helvetica-Bold").fontSize(tam + 1);
+    const alt = doc.heightOfString(texto, { width: cw - 8 }) + 6;
+    doc.rect(pad + 1, y, cw - 2, alt).lineWidth(2).stroke("#000");
+    doc.fillColor("#000").text(texto, pad + 4, y + 3, { width: cw - 8, align: "center" });
+    y += alt + 5;
   };
 
   doc.font("Helvetica-Bold").fontSize(18).text(d.tipo === "entrega" ? "ENTREGAR" : "RETIRADA NO BALCÃO", pad, y, { width: cw, align: "center" });
