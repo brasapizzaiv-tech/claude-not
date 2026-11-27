@@ -280,7 +280,9 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
       return v === "kanban" || v === "mapa" || v === "cards" ? v : "lista";
     } catch { return "lista"; }
   });
-  const [fStatus, setFStatus] = useState<string>("ativos");
+  // Em Cards abre em "Todos" (como no sistema antigo: todos os pedidos do turno
+  // em sequência, a cor do cartão diz a etapa); nas outras, "Em andamento".
+  const [fStatus, setFStatus] = useState<string>(() => (visao === "cards" ? "todos" : "ativos"));
   const [fTipo, setFTipo] = useState<string>("todos");
   const [fOrigem, setFOrigem] = useState<string>("todos");
   // Turno (numeração recomeça a cada um). O filtro SEGUE o turno de agora:
@@ -337,6 +339,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
 
   function mudarVisao(v: "lista" | "cards" | "kanban" | "mapa") {
     setVisao(v);
+    if (v === "cards") setFStatus("todos");
     try { localStorage.setItem("delivery_visao2", v); } catch { /* sem storage */ }
   }
 
@@ -366,6 +369,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     { k: "pronto", rotulo: "Prontos", casa: (p) => p.status === "pronto" },
     { k: "saiu", rotulo: "Na rua", casa: (p) => p.status === "saiu" },
     { k: "entregue", rotulo: "Entregues", casa: (p) => p.status === "entregue" },
+    { k: "todos", rotulo: "Todos", casa: () => true },
   ];
   const filtroAtual = FILTROS.find((x) => x.k === fStatus) ?? FILTROS[0];
   const lista = useMemo(() => base.filter(filtroAtual.casa)
@@ -373,6 +377,12 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     .sort((a, b) => Number(pedidoAtrasado(b, nowMs)) - Number(pedidoAtrasado(a, nowMs)) || Number(b.status === "pendente") - Number(a.status === "pendente") || (fStatus === "entregue" ? b.criado_em.localeCompare(a.criado_em) : a.criado_em.localeCompare(b.criado_em))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
   [base, fStatus, nowMs]);
+
+  // Cards: em sequência pelo número do pedido (1, 2, 3...), da esquerda pra
+  // direita, sem pular atrasado pra frente: o atrasado já ganha o contorno vermelho.
+  const listaCards = useMemo(() => [...lista].sort((a, b) =>
+    chaveTurno(a).localeCompare(chaveTurno(b)) || (a.numero ?? 1e9) - (b.numero ?? 1e9) || a.criado_em.localeCompare(b.criado_em)),
+  [lista]);
 
   const atrasado = (p: PedidoBoard) => pedidoAtrasado(p, nowMs);
 
@@ -529,7 +539,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
           <p className="cartao py-10 text-center text-sm text-texto-suave">Nenhum pedido neste filtro. Para lançar um, use &quot;Pedido por telefone&quot;.</p>
         ) : (
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(250px,1fr))]">
-            {lista.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
+            {listaCards.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
           </div>
         )
       ) : visao === "kanban" ? (
