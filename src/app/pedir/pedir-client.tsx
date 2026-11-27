@@ -84,7 +84,10 @@ export function PedirClient({
   const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
   const [taxa, setTaxa] = useState<number | null>(null);
   const [calcMsg, setCalcMsg] = useState<string | null>(null);
-  const [promoDica, setPromoDica] = useState<string | null>(null); // "Entrega grátis hoje acima de R$ 60"
+  const [promoDica, setPromoDica] = useState<string | null>(null);
+  // Promoções da tele que valem hoje nessa área: o total da tela já desconta
+  // (antes mostrava a taxa cheia e o cliente achava que ia pagar — 27/11/2026).
+  const [promosTele, setPromosTele] = useState<{ tipo: string; valor: number | string; pedido_minimo: number | string | null }[]>([]); // "Entrega grátis hoje acima de R$ 60"
   const [calculando, setCalculando] = useState(false);
   // Quando: "agora" (dentro do horário livre) ou "agendar" (horário exato).
   const [quando, setQuando] = useState<"agora" | "agendar">(aberto ? "agora" : "agendar");
@@ -278,7 +281,14 @@ export function PedirClient({
 
   const subtotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0);
   const qtdItens = cart.reduce((s, l) => s + l.qtd, 0);
-  const taxaN = tipo === "retirada" ? 0 : taxa ?? 0;
+  const taxaCheia = tipo === "retirada" ? 0 : taxa ?? 0;
+  const taxaN = taxaCheia > 0
+    ? promosTele.reduce((m, p) => {
+        if (p.pedido_minimo != null && subtotal < Number(p.pedido_minimo)) return m;
+        const v = p.tipo === "gratis" ? 0 : p.tipo === "percent" ? taxaCheia * (1 - Number(p.valor) / 100) : Math.max(0, taxaCheia - Number(p.valor));
+        return Math.min(m, Math.round(v * 100) / 100);
+      }, taxaCheia)
+    : taxaCheia;
   const descontoCupom = !cupom || (cupom.minimo != null && subtotal < cupom.minimo)
     ? 0
     : cupom.tipo === "percent"
@@ -351,6 +361,7 @@ export function PedirClient({
         return `${oque} hoje${pr.pedido_minimo != null ? ` em pedidos acima de ${brl(Number(pr.pedido_minimo))}` : ""}`;
       });
       setPromoDica(dicas.length ? dicas.join(" · ") : null);
+      setPromosTele((r.promosHoje ?? []) as { tipo: string; valor: number | string; pedido_minimo: number | string | null }[]);
     } else {
       setTaxa(null);
       setCalcMsg(r.mensagem ?? "Não consegui calcular. Confira o endereço.");
@@ -681,7 +692,7 @@ export function PedirClient({
         <div className="fixed inset-x-0 bottom-0 rounded-t-[24px] bg-painel-cartao p-4 shadow-cartao">
           <div className="mx-auto max-w-lg">
             <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
-            {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Entrega</span><span>{taxa == null ? "—" : brl(taxaN)}</span></div>}
+            {tipo === "entrega" && <div className="mb-1 flex justify-between text-sm text-texto-suave"><span>Entrega</span><span>{taxa == null ? "—" : taxaN < taxaCheia ? <>{taxaCheia > 0 && <span className="mr-1.5 text-texto-fraco line-through">{brl(taxaCheia)}</span>}<span className="font-semibold text-ok-texto">{taxaN === 0 ? "Grátis" : brl(taxaN)}</span></> : brl(taxaN)}</span></div>}
             {descontoCupom > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-ok-texto"><span>Cupom {cupom?.codigo}</span><span>− {brl(descontoCupom)}</span></div>}
             {cashbackUsado > 0 && <div className="mb-1 flex justify-between text-sm font-semibold text-ok-texto"><span>Cashback</span><span>− {brl(cashbackUsado)}</span></div>}
             <div className="mb-2 flex items-baseline justify-between"><span className="font-semibold text-texto">Total</span><span className="numero-grande text-[24px] text-texto">{brl(total)}</span></div>
