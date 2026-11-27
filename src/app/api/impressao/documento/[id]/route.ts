@@ -343,6 +343,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         mesa: (com?.mesa as string) || "Balcão",
         // Delivery sai com o nº do turno (o mesmo do painel e do cliente).
         numero: ((dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number)) ?? null,
+        rotuloNumero: dp ? "PEDIDO" : "COMANDA",
         hora,
         garcom: (prof?.nome as string) ?? null,
         observacao: null,

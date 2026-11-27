@@ -30,6 +30,8 @@ export type ComandaPdfDados = {
   qrRotulo?: string | null;
   /** Destaque em moldura no topo (delivery: "ENTREGA ÀS 11:30"). */
   destaque?: string | null;
+  /** Palavra antes do número grande: "PEDIDO" no delivery; padrão "COMANDA". */
+  rotuloNumero?: string | null;
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -44,7 +46,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   const fItem = c.largura <= 58 ? 12 : 15;
 
   // altura estimada
-  let h = 130;
+  let h = 130 + (d.numero ? 30 : 0);
   if (c.garcom && d.garcom) h += 14;
   for (const it of d.itens) {
     const ls = linhasComSabores(it.descricao || "");
@@ -79,13 +81,18 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
     doc.fillColor("#000").text(d.destaque, pad + 4, y + 4, { width: contentW - 8, align: "center" });
     y += alt + 6;
   }
+  // Número em destaque, grande e antes do nome (pedido do Rafael, 27/11/2026):
+  // é por ele que a cozinha chama o pedido. A hora fica pequena embaixo.
+  if (d.numero) {
+    doc.font("Helvetica-Bold").fontSize(c.largura <= 58 ? 24 : 32).text(`${(d.rotuloNumero || "COMANDA").toUpperCase()} ${d.numero}`, pad, y, { width: contentW, align: "center" });
+    y = doc.y + 1;
+  }
   doc.font("Helvetica-Bold").fontSize(c.largura <= 58 ? 15 : 18).text(d.mesa, pad, y, { width: contentW, align: "center" });
   y = doc.y + 2;
-  doc.font("Helvetica").fontSize(10).text(
-    `${d.numero ? `Comanda ${d.numero}` : ""}${d.numero && c.hora ? "  ·  " : ""}${c.hora ? d.hora : ""}`,
-    pad, y, { width: contentW, align: "center" },
-  );
-  y = doc.y + 1;
+  if (c.hora) {
+    doc.font("Helvetica").fontSize(10).text(d.hora, pad, y, { width: contentW, align: "center" });
+    y = doc.y + 1;
+  }
   if (c.garcom && d.garcom) { doc.fontSize(10).text(`Garçom: ${d.garcom}`, pad, y, { width: contentW, align: "center" }); y = doc.y; }
   y += 6; linha();
 
