@@ -32,7 +32,7 @@ export type ViaEntrega = {
 
 export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise<Buffer> {
   const W = larguraMm * MM;
-  const pad = 6;
+  const pad = 10; // margem maior: o caixa cortava a última letra da direita
   const cw = W - pad * 2;
   let h = 330 + (d.qr ? 110 : 0);
   for (const it of d.itens) h += 24 + (it.descricao.split("\n").length - 1) * 15;

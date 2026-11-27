@@ -27,14 +27,18 @@ export type ComandaPdfDados = {
   itens: ComandaItem[];
   qr?: string | null;      // texto do QR (pedido de entrega: "ENTREGA:<id>") — o app do motoboy lê
   qrRotulo?: string | null;
+  /** Destaque em moldura no topo (delivery: "ENTREGA ÀS 11:30"). */
+  destaque?: string | null;
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | null): Promise<Buffer> {
   const c = { ...DEF, ...(cfg ?? {}) };
-  const W = c.largura * MM;
-  const pad = 6;
+  // Papel de 80 mm imprime ~72 mm (58 → ~48): gerar na largura útil, com
+  // margem, senão as laterais saem cortadas (27/11/2026).
+  const W = (c.largura <= 60 ? 48 : 72) * MM;
+  const pad = 9;
   const contentW = W - pad * 2;
   const fItem = c.largura <= 58 ? 12 : 15;
 
@@ -47,6 +51,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   if (c.qtdCat) h += 30;
   if (d.observacao) h += 30;
   if (d.qr) h += 100;
+  if (d.destaque) h += 40;
   h += 46;
   // Sempre mais alta que larga — página "deitada" faz a impressora girar a comanda.
   h = Math.max(h, W + 20);
@@ -60,9 +65,15 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   let y = 8;
   const linha = () => { doc.moveTo(pad, y).lineTo(W - pad, y).lineWidth(1).dash(2, { space: 2 }).stroke().undash(); y += 8; };
 
-  doc.font("Helvetica-Bold").fontSize(11).text(`COMANDA${d.via ? " — " + d.via.toUpperCase() : ""}`, pad, y, { width: contentW, align: "center" });
-  y = doc.y + 4;
-  doc.font("Helvetica-Bold").fontSize(c.largura <= 58 ? 16 : 20).text(d.mesa, pad, y, { width: contentW, align: "center" });
+  // O nome da impressora ("PIZZARIA (ELGIN I8)") saiu do cabeçalho: não ajuda a cozinha.
+  if (d.destaque) {
+    doc.font("Helvetica-Bold").fontSize(c.largura <= 58 ? 13 : 17);
+    const alt = doc.heightOfString(d.destaque, { width: contentW - 8 }) + 8;
+    doc.rect(pad, y, contentW, alt).lineWidth(2.5).stroke("#000");
+    doc.fillColor("#000").text(d.destaque, pad + 4, y + 4, { width: contentW - 8, align: "center" });
+    y += alt + 6;
+  }
+  doc.font("Helvetica-Bold").fontSize(c.largura <= 58 ? 15 : 18).text(d.mesa, pad, y, { width: contentW, align: "center" });
   y = doc.y + 2;
   doc.font("Helvetica").fontSize(10).text(
     `${d.numero ? `Comanda ${d.numero}` : ""}${d.numero && c.hora ? "  ·  " : ""}${c.hora ? d.hora : ""}`,

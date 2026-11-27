@@ -323,7 +323,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const primeiro = itens[0];
     // Pedido de delivery (entrega): QR com o id do pedido pro app do motoboy.
-    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, numero_turno, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
+    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, numero_turno, agendado_para, previsao_em, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
     const entrega = dp && (dp as { tipo: string }).tipo === "entrega" ? (dp as { id: string }) : null;
     const [{ data: com }, { data: prof }] = await Promise.all([
       admin.from("pdv_comandas").select("numero, mesa").eq("id", primeiro.comanda_id).maybeSingle(),
@@ -348,6 +348,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined, categoria: catDe(i) })),
         // O QR do motoboy saiu da cozinha (27/11/2026): vai na via de entrega do caixa.
         qr: entrega && (config as { qrEntrega?: boolean } | null)?.qrEntrega ? `ENTREGA:${entrega.id}` : null,
+        // Horário em destaque: agendado (ou a previsão) — a cozinha sabe a ordem.
+        destaque: (() => {
+          const p = dp as { tipo?: string; agendado_para?: string | null; previsao_em?: string | null } | null;
+          const alvo = p?.agendado_para ?? p?.previsao_em ?? null;
+          if (!p || !alvo) return null;
+          const h = new Date(alvo).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+          return `${p.tipo === "retirada" ? "RETIRA ÀS" : "ENTREGA ÀS"} ${h}`;
+        })(),
         qrRotulo: entrega ? `ENTREGA #${(dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
       },
       config,
