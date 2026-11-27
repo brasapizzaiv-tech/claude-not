@@ -68,6 +68,7 @@ export type PedidoBoard = {
   subtotal: number;
   lat: number | null;
   lng: number | null;
+  observacao?: string | null;
 };
 export type EntregadorOpt = { id: string; nome: string };
 
@@ -94,6 +95,19 @@ const ORIGEM: Record<string, { label: string; icone: NomeIcone }> = {
   balcao: { label: "Balcão", icone: "loja" },
   convenio: { label: "Convênio", icone: "empresa" },
 };
+// Cor do cartão por etapa (visão Cards, pedido do Rafael 27/11/2026: todos os
+// pedidos juntos e a etapa pela cor). Só tokens: fundo da faixa + contorno.
+const COR_ETAPA: Record<string, { faixa: string; borda: string }> = {
+  pendente: { faixa: "bg-urgente-fundo text-urgente-texto", borda: "border-urgente-texto" },
+  aceito: { faixa: "bg-destaque text-texto-marca-pilula", borda: "border-texto-marca" },
+  em_preparo: { faixa: "bg-aviso-fundo text-aviso-texto", borda: "border-aviso-texto" },
+  pronto: { faixa: "bg-ok-fundo text-ok-texto", borda: "border-ok-texto" },
+  saiu: { faixa: "bg-info-fundo text-info-texto", borda: "border-info-texto" },
+  entregue: { faixa: "bg-superficie-suave text-texto-suave", borda: "border-borda" },
+  cancelado: { faixa: "bg-superficie-suave text-texto-fraco", borda: "border-borda" },
+};
+const ROTULO_ETAPA: Record<string, string> = { pendente: "Novo — aceitar", aceito: "Aceito", em_preparo: "Em preparo", pronto: "Pronto", saiu: "Saiu pra entrega", entregue: "Entregue", cancelado: "Cancelado" };
+
 const KANBAN_COLS = ["pendente", "aceito", "em_preparo", "pronto", "saiu"];
 
 function haQuanto(iso: string, nowMs: number) {
@@ -120,6 +134,8 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
   imprimir: (p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") => void;
 }) {
   const st = ST[p.status] ?? ST.pendente;
+  const cor = COR_ETAPA[p.status] ?? COR_ETAPA.pendente;
+  const etapaTxt = p.status === "pronto" && p.tipo === "retirada" ? "Pronto pra retirar" : p.status === "entregue" && p.tipo === "retirada" ? "Retirado" : ROTULO_ETAPA[p.status] ?? st.label;
   // Começa no tempo do topo do Delivery (retirada ou entrega).
   const [tempo, setTempo] = useState(p.tempoPadrao ?? 40);
   async function recusar() {
@@ -128,11 +144,12 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
   }
   const total = Math.round((p.subtotal + Number(p.taxa_entrega) - Number(p.desconto)) * 100) / 100;
   return (
-    <div className={`flex flex-col rounded-cartao bg-painel-cartao p-3 ${atrasado(p) ? "ring-2 ring-erro" : ""}`}>
-      <div className="mb-2 flex items-center gap-2">
-        <span className="font-bold">#{p.numero ?? "—"}</span>
-        <span className="text-xs text-texto-fraco">{haQuanto(p.criado_em, nowMs)}</span>
-        <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg}  ${st.cor}`}>{st.label}</span>
+    <div className={`flex flex-col overflow-hidden rounded-cartao border-2 bg-painel-cartao p-3 ${cor.borda} ${p.status === "cancelado" ? "opacity-60" : ""} ${atrasado(p) ? "ring-2 ring-erro ring-offset-2 ring-offset-painel-fundo" : ""}`}>
+      {/* Faixa da etapa: a cor diz onde o pedido está. */}
+      <div className={`-mx-3 -mt-3 mb-2 flex items-center gap-2 px-3 py-2 ${cor.faixa}`}>
+        <span className="font-numero text-base font-bold">#{p.numero ?? "—"}</span>
+        <span className="whitespace-nowrap text-xs opacity-80">{haQuanto(p.criado_em, nowMs)}</span>
+        <span className="ml-auto min-w-0 truncate text-xs font-bold uppercase tracking-wide" title={etapaTxt}>{etapaTxt}</span>
       </div>
       {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
         <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${p.status === "aceito" || p.status === "pendente" ? "bg-sky-500/15 text-info-texto dark:text-sky-300" : "bg-amber-500/20 text-aviso-texto dark:text-amber-300"}`}>
@@ -162,8 +179,16 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
           <span className="font-numero text-xs text-texto-fraco">{hora(p.criado_em)}</span>
           <span className="font-numero font-semibold tracking-apertada text-texto">{brl(total)}</span>
         </div>
+        {p.itens.length > 0 && (
+          <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-texto-suave">
+            {p.itens.map((i) => `${i.qtd}x ${i.descricao.split("\n")[0]}`).join(" · ")}
+          </p>
+        )}
+        {p.observacao?.trim() && (
+          <p className="mt-1.5 rounded-controle bg-aviso-fundo px-2 py-1 text-xs font-semibold leading-snug text-aviso-texto">Obs.: {p.observacao.trim()}</p>
+        )}
         {atrasado(p) && (
-            <div className="mt-1 flex items-center gap-1 text-xs font-bold text-rose-600"><Icone nome="atraso" tamanho={13} /> Atrasado</div>
+            <div className="mt-1 flex items-center gap-1 text-xs font-bold text-urgente-texto"><Icone nome="atraso" tamanho={13} /> Atrasado</div>
           )}
       </Link>
 
@@ -181,6 +206,8 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
               <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="btn-principal min-h-11 min-w-0 flex-1 whitespace-nowrap px-2 text-sm">Aceitar</button>
               <button onClick={recusar} disabled={proc} title="Recusar com motivo" aria-label="Recusar com motivo" className="btn-secundario flex min-h-11 shrink-0 items-center px-2.5 text-erro"><Icone nome="fechar" tamanho={14} titulo="Recusar" /></button>
             </>
+          ) : p.tipo === "retirada" && p.status === "pronto" ? (
+            <button onClick={() => irPara(p, "entregue")} disabled={proc} className="btn-principal min-h-11 min-w-0 flex-1 whitespace-nowrap px-2 text-sm">Cliente retirou</button>
           ) : st.proximo ? (
             <button onClick={() => avancar(p)} disabled={proc} className="btn-principal min-h-11 min-w-0 flex-1 whitespace-nowrap px-2 text-sm">→ {ST[st.proximo].label}</button>
           ) : (
@@ -189,10 +216,10 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
         </div>
         {/* Linha de baixo: motoboy, mudar etapa e imprimir (o "Aceitar" fica com a linha de cima inteira). */}
         {(
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1">
             {p.tipo === "entrega" && (
-              <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} aria-label="Motoboy" className="min-h-11 min-w-[7rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto">
-                <option value="">Motoboy…</option>
+              <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} aria-label="Motoboy" className="min-h-11 min-w-[4.5rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-1 text-xs text-texto">
+                <option value="">Motoboy</option>
                 {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
               </select>
             )}
@@ -203,9 +230,9 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
                 disabled={proc}
                 title="Pular direto pra outra etapa"
                 aria-label="Mudar etapa"
-                className="min-h-11 min-w-[7rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto"
+                className="min-h-11 min-w-[4.5rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-1 text-xs text-texto"
               >
-                <option value="">Mudar etapa…</option>
+                <option value="">Etapa</option>
                 {PULAR.filter((k) => k !== p.status).map((k) => <option key={k} value={k}>{ST[k].label}</option>)}
               </select>
             )}
@@ -216,9 +243,9 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
               disabled={proc}
               aria-label="Reimprimir"
               title="Reimprimir"
-              className="min-h-11 min-w-[6.5rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs font-semibold text-texto"
+              className="min-h-11 min-w-[5.5rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-1 text-xs font-semibold text-texto"
             >
-              <option value="">Imprimir…</option>
+              <option value="">Imprimir</option>
               <option value="cozinha">Cozinha</option>
               {p.tipo === "entrega" || p.tipo === "retirada" ? <option value="entrega">Via do caixa</option> : null}
               <option value="ambas">As duas</option>
@@ -246,11 +273,11 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
   const [proc, start] = useTransition();
   // Abre na LISTA (layout novo, out/2026); quadro de colunas e mapa ficam a um
   // botão. A escolha fica lembrada neste navegador.
-  const [visao, setVisao] = useState<"lista" | "kanban" | "mapa">(() => {
+  const [visao, setVisao] = useState<"lista" | "cards" | "kanban" | "mapa">(() => {
     if (typeof window === "undefined") return "lista";
     try {
       const v = localStorage.getItem("delivery_visao2");
-      return v === "kanban" || v === "mapa" ? v : "lista";
+      return v === "kanban" || v === "mapa" || v === "cards" ? v : "lista";
     } catch { return "lista"; }
   });
   const [fStatus, setFStatus] = useState<string>("ativos");
@@ -308,7 +335,7 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
     return () => { document.title = antes; };
   }, [pendentes]);
 
-  function mudarVisao(v: "lista" | "kanban" | "mapa") {
+  function mudarVisao(v: "lista" | "cards" | "kanban" | "mapa") {
     setVisao(v);
     try { localStorage.setItem("delivery_visao2", v); } catch { /* sem storage */ }
   }
@@ -425,12 +452,12 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
           >
             <Icone nome={som ? "campainha" : "mudo"} tamanho={17} titulo={som ? "Som ligado" : "Som desligado"} />
           </button>
-          <button type="button" onClick={() => mudarVisao(visao === "kanban" ? "lista" : "kanban")} className="btn-secundario text-sm">
-            {visao === "kanban" ? "Ver em lista" : "Ver em quadro"}
-          </button>
-          <button type="button" onClick={() => mudarVisao(visao === "mapa" ? "lista" : "mapa")} className="btn-secundario text-sm">
-            {visao === "mapa" ? "Ver em lista" : "Ver no mapa"}
-          </button>
+          {/* Jeito de ver: lista com painel, cards (todos juntos, cor pela etapa), quadro de colunas ou mapa. */}
+          <div role="group" aria-label="Jeito de ver os pedidos" className="flex flex-wrap gap-1.5">
+            {([["lista", "Lista"], ["cards", "Cards"], ["kanban", "Quadro"], ["mapa", "Mapa"]] as const).map(([v, rot]) => (
+              <button key={v} type="button" onClick={() => mudarVisao(v)} aria-pressed={visao === v} className={`filtro ${visao === v ? "filtro-ativo" : ""}`}>{rot}</button>
+            ))}
+          </div>
           <Link href="/delivery/novo" className="btn-principal text-sm" title="Tecla rápida: F9">
             <Icone nome="novo" tamanho={16} /> Pedido por telefone <kbd className="rounded-[6px] border border-current/40 px-1 font-numero text-[11px] opacity-70">F9</kbd>
           </Link>
@@ -497,6 +524,14 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
 
       {visao === "mapa" ? (
         googleKey ? <MapaPedidosGoogle pinos={pinos} origem={origemMapa} chave={googleKey} boys={boys} /> : <MapaPedidos pinos={pinos} origem={origemMapa} boys={boys} />
+      ) : visao === "cards" ? (
+        lista.length === 0 ? (
+          <p className="cartao py-10 text-center text-sm text-texto-suave">Nenhum pedido neste filtro. Para lançar um, use &quot;Pedido por telefone&quot;.</p>
+        ) : (
+          <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(250px,1fr))]">
+            {lista.map((p) => <CardPedido key={p.id} p={p} {...cardProps} />)}
+          </div>
+        )
       ) : visao === "kanban" ? (
         <div className="flex gap-3 overflow-x-auto pb-3">
           {KANBAN_COLS.map((col) => {
