@@ -147,7 +147,7 @@ export async function resumoDoPedido(admin: ReturnType<typeof createAdminClient>
     const q = Number(i.qtd);
     const qtd = Number.isInteger(q) ? `${q}x` : `${q.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
     return `${qtd} ${nome.trim()}${escolhas.length ? ` (${escolhas.join(", ")})` : ""}`;
-  }).join("; ");
+  }).join(" ▪ ");
   const subtotal = lista.reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
   const total = Math.max(0, Math.round((subtotal + Number(p.taxa_entrega ?? 0) - Number(p.desconto ?? 0)) * 100) / 100);
   const forma = (p.forma_pagamento || "").trim();
@@ -160,6 +160,69 @@ export async function resumoDoPedido(admin: ReturnType<typeof createAdminClient>
     total: umaLinha(`${brlWpp(total)}${pagamento ? ` · ${pagamento}` : ""}`, 200),
     onde: umaLinha(onde, 200),
   };
+}
+
+// O cliente mandou mensagem pra gente nas últimas 24 h? Aí a Meta deixa texto
+// livre (com quebra de linha), que o modelo não deixa nas variáveis.
+async function janelaAberta(admin: ReturnType<typeof createAdminClient>, telefone: string) {
+  const to = telefoneWa(telefone);
+  if (!to) return false;
+  // O WhatsApp às vezes manda o número sem o 9 (55 + DDD + 8 dígitos).
+  const sem9 = to.length === 13 ? to.slice(0, 4) + to.slice(5) : to;
+  const { count } = await admin.from("whatsapp_mensagens").select("id", { count: "exact", head: true })
+    .eq("direcao", "entrada").in("telefone", [to, sem9]).gte("criado_em", new Date(Date.now() - 23.5 * 3600_000).toISOString());
+  return (count ?? 0) > 0;
+}
+
+// "Pedido confirmado" organizado como no sistema antigo (Rafael, 27/11/2026):
+// um item por linha, as escolhas embaixo, entrega/retirada, total e pagamento.
+// Só sai como texto livre (janela de 24 h); fora dela vai o modelo.
+export async function textoPedidoConfirmado(admin: ReturnType<typeof createAdminClient>, pedidoId: string, primeiroNome: string, numero: string, quando: string, link: string) {
+  const { data } = await admin
+    .from("delivery_pedidos")
+    .select("comanda_id, tipo, logradouro, numero, bairro, complemento, taxa_entrega, desconto, forma_pagamento, troco_para, pago")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  const p = data as { comanda_id: string | null; tipo: string; logradouro: string | null; numero: string | null; bairro: string | null; complemento: string | null; taxa_entrega: number | null; desconto: number | null; forma_pagamento: string | null; troco_para: number | null; pago: boolean } | null;
+  if (!p?.comanda_id) return null;
+  const { data: its } = await admin.from("pdv_comanda_itens").select("descricao, qtd, preco_unit").eq("comanda_id", p.comanda_id).order("criado_em");
+  const lista = (its as { descricao: string; qtd: number; preco_unit: number }[] | null) ?? [];
+  if (lista.length === 0) return null;
+  const L: string[] = [`Olá ${primeiroNome}! Seu pedido *#${numero}* na Brasa foi confirmado ✅ e já vai pra cozinha.`, ""];
+  if (p.tipo === "retirada") L.push(`🛍️ *RETIRADA NO BALCÃO*`, `⏰ ${quando}`);
+  else {
+    const end = [p.logradouro && `${p.logradouro}${p.numero ? `, ${p.numero}` : ""}`, p.bairro].filter(Boolean).join(" · ");
+    L.push(`🛵 *ENTREGA*`, `⏰ ${quando}`);
+    if (end) L.push(`📍 ${end}`);
+    if (p.complemento?.trim()) L.push(`🏠 ${p.complemento.trim()}`);
+  }
+  L.push("", "🧾 *PEDIDO*");
+  for (const i of lista) {
+    const [nome, ...resto] = String(i.descricao || "").split("\n");
+    const q = Number(i.qtd);
+    const qtd = Number.isInteger(q) ? `${q}x` : `${q.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
+    L.push(`▸ *${qtd} ${nome.trim()}* — ${brlWpp(q * Number(i.preco_unit))}`);
+    for (const linha of resto) {
+      const t = linha.trim();
+      if (!t) continue;
+      if (t.startsWith("»")) L.push(`   _${t.replace(/^»\s*/, "")}_`);
+      else if (/^Obs:/i.test(t)) L.push(`   📝 ${t}`);
+      else L.push(`      • ${t.replace(/^-\s*/, "")}`);
+    }
+  }
+  const subtotal = lista.reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const taxa = Number(p.taxa_entrega ?? 0), desc = Number(p.desconto ?? 0);
+  const total = Math.max(0, Math.round((subtotal + taxa - desc) * 100) / 100);
+  L.push("");
+  if (taxa > 0 || desc > 0) L.push(`Produtos: ${brlWpp(subtotal)}`);
+  if (taxa > 0) L.push(`Taxa de entrega: ${brlWpp(taxa)}`);
+  if (desc > 0) L.push(`Desconto: −${brlWpp(desc)}`);
+  L.push(`💰 *TOTAL: ${brlWpp(total)}*`);
+  const forma = (p.forma_pagamento || "").trim();
+  if (forma) L.push(`💳 ${forma}${!p.pago && Number(p.troco_para) > 0 ? ` · troco pra ${brlWpp(Number(p.troco_para))}` : ""}`);
+  if (p.pago) L.push(p.tipo === "retirada" ? "✔️ Pedido pago, é só retirar" : "✔️ Pedido pago, não precisa pagar na entrega");
+  L.push("", `Acompanhe por aqui: ${link}`, "Obrigado pela preferência! 🧡");
+  return L.join("\n");
 }
 
 // Manda o aviso de um evento do pedido, uma vez só (marca em wpp_avisos).
@@ -210,10 +273,17 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido, opts?
       const quando = p.agendado_para ? `agendado pras ${hhmmSP(p.agendado_para)}` : p.previsao_em ? `${p.tipo === "retirada" ? "pronto" : "chega"} por volta das ${hhmmSP(p.previsao_em)}` : "em breve";
       // Uma mensagem só, com o resumo do pedido (27/11/2026). Sem o modelo
       // novo aprovado, cai no "pedido_confirmado" curto.
-      const resumo = await resumoDoPedido(admin, p.id, quando).catch(() => null);
-      r = resumo
-        ? await enviarTemplate(p.telefone, "pedido_confirmado_resumo", [primeiroNome, numero, resumo.itens, resumo.total, resumo.onde, link], p.id)
-        : { ok: false, erro: "sem resumo" };
+      // Cliente falou com a gente nas últimas 24 h: vai organizado (texto livre).
+      const texto = (await janelaAberta(admin, p.telefone).catch(() => false))
+        ? await textoPedidoConfirmado(admin, p.id, primeiroNome, numero, quando, link).catch(() => null)
+        : null;
+      r = texto ? await enviarTexto(p.telefone, texto, p.id) : { ok: false, erro: "fora da janela" };
+      if (!r.ok) {
+        const resumo = await resumoDoPedido(admin, p.id, quando).catch(() => null);
+        r = resumo
+          ? await enviarTemplate(p.telefone, "pedido_confirmado_resumo", [primeiroNome, numero, resumo.itens, resumo.total, resumo.onde, link], p.id)
+          : { ok: false, erro: "sem resumo" };
+      }
       if (!r.ok) r = await enviarTemplate(p.telefone, "pedido_confirmado", [numero, quando, link], p.id);
     } else if (evento === "pronto") {
       // Só retirada: "pronto pra retirar no balcão". Entrega não avisa o pronto (avisa o "saiu").
