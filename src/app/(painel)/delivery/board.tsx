@@ -132,20 +132,21 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
         <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${st.bg}  ${st.cor}`}>{st.label}</span>
       </div>
       {p.agendado_para && p.status !== "entregue" && p.status !== "cancelado" && (
-        <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? "bg-amber-500/20 text-aviso-texto dark:text-amber-300" : "bg-sky-500/15 text-info-texto dark:text-sky-300"}`}>
-          <Icone nome="agenda" tamanho={13} className="mr-1" /> Agendado pra {hora(p.agendado_para)}{nowMs >= new Date(p.agendado_para).getTime() - 45 * 60000 ? " · hora de preparar" : ""}
+        <div className={`mb-2 rounded-controle px-2 py-1 text-xs font-bold ${p.status === "aceito" || p.status === "pendente" ? "bg-sky-500/15 text-info-texto dark:text-sky-300" : "bg-amber-500/20 text-aviso-texto dark:text-amber-300"}`}>
+          <Icone nome="agenda" tamanho={13} className="mr-1" /> Agendado pra {hora(p.agendado_para)}
+          {p.status === "aceito" && <span className="font-medium"> · imprime às {(new Date(p.agendado_para).getUTCHours() + 21) % 24 < 16 ? "10:30" : "18:00"}</span>}
         </div>
       )}
       <Link href={`/delivery/${p.id}`} className="block">
         <div className="font-semibold leading-tight">{p.nome}</div>
         <div className="font-numero text-xs text-texto-suave">{p.telefone}</div>
-        <div className="mt-1 flex items-center gap-2 text-xs text-texto-suave">
-          <span className="inline-flex items-center gap-1">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-texto-suave">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
             {ORIGEM[p.origem] ? <><Icone nome={ORIGEM[p.origem].icone} tamanho={12} /> {ORIGEM[p.origem].label}</> : p.origem}
           </span>
           <span>·</span>
-          <span>{p.forma_pagamento ?? "—"}</span>
-          {!p.pago && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-aviso-texto">{p.status === "entregue" && p.entregadorNome ? `com ${p.entregadorNome}` : "a receber"}</span>}
+          <span className="whitespace-nowrap">{p.forma_pagamento ?? "—"}</span>
+          {!p.pago && <span className="whitespace-nowrap rounded-full bg-amber-500/15 px-2 py-0.5 font-semibold text-aviso-texto">{p.status === "entregue" && p.entregadorNome ? `com ${p.entregadorNome}` : "a receber"}</span>}
         </div>
         <div className="mt-1.5 text-sm">
           {p.tipo === "retirada" ? (
@@ -163,42 +164,50 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
           )}
       </Link>
 
-      <div className="mt-2 flex items-center gap-1.5 border-t border-borda pt-2">
-        {p.status === "pendente" ? (
-          <>
-            {!p.agendado_para && (
-              <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} title="Tempo prometido" className="min-h-11 rounded-controle border border-borda-forte bg-transparent px-1.5 text-xs text-texto">
-                {TEMPOS_ACEITE.map((t) => <option key={t} value={t}>{t} min</option>)}
+      {/* Duas linhas: a ação principal inteira em cima (o texto não quebra numa
+          coluna estreita) e etapa/motoboy/imprimir embaixo (27/11/2026). */}
+      <div className="mt-2 space-y-1.5 border-t border-borda pt-2">
+        <div className="flex items-center gap-1.5">
+          {p.status === "pendente" ? (
+            <>
+              {!p.agendado_para && (
+                <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} title="Tempo prometido" aria-label="Tempo prometido" className="min-h-11 shrink-0 rounded-controle border border-borda-forte bg-painel-cartao px-1.5 text-xs text-texto">
+                  {TEMPOS_ACEITE.map((t) => <option key={t} value={t}>{t} min</option>)}
+                </select>
+              )}
+              <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="btn-principal min-h-11 min-w-0 flex-1 whitespace-nowrap px-2 text-sm">Aceitar</button>
+              <button onClick={recusar} disabled={proc} title="Recusar com motivo" aria-label="Recusar com motivo" className="btn-secundario flex min-h-11 shrink-0 items-center px-2.5 text-erro"><Icone nome="fechar" tamanho={14} titulo="Recusar" /></button>
+            </>
+          ) : st.proximo ? (
+            <button onClick={() => avancar(p)} disabled={proc} className="btn-principal min-h-11 min-w-0 flex-1 whitespace-nowrap px-2 text-sm">→ {ST[st.proximo].label}</button>
+          ) : (
+            <span className="flex-1 text-center text-xs text-texto-fraco">{p.status === "entregue" ? "Concluído" : "—"}</span>
+          )}
+          <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" aria-label="Reimprimir" className="btn-secundario flex min-h-11 shrink-0 items-center px-2.5"><Icone nome="imprimir" tamanho={15} titulo="Reimprimir" /></button>
+        </div>
+        {(p.tipo === "entrega" || (st.proximo && p.status !== "pendente")) && (
+          <div className="flex items-center gap-1.5">
+            {p.tipo === "entrega" && (
+              <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} aria-label="Motoboy" className="min-h-11 min-w-0 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto">
+                <option value="">Motoboy…</option>
+                {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
               </select>
             )}
-            <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="min-h-11 flex-1 rounded-controle bg-texto text-xs font-bold text-fundo transition hover:opacity-90 disabled:opacity-50">Aceitar</button>
-            <button onClick={recusar} disabled={proc} title="Recusar com motivo" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-2 text-xs text-erro"><Icone nome="fechar" tamanho={13} titulo="Recusar" /></button>
-          </>
-        ) : st.proximo ? (
-          <>
-            <button onClick={() => avancar(p)} disabled={proc} className="min-h-11 flex-1 rounded-controle bg-texto text-xs font-bold text-fundo transition hover:opacity-90 disabled:opacity-50">{ST[st.proximo].label}</button>
-            <select
-              value=""
-              onChange={(e) => { if (e.target.value) irPara(p, e.target.value); }}
-              disabled={proc}
-              title="Pular direto pra outra etapa"
-              aria-label="Pular direto pra outra etapa"
-              className="min-h-11 w-11 rounded-controle border border-borda-forte bg-transparent px-1 text-xs text-texto"
-            >
-              <option value="">⋯</option>
-              {PULAR.filter((k) => k !== p.status).map((k) => <option key={k} value={k}>{ST[k].label}</option>)}
-            </select>
-          </>
-        ) : (
-          <span className="flex-1 text-center text-xs text-texto-fraco">{p.status === "entregue" ? "Concluído" : "—"}</span>
+            {st.proximo && p.status !== "pendente" && (
+              <select
+                value=""
+                onChange={(e) => { if (e.target.value) irPara(p, e.target.value); }}
+                disabled={proc}
+                title="Pular direto pra outra etapa"
+                aria-label="Mudar etapa"
+                className="min-h-11 min-w-0 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto"
+              >
+                <option value="">Mudar etapa…</option>
+                {PULAR.filter((k) => k !== p.status).map((k) => <option key={k} value={k}>{ST[k].label}</option>)}
+              </select>
+            )}
+          </div>
         )}
-        {p.tipo === "entrega" && (
-          <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} className="min-h-11 max-w-[7rem] rounded-controle border border-borda-forte bg-transparent px-1.5 text-xs text-texto">
-            <option value="">Motoboy</option>
-            {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-          </select>
-        )}
-        <button onClick={() => imprimir(p)} disabled={proc} title="Reimprimir" className="flex min-h-11 items-center rounded-controle border border-borda-forte px-2 text-texto-suave transition hover:bg-superficie-suave"><Icone nome="imprimir" tamanho={14} titulo="Reimprimir" /></button>
       </div>
     </div>
   );
