@@ -26,7 +26,12 @@ export async function criarPedidoDelivery(d: DadosPedidoDelivery) {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id ?? null;
   const r = await criarPedidoDeliveryCore(supabase, d, { status: "aceito", atendenteId: uid, criadoPor: uid });
-  if (r.ok) revalidatePath("/delivery");
+  if (r.ok) {
+    // Lançado pelo painel já nasce aceito: o cliente recebe o "confirmado" com
+    // o resumo (antes não ia nada — pedido da Nelsi, 27/11/2026).
+    await avisarPedido(r.id, "confirmado");
+    revalidatePath("/delivery");
+  }
   return r;
 }
 

@@ -122,6 +122,44 @@ export type EventoPedido = "recebido" | "confirmado" | "saiu" | "entregue";
 
 const hhmmSP = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
+// Variável de modelo da Meta não aceita quebra de linha, tab nem 4+ espaços.
+const umaLinha = (s: string, max: number) => s.replace(/[\t\r\n]+/g, " ").replace(/ {2,}/g, " ").trim().slice(0, max);
+const brlWpp = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// Resumo do pedido pro "pedido confirmado": itens (com as escolhas), total com
+// a forma de pagamento e onde/quando.
+export async function resumoDoPedido(admin: ReturnType<typeof createAdminClient>, pedidoId: string, quando: string) {
+  const { data } = await admin
+    .from("delivery_pedidos")
+    .select("comanda_id, tipo, logradouro, numero, taxa_entrega, desconto, forma_pagamento, troco_para, pago")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  const p = data as { comanda_id: string | null; tipo: string; logradouro: string | null; numero: string | null; taxa_entrega: number | null; desconto: number | null; forma_pagamento: string | null; troco_para: number | null; pago: boolean } | null;
+  if (!p?.comanda_id) return null;
+  const { data: its } = await admin.from("pdv_comanda_itens").select("descricao, qtd, preco_unit").eq("comanda_id", p.comanda_id).order("criado_em");
+  const lista = (its as { descricao: string; qtd: number; preco_unit: number }[] | null) ?? [];
+  if (lista.length === 0) return null;
+  const itens = lista.map((i) => {
+    const [nome, ...resto] = String(i.descricao || "").split("\n");
+    const escolhas = resto.filter((l) => !/^Obs:/i.test(l.trim())).map((l) => l.replace(/^\s*-\s*/, "").trim()).filter(Boolean);
+    const q = Number(i.qtd);
+    const qtd = Number.isInteger(q) ? `${q}x` : `${q.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
+    return `${qtd} ${nome.trim()}${escolhas.length ? ` (${escolhas.join(", ")})` : ""}`;
+  }).join("; ");
+  const subtotal = lista.reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+  const total = Math.max(0, Math.round((subtotal + Number(p.taxa_entrega ?? 0) - Number(p.desconto ?? 0)) * 100) / 100);
+  const forma = (p.forma_pagamento || "").trim();
+  const pagamento = p.pago ? `pago${forma ? ` (${forma})` : ""}` : forma ? `${forma}${Number(p.troco_para) > 0 ? `, troco pra ${brlWpp(Number(p.troco_para))}` : ""}` : "";
+  const onde = p.tipo === "retirada"
+    ? `Retirada no balcão · ${quando}`
+    : `Entrega${p.logradouro ? ` na ${p.logradouro}${p.numero ? `, ${p.numero}` : ""}` : ""} · ${quando}`;
+  return {
+    itens: umaLinha(itens, 900),
+    total: umaLinha(`${brlWpp(total)}${pagamento ? ` · ${pagamento}` : ""}`, 200),
+    onde: umaLinha(onde, 200),
+  };
+}
+
 // Manda o aviso de um evento do pedido, uma vez só (marca em wpp_avisos).
 // Nunca derruba a ação que chamou: erro vira registro na tabela e segue.
 export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
@@ -150,7 +188,13 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
     if (evento === "recebido") r = await enviarTemplate(p.telefone, "pedido_recebido", [primeiroNome, numero, link], p.id);
     else if (evento === "confirmado") {
       const quando = p.agendado_para ? `agendado pras ${hhmmSP(p.agendado_para)}` : p.previsao_em ? `${p.tipo === "retirada" ? "pronto" : "chega"} por volta das ${hhmmSP(p.previsao_em)}` : "em breve";
-      r = await enviarTemplate(p.telefone, "pedido_confirmado", [numero, quando, link], p.id);
+      // Uma mensagem só, com o resumo do pedido (27/11/2026). Sem o modelo
+      // novo aprovado, cai no "pedido_confirmado" curto.
+      const resumo = await resumoDoPedido(admin, p.id, quando).catch(() => null);
+      r = resumo
+        ? await enviarTemplate(p.telefone, "pedido_confirmado_resumo", [primeiroNome, numero, resumo.itens, resumo.total, resumo.onde, link], p.id)
+        : { ok: false, erro: "sem resumo" };
+      if (!r.ok) r = await enviarTemplate(p.telefone, "pedido_confirmado", [numero, quando, link], p.id);
     } else if (evento === "saiu") r = await enviarTemplate(p.telefone, "pedido_saiu", [numero, boy?.nome ?? "nosso entregador"], p.id);
     else r = await enviarTemplate(p.telefone, "pedido_finalizado", [numero], p.id);
     if (r.ok) await admin.from("delivery_pedidos").update({ wpp_avisos: { ...avisos, [evento]: new Date().toISOString() } }).eq("id", p.id);
