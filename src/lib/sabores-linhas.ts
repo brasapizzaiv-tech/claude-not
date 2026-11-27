@@ -6,6 +6,15 @@
 const EH_PIZZA = /pizza|\d\s*cm\b|broto|m[ée]dia|grande|gigante|mini/i;
 const SABOR = "  • ";
 
+// "borda Borda de Catupiry" → "Borda de Catupiry"; "borda Cheddar" → "Borda Cheddar".
+function nomeDaBorda(b: string): string {
+  const resto = b.replace(/^borda\s+/i, "").trim();
+  return /^borda\b/i.test(resto) ? resto.charAt(0).toUpperCase() + resto.slice(1) : `Borda ${resto}`;
+}
+
+/** Linha de borda (vem como etapa "» Borda ..."). */
+export const ehLinhaDeBorda = (l: string) => /^»\s*borda\b/i.test(l.trim());
+
 function sabores(lista: string): string[] {
   return lista.split(" / ").map((s) => s.trim()).filter(Boolean);
 }
@@ -25,8 +34,10 @@ export function linhasComSabores(descricao: string): string[] {
     const ss = sabores(lista);
     if (ss.length > 1 || borda) {
       saida.push(m[1].trim());
+      // Borda logo embaixo do tamanho, em moldura ("» "): é a primeira coisa
+      // que o pizzaiolo faz (pedido do Rafael, 27/11/2026).
+      if (borda) saida.push(`» ${nomeDaBorda(borda)}`);
       for (const s of ss) saida.push(`${SABOR}${s}`);
-      if (borda) saida.push(`  ${borda.charAt(0).toUpperCase()}${borda.slice(1)}`);
     } else saida.push(primeira);
   } else saida.push(primeira);
 

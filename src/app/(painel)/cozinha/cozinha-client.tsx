@@ -306,6 +306,8 @@ export function CozinhaClient({ inicial, inicialDelivery }: { inicial: PedidoRod
                 {linhas.map((l, j) =>
                   l.tipo === "etapa" ? (
                     <div key={j} style={{ fontSize: 13, fontWeight: 900, letterSpacing: "0.1em", color: TV.areia, marginTop: 6, textTransform: "uppercase" }}>{l.texto}</div>
+                  ) : l.tipo === "borda" ? (
+                    <div key={j} style={{ display: "inline-block", fontSize: 18, fontWeight: 900, color: TV.laranja, border: `2px solid ${TV.laranja}`, borderRadius: 10, padding: "2px 10px", marginTop: 4, textTransform: "uppercase" }}>{l.texto}</div>
                   ) : l.tipo === "sabor" ? (
                     <div key={j} style={{ fontSize: 19, fontWeight: 800, color: TV.texto, lineHeight: 1.3, paddingLeft: 10 }}>• {l.texto}</div>
                   ) : l.tipo === "obs" ? (

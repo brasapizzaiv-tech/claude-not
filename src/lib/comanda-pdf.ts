@@ -1,6 +1,6 @@
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
-import { linhasComSabores } from "@/lib/sabores-linhas";
+import { ehLinhaDeBorda, linhasComSabores } from "@/lib/sabores-linhas";
 
 const MM = 2.834645669;
 
@@ -46,7 +46,12 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   // altura estimada
   let h = 130;
   if (c.garcom && d.garcom) h += 14;
-  for (const it of d.itens) h += 30 + (linhasComSabores(it.descricao || "").length - 1) * 18;
+  for (const it of d.itens) {
+    const ls = linhasComSabores(it.descricao || "");
+    h += 30 + (ls.length - 1) * 18;
+    // Observação em caixa, letra maior (pode quebrar em várias linhas).
+    for (const l of ls.slice(1)) if (/^obs\b/i.test(l.trim())) h += 16 + Math.floor(l.length / 26) * 20;
+  }
   if (c.agrupar) h += 22 * new Set(d.itens.map((i) => i.categoria || "Outros")).size;
   if (c.precos) h += 26;
   if (c.qtdCat) h += 30;
@@ -104,14 +109,28 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
       // Título da etapa da marmita ("» Carne"): em moldura, pra separar
       // (pedido do Rafael: "quadradinho em volta", 27/11/2026).
       if (obs.startsWith("» ")) {
+        // Borda da pizza: logo embaixo do tamanho, maior e com moldura grossa
+        // — é o primeiro detalhe que o pizzaiolo faz (27/11/2026).
+        const borda = ehLinhaDeBorda(obs);
         y += 3;
         const tit = obs.slice(2).toUpperCase();
-        doc.font("Helvetica-Bold").fontSize(11.5).fillColor("#000");
+        doc.font("Helvetica-Bold").fontSize(borda ? 14 : 11.5).fillColor("#000");
         const wT = Math.min(contentW - 8, doc.widthOfString(tit) + 12);
-        const hT = doc.heightOfString(tit, { width: wT - 10 }) + 4;
-        doc.rect(pad + 6, y, wT, hT).lineWidth(1.6).stroke("#000");
-        doc.text(tit, pad + 11, y + 2.5, { width: wT - 10 });
+        const hT = doc.heightOfString(tit, { width: wT - 10 }) + (borda ? 6 : 4);
+        doc.rect(pad + 6, y, wT, hT).lineWidth(borda ? 2.6 : 1.6).stroke("#000");
+        doc.text(tit, pad + 11, y + (borda ? 3.5 : 2.5), { width: wT - 10 });
         y += hT + 3;
+        continue;
+      }
+      // Observação bem visível: caixa da largura toda, letra grande em negrito.
+      if (/^obs\b/i.test(obs.trim())) {
+        y += 3;
+        const txt = `OBS: ${obs.trim().replace(/^obs\.?:?\s*/i, "")}`;
+        doc.font("Helvetica-Bold").fontSize(13).fillColor("#000");
+        const hO = doc.heightOfString(txt, { width: contentW - 14 }) + 8;
+        doc.rect(pad + 2, y, contentW - 4, hO).lineWidth(2.2).stroke("#000");
+        doc.text(txt, pad + 8, y + 4, { width: contentW - 14 });
+        y += hO + 4;
         continue;
       }
       if (c.destObs) doc.font("Helvetica-Bold").fontSize(12).fillColor("#000").text(`  ${obs}`, pad, y, { width: contentW });

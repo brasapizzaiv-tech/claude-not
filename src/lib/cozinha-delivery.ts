@@ -5,7 +5,7 @@
 // em preparo), com os itens do jeito que saem no papel, e um botão "Pronto".
 // O agendado que ainda não foi liberado (almoço 10:30, noite 18:00) aparece à
 // parte, como "mais tarde", pra cozinha saber o que vem.
-import { linhasComSabores } from "@/lib/sabores-linhas";
+import { ehLinhaDeBorda, linhasComSabores } from "@/lib/sabores-linhas";
 
 export type PedidoCozinha = {
   id: string;
@@ -33,6 +33,7 @@ export type LinhaItem =
   | { tipo: "etapa"; texto: string }
   | { tipo: "escolha"; texto: string }
   | { tipo: "sabor"; texto: string }
+  | { tipo: "borda"; texto: string }
   | { tipo: "obs"; texto: string };
 
 /** Quebra a descrição do item (a mesma da comanda impressa) em partes:
@@ -52,6 +53,7 @@ export function partesDoItem(descricao: string): { nome: string; sabores: string
     const l = bruta.trim();
     if (!l) continue;
     if (l.startsWith("•")) linhas.push({ tipo: "sabor", texto: l.replace(/^•\s*/, "") });
+    else if (ehLinhaDeBorda(l)) linhas.push({ tipo: "borda", texto: l.replace(/^»\s*/, "") });
     else if (l.startsWith("»")) linhas.push({ tipo: "etapa", texto: l.replace(/^»\s*/, "") });
     else if (/^(obs|📝)/i.test(l)) linhas.push({ tipo: "obs", texto: l.replace(/^(📝\s*)?obs\.?:?\s*/i, "") });
     else linhas.push({ tipo: "escolha", texto: semPreco(l.replace(/^[-•]\s*/, "")) });
