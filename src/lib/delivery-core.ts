@@ -108,10 +108,13 @@ export async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]):
     if (ids.length === 0) continue;
     // Complementos (marmita): o nome da etapa vira um título na comanda
     // ("» Carne", "» Salada") pra cozinha separar (27/11/2026).
-    if (!ehCombo) linhas.push(`» ${tituloDaEtapa(g.nome)}`);
-    if (ehCombo) {
+    // Combo: a pizza (etapa de média) continua numa linha "Grande: A / B";
+    // as outras etapas (marmita do combo, bebida) viram título + uma linha por
+    // escolha, igual à marmita avulsa (o combo saía embolado — 27/11/2026).
+    if (!ehCombo || !g.media) linhas.push(`» ${tituloDaEtapa(g.nome)}`);
+    if (ehCombo && g.media) {
       const tam = Array.isArray(g.pdv_pizza_tamanhos) ? g.pdv_pizza_tamanhos[0] : g.pdv_pizza_tamanhos;
-      const nomes = g.media ? nomesDosSabores(ids, (id) => opDe.get(id)?.nome ?? "?") : contarNomes(ids, (id) => opDe.get(id)?.nome ?? "?");
+      const nomes = nomesDosSabores(ids, (id) => opDe.get(id)?.nome ?? "?");
       linhas.push(`${tam?.nome ?? g.nome}: ${nomes}`);
     } else {
       const cont = new Map<string, number>();
@@ -124,7 +127,10 @@ export async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]):
 }
 
 // "Escolhas seus pratos quentes" → "Pratos quentes"; "Deseja salada?" → "Salada".
-export function tituloDaEtapa(nome: string) {
+export function tituloDaEtapa(nome: string): string {
+  // "1ª Marmita do Dia: Escolhas seus pratos quentes" → "1ª Marmita do Dia · Pratos quentes"
+  const dois = nome.split(/:\s*/);
+  if (dois.length > 1 && dois[0].trim() && dois.slice(1).join(":").trim()) return `${dois[0].trim()} · ${tituloDaEtapa(dois.slice(1).join(": "))}`;
   const t = nome
     .replace(/^\s*(selecione|escolha|escolhas|escolher)\s+(a\s+sua|o\s+seu|as\s+suas|os\s+seus|seus|suas|sua|seu|a|o)?\s*/i, "")
     .replace(/^\s*deseja\s+/i, "")

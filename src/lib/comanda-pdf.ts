@@ -100,11 +100,17 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
     }
     for (let i = 1; i < linhas.length; i++) {
       const obs = linhas[i];
-      // Título da etapa da marmita ("» Carne"): negrito e sublinhado, pra separar.
+      // Título da etapa da marmita ("» Carne"): em moldura, pra separar
+      // (pedido do Rafael: "quadradinho em volta", 27/11/2026).
       if (obs.startsWith("» ")) {
-        y += 2;
-        doc.font("Helvetica-Bold").fontSize(11.5).fillColor("#000").text(obs.slice(2).toUpperCase(), pad + 8, y, { width: contentW - 8, underline: true });
-        y = doc.y + 1;
+        y += 3;
+        const tit = obs.slice(2).toUpperCase();
+        doc.font("Helvetica-Bold").fontSize(11.5).fillColor("#000");
+        const wT = Math.min(contentW - 8, doc.widthOfString(tit) + 12);
+        const hT = doc.heightOfString(tit, { width: wT - 10 }) + 4;
+        doc.rect(pad + 6, y, wT, hT).lineWidth(1.6).stroke("#000");
+        doc.text(tit, pad + 11, y + 2.5, { width: wT - 10 });
+        y += hT + 3;
         continue;
       }
       if (c.destObs) doc.font("Helvetica-Bold").fontSize(12).fillColor("#000").text(`  ${obs}`, pad, y, { width: contentW });

@@ -75,12 +75,26 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
     const valor = it.preco * it.qtd;
     subtotal += valor;
     const q = Number.isInteger(it.qtd) ? `${it.qtd}x ` : "";
-    doc.font("Helvetica-Bold").fontSize(11).text(`${q}${nome}`, pad, y, { width: cw - 55 });
-    doc.font("Helvetica-Bold").fontSize(11).text(brl(valor), W - pad - 55, y, { width: 55, align: "right" });
-    y = Math.max(doc.y, y + 13);
+    // Nome comprido (combo) quebra: a próxima linha começa depois dele, não do valor.
+    doc.font("Helvetica-Bold").fontSize(11);
+    const altNome = doc.heightOfString(`${q}${nome}`, { width: cw - 58 });
+    doc.text(`${q}${nome}`, pad, y, { width: cw - 58 });
+    doc.text(brl(valor), W - pad - 55, y, { width: 55, align: "right" });
+    y += Math.max(altNome, 13) + 1;
     for (const l of resto) {
-      const titulo = l.startsWith("» ");
-      doc.font("Helvetica-Bold").fontSize(titulo ? 10.5 : 10).text(titulo ? `  ${l.slice(2).toUpperCase()}` : `     ${l.replace(/^-\s*/, "")}`, pad, y, { width: cw });
+      if (l.startsWith("» ")) {
+        // Etapa em moldura (igual à comanda da cozinha).
+        y += 2;
+        const tit = l.slice(2).toUpperCase();
+        doc.font("Helvetica-Bold").fontSize(10);
+        const wT = Math.min(cw - 6, doc.widthOfString(tit) + 10);
+        const hT = doc.heightOfString(tit, { width: wT - 8 }) + 3;
+        doc.rect(pad + 4, y, wT, hT).lineWidth(1.3).stroke("#000");
+        doc.text(tit, pad + 8, y + 2, { width: wT - 8 });
+        y += hT + 2;
+        continue;
+      }
+      doc.font("Helvetica-Bold").fontSize(10).text(`     ${l.replace(/^-\s*/, "")}`, pad, y, { width: cw });
       y = doc.y;
     }
     y += 3;
