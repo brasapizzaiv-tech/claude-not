@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { gerarViaEntregaPdf } from "@/lib/entrega-via-pdf";
 import { empresaDoAgente } from "@/lib/impressao-agente";
 import { gerarEtiquetaPdf, type EtiquetaConfig } from "@/lib/etiqueta-pdf";
 import { gerarComandaPdf, type ComandaConfig } from "@/lib/comanda-pdf";
@@ -272,8 +273,45 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (itens.length === 0) return new Response("comanda vazia", { status: 404 });
 
     const { data: imp } = job.impressora_id
-      ? await admin.from("impressoras").select("nome, comanda_produtos, comanda_config, recebe_pizzas").eq("id", job.impressora_id).maybeSingle()
-      : { data: null as { nome: string; comanda_produtos: string[] | null; comanda_config: Record<string, unknown> | null; recebe_pizzas: boolean | null } | null };
+      ? await admin.from("impressoras").select("nome, comanda_produtos, comanda_config, recebe_pizzas, recebe_nfce").eq("id", job.impressora_id).maybeSingle()
+      : { data: null as { nome: string; comanda_produtos: string[] | null; comanda_config: Record<string, unknown> | null; recebe_pizzas: boolean | null; recebe_nfce: boolean | null } | null };
+    // Impressora do CAIXA (a da NFC-e) + pedido de delivery = via de entrega
+    // (cliente, endereço, valores, pagamento e o QR do motoboy).
+    if ((imp as { recebe_nfce?: boolean | null } | null)?.recebe_nfce) {
+      const { data: ped } = await admin
+        .from("delivery_pedidos")
+        .select("id, tipo, numero_turno, agendado_para, criado_em, origem, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, taxa_entrega, desconto, desconto_motivo, forma_pagamento, troco_para, pago, observacao")
+        .eq("comanda_id", itens[0].comanda_id)
+        .maybeSingle();
+      if (!ped) return new Response("sem pedido de delivery", { status: 404 });
+      const pd = ped as Record<string, unknown> & { id: string; tipo: string };
+      const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+      const dd = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      const end = [[pd.logradouro, pd.numero].filter(Boolean).join(", "), pd.complemento, pd.bairro, pd.cidade].filter(Boolean).join(" - ");
+      const ORIG: Record<string, string> = { app: "App", whatsapp: "WhatsApp", instagram: "Instagram", telefone: "Telefone", balcao: "Balcão", convenio: "Convênio" };
+      const largE = (((imp?.comanda_config as { largura?: number } | null)?.largura) ?? 80);
+      pdf = await gerarViaEntregaPdf({
+        numero: (pd.numero_turno as number | null) ?? null,
+        tipo: pd.tipo === "retirada" ? "retirada" : "entrega",
+        agendadoPara: pd.agendado_para ? hhmm(pd.agendado_para as string) : null,
+        pedidoEm: dd(pd.criado_em as string),
+        origem: ORIG[pd.origem as string] ?? String(pd.origem ?? ""),
+        nome: String(pd.nome ?? ""),
+        telefone: (pd.telefone as string) || null,
+        endereco: pd.tipo === "entrega" ? end || null : null,
+        referencia: (pd.referencia as string) || null,
+        itens: itens.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: Number(i.preco_unit ?? 0) })),
+        taxa: Number(pd.taxa_entrega ?? 0),
+        desconto: Number(pd.desconto ?? 0),
+        descontoMotivo: (pd.desconto_motivo as string) || null,
+        forma: (pd.forma_pagamento as string) || null,
+        trocoPara: pd.troco_para != null ? Number(pd.troco_para) : null,
+        pago: !!pd.pago,
+        observacao: (pd.observacao as string) || null,
+        qr: pd.tipo === "entrega" ? `ENTREGA:${pd.id}` : null,
+      }, largE);
+      return new Response(new Uint8Array(pdf), { headers: { "Content-Type": "application/pdf", "Cache-Control": "no-store" } });
+    }
     const prods = (imp?.comanda_produtos as string[] | null) ?? null;
     const pizzas = !!(imp as { recebe_pizzas?: boolean | null } | null)?.recebe_pizzas;
     const config = (imp?.comanda_config as ComandaConfig | null) ?? null;
@@ -308,7 +346,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         garcom: (prof?.nome as string) ?? null,
         observacao: null,
         itens: filtrados.map((i) => ({ qtd: Number(i.qtd), descricao: i.descricao, preco: i.preco_unit != null ? Number(i.preco_unit) : undefined, categoria: catDe(i) })),
-        qr: entrega ? `ENTREGA:${entrega.id}` : null,
+        // O QR do motoboy saiu da cozinha (27/11/2026): vai na via de entrega do caixa.
+        qr: entrega && (config as { qrEntrega?: boolean } | null)?.qrEntrega ? `ENTREGA:${entrega.id}` : null,
         qrRotulo: entrega ? `ENTREGA #${(dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
       },
       config,

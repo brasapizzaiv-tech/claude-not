@@ -89,6 +89,13 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
     }
     for (let i = 1; i < linhas.length; i++) {
       const obs = linhas[i];
+      // Título da etapa da marmita ("» Carne"): negrito e sublinhado, pra separar.
+      if (obs.startsWith("» ")) {
+        y += 2;
+        doc.font("Helvetica-Bold").fontSize(11.5).fillColor("#000").text(obs.slice(2).toUpperCase(), pad + 8, y, { width: contentW - 8, underline: true });
+        y = doc.y + 1;
+        continue;
+      }
       if (c.destObs) doc.font("Helvetica-Bold").fontSize(12).fillColor("#000").text(`  ${obs}`, pad, y, { width: contentW });
       else doc.font("Helvetica").fontSize(11).text(`     ${obs}`, pad, y, { width: contentW });
       y = doc.y;

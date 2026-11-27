@@ -106,6 +106,9 @@ export async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]):
   for (const g of grupos) {
     const ids = porGrupo[g.id] ?? [];
     if (ids.length === 0) continue;
+    // Complementos (marmita): o nome da etapa vira um título na comanda
+    // ("» Carne", "» Salada") pra cozinha separar (27/11/2026).
+    if (!ehCombo) linhas.push(`» ${tituloDaEtapa(g.nome)}`);
     if (ehCombo) {
       const tam = Array.isArray(g.pdv_pizza_tamanhos) ? g.pdv_pizza_tamanhos[0] : g.pdv_pizza_tamanhos;
       const nomes = g.media ? nomesDosSabores(ids, (id) => opDe.get(id)?.nome ?? "?") : contarNomes(ids, (id) => opDe.get(id)?.nome ?? "?");
@@ -116,8 +119,18 @@ export async function resolverCombo(db: Db, itemId: string, opcaoIds: string[]):
       for (const [id, n] of cont) { const o = opDe.get(id)!; const p = Number(o.preco); linhas.push(`${n > 1 ? `${n}× ` : ""}${o.nome}${p > 0 ? ` (+${p})` : ""}`); }
     }
   }
-  const descricao = linhas.length ? `${item.nome}\n${linhas.map((n) => `- ${n}`).join("\n")}` : item.nome;
+  const descricao = linhas.length ? `${item.nome}\n${linhas.map((n) => (n.startsWith("» ") ? n : `- ${n}`)).join("\n")}` : item.nome;
   return { descricao, qtd: 1, preco, itemId, combo: true, promo: Number(item.promo_preco ?? 0) > 0 };
+}
+
+// "Escolhas seus pratos quentes" → "Pratos quentes"; "Deseja salada?" → "Salada".
+export function tituloDaEtapa(nome: string) {
+  const t = nome
+    .replace(/^\s*(selecione|escolha|escolhas|escolher)\s+(a\s+sua|o\s+seu|as\s+suas|os\s+seus|seus|suas|sua|seu|a|o)?\s*/i, "")
+    .replace(/^\s*deseja\s+/i, "")
+    .replace(/[\s?.:!]+$/, "")
+    .trim() || nome.trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 // "2× Guaraná / Coca" (uma etapa de lista no combo).
@@ -225,7 +238,13 @@ export async function imprimirComandaDoPedido(db: Db, pedidoId: string) {
     .from("pdv_comanda_itens").select("lancamento_id").eq("comanda_id", comandaId).order("criado_em").limit(1).maybeSingle();
   const lanc = (item as { lancamento_id: string | null } | null)?.lancamento_id;
   if (!lanc) return 0;
-  return enfileirarLancamento(db, lanc);
+  const n = await enfileirarLancamento(db, lanc);
+  // Via de entrega no caixa (impressora da NFC-e): cliente, endereço, valores
+  // e o QR do motoboy — a comanda da cozinha não leva mais o QR (27/11/2026).
+  const { data: caixas } = await db.from("impressoras").select("id").eq("ativo", true).eq("recebe_nfce", true).eq("recebe_comandas", false);
+  const vias = ((caixas as { id: string }[] | null) ?? []).map((im) => ({ tipo: "comanda", ref_id: lanc, impressora_id: im.id }));
+  if (vias.length) await db.from("impressao_fila").insert(vias);
+  return n + vias.length;
 }
 
 // Manda (de novo) um pedido pra cozinha: cada impressora recebe só o que é

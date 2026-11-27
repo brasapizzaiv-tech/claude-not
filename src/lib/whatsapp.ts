@@ -141,7 +141,7 @@ export async function resumoDoPedido(admin: ReturnType<typeof createAdminClient>
   if (lista.length === 0) return null;
   const itens = lista.map((i) => {
     const [nome, ...resto] = String(i.descricao || "").split("\n");
-    const escolhas = resto.filter((l) => !/^Obs:/i.test(l.trim())).map((l) => l.replace(/^\s*-\s*/, "").trim()).filter(Boolean);
+    const escolhas = resto.filter((l) => !/^Obs:/i.test(l.trim()) && !l.trim().startsWith("»")).map((l) => l.replace(/^\s*-\s*/, "").trim()).filter(Boolean);
     const q = Number(i.qtd);
     const qtd = Number.isInteger(q) ? `${q}x` : `${q.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`;
     return `${qtd} ${nome.trim()}${escolhas.length ? ` (${escolhas.join(", ")})` : ""}`;
