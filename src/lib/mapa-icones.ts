@@ -25,16 +25,29 @@ function svg(tracos: string, cor: string, tamanho: number) {
   );
 }
 
+// Entregador: bicicleta branca dentro de um círculo azul com borda branca —
+// a bicicleta branca solta sumia no mapa claro (27/11/2026).
+const AZUL_BOY = "#2b58a8";
+function boySvg(tamanho: number) {
+  const r = tamanho / 2;
+  const ic = Math.round(tamanho * 0.62);
+  const off = (tamanho - ic) / 2;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${tamanho}" height="${tamanho}" viewBox="0 0 ${tamanho} ${tamanho}">` +
+    `<circle cx="${r}" cy="${r}" r="${r - 1.5}" fill="${AZUL_BOY}" stroke="#ffffff" stroke-width="3"/>` +
+    `<svg x="${off}" y="${off}" width="${ic}" height="${ic}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${BIKE}</svg></svg>`
+  );
+}
+
 /** HTML pronto pro divIcon do Leaflet. */
 export function pinoHtml(qual: "restaurante" | "entregador", tamanho = 26) {
-  const cor = qual === "restaurante" ? "#c78340" : "#ffffff";
   const sombra = "filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))";
-  return `<div style="line-height:0;${sombra}">${svg(qual === "restaurante" ? PIZZA : BIKE, cor, tamanho)}</div>`;
+  if (qual === "entregador") return `<div style="line-height:0;${sombra}">${boySvg(Math.max(tamanho, 32))}</div>`;
+  return `<div style="line-height:0;${sombra}">${svg(PIZZA, "#c78340", tamanho)}</div>`;
 }
 
 /** Endereço de imagem pro marcador do Google Maps. */
 export function pinoUrl(qual: "restaurante" | "entregador", tamanho = 22) {
-  const cor = qual === "restaurante" ? "#c78340" : "#ffffff";
-  const bruto = svg(qual === "restaurante" ? PIZZA : BIKE, cor, tamanho);
+  const bruto = qual === "entregador" ? boySvg(Math.max(tamanho, 30)) : svg(PIZZA, "#c78340", tamanho);
   return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(bruto);
 }

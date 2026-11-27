@@ -88,7 +88,7 @@ export function MapaPedidos({ pinos, origem, boys = [] }: {
     const g = boysRef.current; g.clearLayers();
     for (const b of boys) {
       const min = Math.max(0, Math.round((Date.now() - new Date(b.em).getTime()) / 60000));
-      L.marker([b.lat, b.lng], { icon: L.divIcon({ className: "", html: pinoHtml("entregador"), iconSize: [28, 28], iconAnchor: [14, 14] }) })
+      L.marker([b.lat, b.lng], { icon: L.divIcon({ className: "", html: pinoHtml("entregador"), iconSize: [32, 32], iconAnchor: [16, 16] }) })
         .addTo(g)
         .bindTooltip(`${b.nome} · ${min <= 1 ? "agora" : `há ${min} min`}`, { permanent: true, direction: "top", offset: [0, -12] });
     }

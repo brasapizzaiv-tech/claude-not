@@ -117,9 +117,9 @@ export function MapaPedidosGoogle({ pinos, origem, chave, boys = [] }: {
         position: { lat: b.lat, lng: b.lng },
         title: `${b.nome} · ${min <= 1 ? "agora" : `há ${min} min`}`,
         icon: {
-          url: pinoUrl("entregador", 20),
-          scaledSize: new google.maps.Size(20, 20),
-          anchor: new google.maps.Point(10, 10),
+          url: pinoUrl("entregador", 30),
+          scaledSize: new google.maps.Size(30, 30),
+          anchor: new google.maps.Point(15, 15),
         },
         zIndex: 3,
       });
