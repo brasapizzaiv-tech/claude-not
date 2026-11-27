@@ -58,14 +58,14 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
   doc.font("Helvetica-Bold").fontSize(22).text(`PEDIDO ${d.numero ?? "—"}`, pad, y, { width: cw, align: "center" });
   y = doc.y + 4;
   if (d.agendadoPara) faixa(`AGENDADO PARA ${d.agendadoPara}`, 13);
-  doc.font("Helvetica").fontSize(10).text(`Pedido às ${d.pedidoEm} · ${d.origem}`, pad, y, { width: cw });
+  doc.font("Helvetica-Bold").fontSize(10).text(`Pedido às ${d.pedidoEm} · ${d.origem}`, pad, y, { width: cw });
   y = doc.y + 4; linha();
 
   doc.font("Helvetica-Bold").fontSize(12).text(d.nome, pad, y, { width: cw });
   y = doc.y;
-  if (d.telefone) { doc.font("Helvetica").fontSize(11).text(`Fone: ${d.telefone}`, pad, y, { width: cw }); y = doc.y; }
+  if (d.telefone) { doc.font("Helvetica-Bold").fontSize(11).text(`Fone: ${d.telefone}`, pad, y, { width: cw }); y = doc.y; }
   if (d.endereco) { doc.font("Helvetica-Bold").fontSize(11).text(d.endereco, pad, y, { width: cw }); y = doc.y; }
-  if (d.referencia) { doc.font("Helvetica").fontSize(10).text(`Ref.: ${d.referencia}`, pad, y, { width: cw }); y = doc.y; }
+  if (d.referencia) { doc.font("Helvetica-Bold").fontSize(10).text(`Ref.: ${d.referencia}`, pad, y, { width: cw }); y = doc.y; }
   y += 4; linha();
 
   let subtotal = 0;
@@ -75,11 +75,11 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
     subtotal += valor;
     const q = Number.isInteger(it.qtd) ? `${it.qtd}x ` : "";
     doc.font("Helvetica-Bold").fontSize(11).text(`${q}${nome}`, pad, y, { width: cw - 55 });
-    doc.font("Helvetica").fontSize(11).text(brl(valor), W - pad - 55, y, { width: 55, align: "right" });
+    doc.font("Helvetica-Bold").fontSize(11).text(brl(valor), W - pad - 55, y, { width: 55, align: "right" });
     y = Math.max(doc.y, y + 13);
     for (const l of resto) {
       const titulo = l.startsWith("» ");
-      doc.font(titulo ? "Helvetica-Bold" : "Helvetica").fontSize(9.5).text(titulo ? `  ${l.slice(2).toUpperCase()}` : `     ${l.replace(/^-\s*/, "")}`, pad, y, { width: cw });
+      doc.font("Helvetica-Bold").fontSize(titulo ? 10.5 : 10).text(titulo ? `  ${l.slice(2).toUpperCase()}` : `     ${l.replace(/^-\s*/, "")}`, pad, y, { width: cw });
       y = doc.y;
     }
     y += 3;
@@ -87,7 +87,7 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
   linha();
 
   const par = (rot: string, val: string, forte = false, tam = 11) => {
-    doc.font(forte ? "Helvetica-Bold" : "Helvetica").fontSize(tam).text(rot, pad, y, { width: cw / 2 });
+    doc.font("Helvetica-Bold").fontSize(tam).text(rot, pad, y, { width: cw / 2 });
     doc.text(val, pad + cw / 2, y, { width: cw / 2, align: "right" });
     y = doc.y + 1;
   };
@@ -111,11 +111,11 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
       const lado = 85;
       doc.image(png, pad + (cw - lado) / 2, y, { width: lado, height: lado });
       y += lado + 2;
-      doc.font("Helvetica").fontSize(8.5).text(`Motoboy: leia no app pra pegar a entrega #${d.numero ?? ""}`, pad, y, { width: cw, align: "center" });
+      doc.font("Helvetica-Bold").fontSize(8.5).text(`Motoboy: leia no app pra pegar a entrega #${d.numero ?? ""}`, pad, y, { width: cw, align: "center" });
       y = doc.y + 4;
     } catch { /* sem QR */ }
   }
-  doc.font("Helvetica").fontSize(8).fillColor("#444").text("Brasa · via de entrega", pad, y, { width: cw, align: "center" });
+  doc.font("Helvetica-Bold").fontSize(8).fillColor("#000").text("Brasa · via de entrega", pad, y, { width: cw, align: "center" });
   doc.end();
   return fim;
 }

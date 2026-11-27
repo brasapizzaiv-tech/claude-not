@@ -309,7 +309,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         pago: !!pd.pago,
         observacao: (pd.observacao as string) || null,
         qr: pd.tipo === "entrega" ? `ENTREGA:${pd.id}` : null,
-      }, largE);
+      }, larguraUtil(largE));
       return new Response(new Uint8Array(pdf), { headers: { "Content-Type": "application/pdf", "Cache-Control": "no-store" } });
     }
     const prods = (imp?.comanda_produtos as string[] | null) ?? null;
