@@ -117,7 +117,7 @@ export async function enviarTexto(telefone: string, texto: string, pedidoId?: st
 //   pedido_recebido   {{1}} nome · {{2}} nº · {{3}} link
 //   pedido_confirmado {{1}} nº · {{2}} previsão · {{3}} link
 //   pedido_saiu       {{1}} nº · {{2}} entregador
-//   pedido_entregue   {{1}} nº
+//   pedido_finalizado {{1}} nº  (o antigo pedido_entregue ficou em inglês/Marketing na Meta, 27/11/2026)
 export type EventoPedido = "recebido" | "confirmado" | "saiu" | "entregue";
 
 const hhmmSP = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
@@ -152,7 +152,7 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido) {
       const quando = p.agendado_para ? `agendado pras ${hhmmSP(p.agendado_para)}` : p.previsao_em ? `${p.tipo === "retirada" ? "pronto" : "chega"} por volta das ${hhmmSP(p.previsao_em)}` : "em breve";
       r = await enviarTemplate(p.telefone, "pedido_confirmado", [numero, quando, link], p.id);
     } else if (evento === "saiu") r = await enviarTemplate(p.telefone, "pedido_saiu", [numero, boy?.nome ?? "nosso entregador"], p.id);
-    else r = await enviarTemplate(p.telefone, "pedido_entregue", [numero], p.id);
+    else r = await enviarTemplate(p.telefone, "pedido_finalizado", [numero], p.id);
     if (r.ok) await admin.from("delivery_pedidos").update({ wpp_avisos: { ...avisos, [evento]: new Date().toISOString() } }).eq("id", p.id);
   } catch (e) {
     // Nunca derruba o pedido por causa do aviso, mas fica o rastro (COD-004).

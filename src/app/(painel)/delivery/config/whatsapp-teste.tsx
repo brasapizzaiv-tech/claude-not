@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { modelosWhatsappDelivery, testarWhatsappDelivery } from "../actions";
 
-const ESPERADOS = ["pedido_recebido", "pedido_confirmado", "pedido_saiu", "pedido_entregue"];
+const ESPERADOS = ["pedido_recebido", "pedido_confirmado", "pedido_saiu", "pedido_finalizado"];
 const STATUS_PT: Record<string, string> = { APPROVED: "✅ aprovado", PENDING: "⏳ em análise", REJECTED: "❌ rejeitado", PAUSED: "⏸ pausado", DISABLED: "🚫 desativado" };
 
 // Testa a API oficial: manda o modelo padrão da Meta (hello_world) pro número.
