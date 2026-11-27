@@ -277,6 +277,18 @@ export async function calcularEntrega(endereco: {
 }
 
 // Salva a config do delivery e geocodifica o endereço do restaurante.
+// Botão "Fechar agora / Abrir o delivery" do topo do delivery (o mesmo
+// "Delivery ligado" da Config).
+export async function definirDeliveryAberto(aberto: boolean) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("delivery_config").update({ aberto: !!aberto, atualizado_em: new Date().toISOString() }).eq("id", 1).select("id");
+  if (error || !data?.length) return { ok: false as const, mensagem: "Não consegui mudar. Confira a internet e tente de novo." };
+  revalidatePath("/delivery");
+  revalidatePath("/delivery/config");
+  return { ok: true as const };
+}
+
 export async function salvarConfigDelivery(formData: FormData) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();

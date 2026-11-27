@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { StatusLoja } from "./status-loja";
+import { lerConfigHorarios } from "@/lib/delivery-horarios";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 import { empresaAtualId } from "@/lib/empresa";
 import { AvisoSaude } from "@/components/aviso-saude";
@@ -26,7 +28,7 @@ export default async function DeliveryPage() {
       .order("criado_em", { ascending: false })
       .limit(120),
     supabase.from("entregadores").select("id, nome, ultima_lat, ultima_lng, ultima_pos_em").eq("ativo", true).order("nome"),
-    supabase.from("delivery_config").select("origem_lat, origem_lng").maybeSingle(),
+    supabase.from("delivery_config").select("origem_lat, origem_lng, aberto, config").maybeSingle(),
   ]);
   // DEL-12: entregue e não recebido de DIA ANTERIOR sumia de todas as telas
   // (a lista e a trava do fechamento só olham o dia). Fica num aviso aqui até alguém receber.
@@ -95,6 +97,7 @@ export default async function DeliveryPage() {
       turnoAtual={turnoAtual}
       aviso={<>
         <AvisoSaude empresaId={await empresaAtualId()} />
+        <StatusLoja horarios={lerConfigHorarios((cfgMapa as { config?: unknown } | null)?.config)} aberto={(cfgMapa as { aberto?: boolean } | null)?.aberto !== false} />
         {semReceber.length > 0 && (
           <div role="alert" className="cartao mb-3 p-4">
             <p className="font-semibold text-urgente-texto">{semReceber.length === 1 ? "1 pedido entregue em outro dia ainda não foi recebido" : `${semReceber.length} pedidos entregues em outros dias ainda não foram recebidos`}</p>
