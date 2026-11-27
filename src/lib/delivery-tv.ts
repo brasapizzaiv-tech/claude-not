@@ -4,10 +4,15 @@
 // motoboys na rua, maior espera por motoboy e os ATRASADOS em destaque.
 // Convênio (Kern) fica fora: é produção à parte, sai por etiqueta.
 import { createAdminClient } from "@/lib/supabase/admin";
+import { estadoDelivery, lerConfigHorarios } from "@/lib/delivery-horarios";
 
 export type PedidoTv = { numero: number | null; nome: string; itens: string; min: number; hora?: string; retirada?: boolean };
 export type DeliveryTv = {
   ativo: boolean;
+  // Na TV: "fixo" durante a janela de pedidos (11:15–13:20, 18:30–22:00),
+  // "alterna" com o cardápio antes dela (ou depois, se sobrou pedido na
+  // cozinha) e "nao" depois que fechou e não tem mais nada pra sair.
+  modo: "fixo" | "alterna" | "nao";
   turno: "almoco" | "noite";
   rotulo: string;           // "marmitas" | "pizzas"
   contador: number;
@@ -43,6 +48,7 @@ export async function deliveryTv(empresaId?: string | null, agora = Date.now()):
   let qc = admin.from("delivery_config").select("config").limit(1);
   if (empresaId) qc = qc.eq("empresa_id", empresaId);
   const { data: cfg } = await qc.maybeSingle();
+  const estado = estadoDelivery(lerConfigHorarios((cfg as { config?: unknown } | null)?.config), agora);
   const metas = ((cfg as { config?: { metaTv?: { almoco?: unknown; noite?: unknown } } | null } | null)?.config?.metaTv) ?? {};
   const metaN = Number(turno === "almoco" ? metas.almoco : metas.noite);
 
@@ -103,8 +109,11 @@ export async function deliveryTv(empresaId?: string | null, agora = Date.now()):
   proximos.sort((a, b) => a.t - b.t);
   atrasados.sort((a, b) => b.min - a.min);
 
+  const naCozinha = peds.some((p) => ["aceito", "em_preparo", "pronto"].includes(p.status));
+  const modo: DeliveryTv["modo"] = peds.length === 0 ? "nao" : estado.livre ? "fixo" : estado.agendamentoAberto || naCozinha ? "alterna" : "nao";
   return {
     ativo: peds.length > 0,
+    modo,
     turno,
     rotulo: turno === "almoco" ? "marmitas" : "pizzas",
     contador,

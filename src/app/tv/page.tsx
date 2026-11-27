@@ -105,9 +105,10 @@ function TvSimples({ delivery, pedidos, agora, semRede, recados, temperatura, an
   const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
   const { salgadas, doces } = separarColunas(fila);
   const totalPaginas = totalPaginasTv(apontamentos);
-  const comDelivery = !!delivery?.ativo;
+  // Fixo na janela de pedidos; alternando antes dela (ou com pedido sobrando).
+  const comDelivery = !!delivery?.ativo && delivery.modo !== "nao";
   const slot = paginaDaRotacao(agora, comDelivery ? totalPaginas * 2 : totalPaginas);
-  const mostraDelivery = comDelivery && slot % 2 === 1;
+  const mostraDelivery = comDelivery && (delivery?.modo === "fixo" || slot % 2 === 1);
   const pagina = comDelivery ? Math.floor(slot / 2) : slot;
   const hora = new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 

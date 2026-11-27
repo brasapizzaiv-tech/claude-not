@@ -163,9 +163,10 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   const { salgadas, doces } = separarColunas(fila);
   const totalPaginas = totalPaginasTv(apontamentos);
   // Com delivery no turno, a TV alterna: cardápio, delivery, cardápio...
-  const comDelivery = !!delivery?.ativo;
+  // Fixo na janela de pedidos; alternando antes dela (ou com pedido sobrando).
+  const comDelivery = !!delivery?.ativo && delivery.modo !== "nao";
   const slot = paginaDaRotacao(agora, comDelivery ? totalPaginas * 2 : totalPaginas);
-  const mostraDelivery = comDelivery && slot % 2 === 1;
+  const mostraDelivery = comDelivery && (delivery?.modo === "fixo" || slot % 2 === 1);
   const pagina = comDelivery ? Math.floor(slot / 2) : slot;
   const semRede = !conectado || (ultimaOk > 0 && agora - ultimaOk > 20000);
 
