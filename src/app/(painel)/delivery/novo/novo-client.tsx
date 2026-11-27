@@ -5,7 +5,7 @@ import { Icone } from "@/components/icone";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { criarPedidoDelivery, buscarClientePorTelefone, calcularEntrega } from "../actions";
+import { criarPedidoDelivery, buscarClientePorTelefone, calcularEntrega, editarPedidoDelivery } from "../actions";
 import {
   PizzaModal, ComboModal, brl, novoUid,
   type Item, type Grupo, type Opcao, type PizzaData, type CartLine,
@@ -14,8 +14,30 @@ import { tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 
 const ORIGENS: [string, string][] = [["whatsapp", "WhatsApp"], ["instagram", "Instagram"], ["telefone", "Telefone"], ["balcao", "Balcão"]];
 
+const numTxt = (n: number) => (n ? String(n).replace(".", ",") : "");
+
+/** Pedido já lançado, aberto pra editar (itens e endereço — 27/11/2026). */
+export type EditarPedido = {
+  id: string;
+  numero: number | null;
+  nome: string;
+  telefone: string;
+  clienteId: string | null;
+  tipo: "entrega" | "retirada";
+  end: { logradouro: string; numero: string; complemento: string; bairro: string; cidade: string; referencia: string; cep: string };
+  taxa: number;
+  desconto: number;
+  descMotivo: string;
+  forma: string;
+  troco: number | null;
+  obs: string;
+  pago: boolean;
+  /** Itens que já estão no pedido: dá pra mudar a quantidade ou tirar. */
+  existentes: { id: string; descricao: string; qtd: number; preco: number }[];
+};
+
 export function NovoPedido({
-  itens, categorias, comComplemento, pizza, complementos, cfg, formas,
+  itens, categorias, comComplemento, pizza, complementos, cfg, formas, editar,
 }: {
   itens: Item[];
   categorias: string[];
@@ -24,32 +46,37 @@ export function NovoPedido({
   complementos: { grupos: Grupo[]; opcoes: Opcao[] };
   cfg: { taxaBase: number; precoKm: number; tempoPreparo: number };
   formas: FormaOpcao[];
+  editar?: EditarPedido;
 }) {
   const router = useRouter();
   const [proc, start] = useTransition();
   const [aba, setAba] = useState(categorias[0] ?? "");
   const [busca, setBusca] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  // Editando: os itens que já estavam (quantidade nova; 0 = tirar).
+  const [existentes, setExistentes] = useState(() => editar?.existentes ?? []);
 
   // cliente / entrega
-  const [nome, setNome] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [clienteId, setClienteId] = useState<string | null>(null);
+  const [nome, setNome] = useState(editar?.nome ?? "");
+  const [telefone, setTelefone] = useState(editar?.telefone ?? "");
+  const [clienteId, setClienteId] = useState<string | null>(editar?.clienteId ?? null);
   const [sugestoes, setSugestoes] = useState<Awaited<ReturnType<typeof buscarClientePorTelefone>>>([]);
-  const [tipo, setTipo] = useState<"entrega" | "retirada">("entrega");
-  const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
-  const [taxa, setTaxa] = useState<string>(String(cfg.taxaBase || ""));
+  const [tipo, setTipo] = useState<"entrega" | "retirada">(editar?.tipo ?? "entrega");
+  const [end, setEnd] = useState(editar?.end ?? { logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
+  const [taxa, setTaxa] = useState<string>(editar ? numTxt(editar.taxa) : String(cfg.taxaBase || ""));
   const [geo, setGeo] = useState<{ km: number | null; lat: number; lng: number; aprox: boolean; fora: boolean; areaId: string | null; areaNome: string | null } | null>(null);
   const [calcMsg, setCalcMsg] = useState<string | null>(null);
   const [calculando, setCalculando] = useState(false);
-  const [desconto, setDesconto] = useState("");
-  const [descMotivo, setDescMotivo] = useState("");
-  const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
-  const [trocoPara, setTrocoPara] = useState("");
+  const [desconto, setDesconto] = useState(editar ? numTxt(editar.desconto) : "");
+  const [descMotivo, setDescMotivo] = useState(editar?.descMotivo ?? "");
+  const [forma, setForma] = useState(editar?.forma || (formas[0]?.nome ?? "Dinheiro"));
+  const [trocoPara, setTrocoPara] = useState(editar?.troco ? numTxt(editar.troco) : "");
   const [agendar, setAgendar] = useState(""); // "YYYY-MM-DDTHH:MM" (horário de SP) ou vazio
   const [origem, setOrigem] = useState<string>("whatsapp");
-  const [obs, setObs] = useState("");
+  const [obs, setObs] = useState(editar?.obs ?? "");
   const [erro, setErro] = useState<string | null>(null);
+  // Forma do pedido que não está na lista (ex.: "Pix online"): continua escolhível.
+  const formasLista = editar?.forma && !formas.some((f) => f.nome === editar.forma) ? [...formas, { nome: editar.forma } as FormaOpcao] : formas;
 
   const comComplSet = useMemo(() => new Set(comComplemento), [comComplemento]);
   const gruposDe = (itemId: string) => complementos.grupos.filter((g) => g.item_id === itemId);
@@ -60,7 +87,9 @@ export function NovoPedido({
     return itens.filter((i) => (!q ? i.categoria === aba : i.nome.toLowerCase().includes(q)));
   }, [itens, aba, busca]);
 
-  const subtotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0);
+  const subtotal = cart.reduce((s, l) => s + l.preco * l.qtd, 0) + existentes.reduce((s, l) => s + l.preco * l.qtd, 0);
+  function setQtdExistente(id: string, q: number) { setExistentes((e) => e.map((l) => (l.id === id ? { ...l, qtd: Math.max(0, q) } : l))); }
+  const temItens = cart.length > 0 || existentes.some((l) => l.qtd > 0);
   const taxaN = tipo === "retirada" ? 0 : Number(taxa.replace(",", ".")) || 0;
   const descN = Number(desconto.replace(",", ".")) || 0;
   const total = Math.round((subtotal + taxaN - descN) * 100) / 100;
@@ -108,9 +137,26 @@ export function NovoPedido({
   }
 
   function finalizar() {
-    if (cart.length === 0) { setErro("Adicione itens ao pedido."); return; }
+    if (!temItens) { setErro("Adicione itens ao pedido."); return; }
     if (!nome.trim()) { setErro("Informe o nome do cliente."); return; }
     setErro(null);
+    if (editar) {
+      start(async () => {
+        const r = await editarPedidoDelivery(editar.id, {
+          nome, tipo,
+          endereco: tipo === "entrega" ? end : null,
+          geo: geo ? { distanciaKm: geo.km, lat: geo.lat, lng: geo.lng, areaId: geo.areaId, areaNome: geo.areaNome } : null,
+          taxaEntrega: taxaN, desconto: descN, descontoMotivo: descMotivo,
+          formaPagamento: forma, trocoPara: trocoN || null,
+          observacao: obs,
+          existentes: existentes.map((l) => ({ id: l.id, qtd: l.qtd })),
+          novos: cart.map((l) => ({ ...l.payload, qtd: l.qtd })),
+        });
+        if (r.ok) router.push(`/delivery/${editar.id}`);
+        else setErro(r.mensagem);
+      });
+      return;
+    }
     start(async () => {
       const r = await criarPedidoDelivery({
         clienteId, nome, telefone, tipo,
@@ -134,8 +180,8 @@ export function NovoPedido({
       {/* Cardápio */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-cartao bg-painel-cartao">
         <div className="flex items-center gap-2 border-b border-borda p-3">
-          <Link href="/delivery" className="font-semibold text-texto-marca hover:underline">← Voltar</Link>
-          <h1 className="text-lg font-bold">Novo pedido</h1>
+          <Link href={editar ? `/delivery/${editar.id}` : "/delivery"} className="font-semibold text-texto-marca hover:underline">← Voltar</Link>
+          <h1 className="text-lg font-bold">{editar ? `Editar pedido nº ${editar.numero ?? "—"}` : "Novo pedido"}</h1>
           <input aria-label="Buscar produto" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto..." className="campo ml-auto w-64" />
         </div>
         {!busca && (
@@ -165,7 +211,8 @@ export function NovoPedido({
           {/* Cliente */}
           <div className="relative">
             <label className="text-xs font-semibold text-texto-suave">Telefone</label>
-            <input aria-label="(51) 9." value={telefone} onChange={(e) => buscarCliente(e.target.value)} placeholder="(51) 9...." className="campo w-full" />
+            {/* Editando: o telefone se troca no próprio pedido ("Corrigir telefone"). */}
+            <input aria-label="(51) 9." value={telefone} onChange={(e) => buscarCliente(e.target.value)} readOnly={!!editar} placeholder="(51) 9...." className={`campo w-full ${editar ? "opacity-60" : ""}`} />
             {sugestoes.length > 0 && (
               <div className="absolute z-10 mt-1 w-full rounded-controle border border-borda bg-painel-cartao dark:border-borda-forte">
                 {sugestoes.map((s) => (
@@ -219,7 +266,30 @@ export function NovoPedido({
           {/* Itens */}
           <div>
             <div className="mb-1 text-xs font-semibold text-texto-suave">Itens</div>
-            {cart.length === 0 ? (
+            {/* Editando: o que já estava no pedido. Pra trocar o sabor da pizza, tire e monte de novo. */}
+            {existentes.length > 0 && (
+              <div className="mb-1.5 space-y-1.5">
+                {existentes.map((l) => (
+                  <div key={l.id} className={`flex items-start justify-between gap-2 rounded-controle border border-borda p-2 ${l.qtd === 0 ? "opacity-50" : ""}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className={`whitespace-pre-line text-sm font-medium leading-tight ${l.qtd === 0 ? "line-through" : ""}`}>{l.descricao}</div>
+                      <div className="text-xs text-ok-texto">{l.qtd === 0 ? "vai sair do pedido" : brl(l.preco * l.qtd)}</div>
+                    </div>
+                    {l.qtd === 0 ? (
+                      <button onClick={() => setQtdExistente(l.id, 1)} className="text-xs font-semibold text-texto-marca hover:underline">Voltar</button>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => setQtdExistente(l.id, l.qtd - 1)} className="h-6 w-6 rounded border border-borda-forte">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={13} titulo="Tirar do pedido" /> : "−"}</button>
+                        <span className="w-4 text-center text-sm font-bold">{l.qtd}</span>
+                        <button aria-label="Mais um" onClick={() => setQtdExistente(l.id, l.qtd + 1)} className="h-6 w-6 rounded border border-borda-forte text-ok-texto">+</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <p className="text-xs text-texto-fraco">Pra trocar o sabor da pizza: tire a pizza (lixeira) e monte de novo em “Montar pizza”.</p>
+              </div>
+            )}
+            {cart.length === 0 && existentes.length > 0 ? null : cart.length === 0 ? (
               <p className="rounded-controle border border-dashed border-borda-forte py-4 text-center text-sm text-texto-fraco">Toque nos produtos</p>
             ) : (
               <div className="space-y-1.5">
@@ -254,23 +324,28 @@ export function NovoPedido({
             <div>
               <label className="text-xs font-semibold text-texto-suave">Forma</label>
               <select value={forma} onChange={(e) => setForma(e.target.value)} className="campo w-full px-2">
-                {formas.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
+                {formasLista.map((f) => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
               </select>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-texto-suave">Origem</label>
-              <select value={origem} onChange={(e) => setOrigem(e.target.value)} className="campo w-full px-2">
-                {ORIGENS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
+            {!editar && (
+              <div>
+                <label className="text-xs font-semibold text-texto-suave">Origem</label>
+                <select value={origem} onChange={(e) => setOrigem(e.target.value)} className="campo w-full px-2">
+                  {ORIGENS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+            )}
           </div>
+          {editar?.pago && <p className="rounded-controle bg-destaque px-2 py-1.5 text-xs text-texto">Pedido já pago: dá pra trocar itens e endereço, mas o total não pode mudar.</p>}
           {forma === "Dinheiro" && (
             <input aria-label="Troco para quanto? (opcional)" value={trocoPara} onChange={(e) => setTrocoPara(e.target.value)} inputMode="decimal" placeholder="Troco para quanto? (opcional)" className="campo w-full" />
           )}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-texto-suave"><Icone nome="agenda" tamanho={13} /> Agendar pra (opcional — vazio = pra agora)</label>
-            <input type="datetime-local" value={agendar} onChange={(e) => setAgendar(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
-          </div>
+          {!editar && (
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-texto-suave"><Icone nome="agenda" tamanho={13} /> Agendar pra (opcional — vazio = pra agora)</label>
+              <input type="datetime-local" value={agendar} onChange={(e) => setAgendar(e.target.value)} className="w-full rounded-controle border border-borda-forte bg-transparent px-3 py-2 text-sm " />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2">
             {tipo === "entrega" && (
               <div>
@@ -300,7 +375,7 @@ export function NovoPedido({
           <div className="mb-2 flex justify-between text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
           {forma === "Dinheiro" && trocoN > total && <div className="mb-2 flex justify-between text-sm text-aviso-texto"><span>Troco</span><span>{brl(Math.round((trocoN - total) * 100) / 100)}</span></div>}
           {erro && <p role="alert" className="mb-2 text-sm text-urgente-texto">{erro}</p>}
-          <button onClick={finalizar} disabled={proc} className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-50">{proc ? "Criando..." : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={17} /> Criar pedido</span>}</button>
+          <button onClick={finalizar} disabled={proc} className="w-full rounded-cartao bg-texto py-3 text-base font-bold text-fundo disabled:opacity-50">{proc ? (editar ? "Salvando..." : "Criando...") : <span className="inline-flex items-center justify-center gap-2"><Icone nome="certo" tamanho={17} /> {editar ? "Salvar alterações" : "Criar pedido"}</span>}</button>
         </div>
       </div>
 

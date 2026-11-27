@@ -52,7 +52,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   if (c.qtdCat) h += 30;
   if (d.observacao) h += 30;
   if (d.qr) h += 100;
-  if (d.destaque) h += 40;
+  if (d.destaque) h += 18 + 22 * d.destaque.split("\n").length;
   h += 46;
   // Sempre mais alta que larga — página "deitada" faz a impressora girar a comanda.
   h = Math.max(h, W + 20);

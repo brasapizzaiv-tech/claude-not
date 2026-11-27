@@ -14,6 +14,8 @@ export type ViaEntrega = {
   numero: number | null;
   tipo: "entrega" | "retirada";
   agendadoPara: string | null; // "11:25"
+  /** Pedido editado depois de lançado: "19:42" (sai "PEDIDO ALTERADO" no topo). */
+  alterado?: string | null;
   pedidoEm: string;            // "27/11 10:03"
   origem: string;
   nome: string;
@@ -35,7 +37,7 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
   const W = larguraMm * MM;
   const pad = 10; // margem maior: o caixa cortava a última letra da direita
   const cw = W - pad * 2;
-  let h = 330 + (d.qr ? 110 : 0);
+  let h = 330 + (d.qr ? 110 : 0) + (d.alterado ? 40 : 0);
   for (const it of d.itens) h += 24 + (linhasComSabores(it.descricao).length - 1) * 15;
   if (d.observacao) h += 30;
   const doc = new PDFDocument({ size: [W, Math.max(h, W + 20)], margin: 0 });
@@ -55,6 +57,7 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
     y += alt + 5;
   };
 
+  if (d.alterado) faixa(`PEDIDO ALTERADO ÀS ${d.alterado}\nVALE ESTA VIA`, 12);
   doc.font("Helvetica-Bold").fontSize(18).text(d.tipo === "entrega" ? "ENTREGAR" : "RETIRADA NO BALCÃO", pad, y, { width: cw, align: "center" });
   y = doc.y + 2;
   doc.font("Helvetica-Bold").fontSize(22).text(`PEDIDO ${d.numero ?? "—"}`, pad, y, { width: cw, align: "center" });

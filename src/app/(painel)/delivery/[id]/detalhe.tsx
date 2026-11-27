@@ -5,6 +5,7 @@ import { avisar, confirmar, perguntar } from "@/components/dialogo";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { alterarTelefonePedido, definirStatusDelivery, definirEntregador, definirPagoDelivery, enviarStatusWhatsapp, receberDelivery, reimprimirDelivery } from "../actions";
 import { codigoDaForma, formaPelaBandeira, tefDoTipo, tipoDe, type FormaOpcao } from "@/lib/formas-pagamento";
 import { CobrarPinpad, useAgenteTef } from "@/components/cobrar-pinpad";
@@ -102,6 +103,10 @@ export function Detalhe({ pedido: p, entregadores, formas = [], colaboradores = 
               <option value="">Mudar etapa…</option>
               {ETAPAS.filter((e) => e.key !== p.status && e.key !== "pendente").map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
             </select>
+          )}
+          {/* Editar itens (trocar sabor, tirar/pôr) e endereço enquanto não saiu. */}
+          {!["saiu", "entregue", "cancelado"].includes(p.status) && (
+            <Link href={`/delivery/${p.id}/editar`} className="btn-secundario text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="editar" tamanho={14} /> Editar pedido</span></Link>
           )}
           <button onClick={() => act(() => reimprimirDelivery(p.id, "cozinha"))} disabled={proc} className="btn-secundario text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir cozinha</span></button>
           <button onClick={() => act(() => reimprimirDelivery(p.id, "entrega"))} disabled={proc} className="btn-secundario text-sm"><span className="inline-flex items-center gap-1.5"><Icone nome="imprimir" tamanho={14} /> Reimprimir via do caixa</span></button>

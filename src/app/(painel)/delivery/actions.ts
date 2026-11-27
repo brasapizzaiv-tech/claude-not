@@ -1,7 +1,7 @@
 "use server";
 
 import { exigirAcesso } from "@/lib/permissoes-server";
-import { imprimirAgendadoSeLiberado } from "@/lib/delivery-agendados";
+import { agendadoLiberado, imprimirAgendadoSeLiberado, lerLibera } from "@/lib/delivery-agendados";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { codigoDaForma, tipoDe } from "@/lib/formas-pagamento";
@@ -11,7 +11,7 @@ import { API as GRAPH, avisarPedido, enviarTemplate, enviarTexto, esquecerCredWp
 import { empresaAtualId } from "@/lib/empresa";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { geocodificar } from "@/lib/geo";
-import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, type DadosPedidoDelivery } from "@/lib/delivery-core";
+import { criarPedidoDeliveryCore, imprimirComandaDoPedido, calcularTaxaEntrega, resolverLinhas, type DadosPedidoDelivery, type LinhaPedido } from "@/lib/delivery-core";
 import { camposTefDoMov, registrarTefDaVenda, type TefDaVenda } from "@/lib/tef-venda-server";
 import { contaDoMotoboy, formasDoMotoboy, pedidosComMotoboy } from "@/lib/caixa-motoboy";
 import { FORMA_PIX_APP } from "@/lib/delivery-pix";
@@ -38,6 +38,133 @@ export async function criarPedidoDelivery(d: DadosPedidoDelivery) {
   }
   return r;
 }
+
+// Editar o pedido depois de lançado (pedido do Rafael, 27/11/2026): itens
+// (quantidade, tirar, pôr; trocar sabor = tirar a pizza e montar de novo),
+// endereço/taxa, desconto, pagamento e observação. Se o pedido já foi pra
+// cozinha, sai papel novo com "PEDIDO ALTERADO" (itens mudaram → cozinha e
+// via do caixa; só endereço/pagamento → só a via do caixa).
+export async function editarPedidoDelivery(id: string, d: {
+  nome: string;
+  tipo: "entrega" | "retirada";
+  endereco: { logradouro: string; numero: string; complemento: string; bairro: string; cidade: string; referencia: string; cep?: string } | null;
+  geo: { distanciaKm: number | null; lat: number; lng: number; areaId: string | null; areaNome: string | null } | null;
+  taxaEntrega: number;
+  desconto: number;
+  descontoMotivo: string;
+  formaPagamento: string;
+  trocoPara: number | null;
+  observacao: string;
+  existentes: { id: string; qtd: number }[];
+  novos: LinhaPedido[];
+}): Promise<{ ok: true } | { ok: false; mensagem: string }> {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const { data: pedRaw } = await supabase
+    .from("delivery_pedidos")
+    .select("id, status, pago, forma_pagamento, comanda_id, tipo, taxa_entrega, desconto, observacao, agendado_para, logradouro, numero, complemento, bairro, cidade, referencia, troco_para, empresa_id")
+    .eq("id", id).maybeSingle();
+  const ped = pedRaw as {
+    status: string; pago: boolean; forma_pagamento: string | null; comanda_id: string | null; tipo: string; taxa_entrega: number | null;
+    desconto: number | null; observacao: string | null; agendado_para: string | null; logradouro: string | null; numero: string | null;
+    complemento: string | null; bairro: string | null; cidade: string | null; referencia: string | null; troco_para: number | null; empresa_id: string | null;
+  } | null;
+  if (!ped || !ped.comanda_id) return { ok: false, mensagem: "Pedido não encontrado." };
+  if (["saiu", "entregue", "cancelado"].includes(ped.status)) return { ok: false, mensagem: "Este pedido já saiu (ou foi encerrado): não dá mais pra editar." };
+  if (!d.nome.trim()) return { ok: false, mensagem: "Informe o nome do cliente." };
+
+  const { data: atuaisRaw } = await supabase.from("pdv_comanda_itens").select("id, descricao, qtd, preco_unit, criado_em").eq("comanda_id", ped.comanda_id).order("criado_em").order("id");
+  const atuais = ((atuaisRaw as { id: string; descricao: string; qtd: number; preco_unit: number | null; criado_em: string }[]) ?? []);
+  const qtdNova = new Map(d.existentes.map((e) => [e.id, Math.max(0, Number(e.qtd) || 0)]));
+  const falhas: string[] = [];
+  const novas = await resolverLinhas(supabase, d.novos ?? [], falhas);
+  if (falhas.length) return { ok: false, mensagem: `Não deu pra montar: ${falhas.join(", ")}.` };
+
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const ficam = atuais.map((a) => ({ ...a, qtdNova: qtdNova.has(a.id) ? qtdNova.get(a.id)! : Number(a.qtd) }));
+  const subAntes = r2(atuais.reduce((s, a) => s + Number(a.qtd) * Number(a.preco_unit ?? 0), 0));
+  const subDepois = r2(ficam.reduce((s, a) => s + a.qtdNova * Number(a.preco_unit ?? 0), 0) + novas.reduce((s, l) => s + l.preco * l.qtd, 0));
+  if (subDepois <= 0) return { ok: false, mensagem: "O pedido ficou sem itens. Para desistir dele, use Cancelar." };
+  const taxa = d.tipo === "retirada" ? 0 : r2(Math.max(0, Number(d.taxaEntrega) || 0));
+  const desconto = r2(Math.max(0, Number(d.desconto) || 0));
+  const totalAntes = r2(subAntes + Number(ped.taxa_entrega ?? 0) - Number(ped.desconto ?? 0));
+  const totalDepois = r2(subDepois + taxa - desconto);
+  if (totalDepois < 0) return { ok: false, mensagem: "O desconto ficou maior que o pedido." };
+  // Já recebido (Pix do app, caixa…): o dinheiro não muda junto.
+  if (ped.pago && Math.abs(totalDepois - totalAntes) > 0.009) {
+    return { ok: false, mensagem: `Este pedido já foi pago (${ped.forma_pagamento ?? "recebido"}). O total mudaria de ${brlTxt(totalAntes)} para ${brlTxt(totalDepois)}: ajuste pra fechar no mesmo valor, ou cancele e lance outro.` };
+  }
+
+  const itensMudaram = novas.length > 0 || ficam.some((a) => a.qtdNova !== Number(a.qtd));
+  const lanc = crypto.randomUUID();
+  const { data: auth } = await supabase.auth.getUser();
+  if (novas.length) {
+    const { error } = await supabase.from("pdv_comanda_itens").insert(novas.map((l) => ({
+      comanda_id: ped.comanda_id, item_id: l.itemId, descricao: l.descricao, qtd: l.qtd, preco_unit: l.preco, criado_por: auth.user?.id ?? null, lancamento_id: lanc,
+    })));
+    if (error) return { ok: false, mensagem: "Não consegui gravar os itens novos. Confira a internet e tente de novo." };
+  }
+  const tirar = ficam.filter((a) => a.qtdNova === 0).map((a) => a.id);
+  if (tirar.length) await supabase.from("pdv_comanda_itens").delete().in("id", tirar);
+  for (const a of ficam.filter((x) => x.qtdNova > 0 && x.qtdNova !== Number(x.qtd))) {
+    await supabase.from("pdv_comanda_itens").update({ qtd: a.qtdNova }).eq("id", a.id);
+  }
+
+  // Observação do pedido: ela também vai no fim do 1º item (é assim que sai na
+  // cozinha). Tira a antiga e põe a nova no 1º item que sobrou.
+  const obsAntes = (ped.observacao ?? "").trim();
+  const obsNova = (d.observacao ?? "").trim().slice(0, 500);
+  const { data: restoRaw } = await supabase.from("pdv_comanda_itens").select("id, descricao").eq("comanda_id", ped.comanda_id).order("criado_em").order("id");
+  const resto = (restoRaw as { id: string; descricao: string }[]) ?? [];
+  if (obsAntes !== obsNova || (obsNova && !resto.some((r) => r.descricao.endsWith(`\nObs: ${obsNova}`)))) {
+    for (const r of resto) {
+      if (obsAntes && r.descricao.endsWith(`\nObs: ${obsAntes}`)) {
+        r.descricao = r.descricao.slice(0, -`\nObs: ${obsAntes}`.length);
+        await supabase.from("pdv_comanda_itens").update({ descricao: r.descricao }).eq("id", r.id);
+      }
+    }
+    if (obsNova && resto[0]) await supabase.from("pdv_comanda_itens").update({ descricao: `${resto[0].descricao}\nObs: ${obsNova}` }).eq("id", resto[0].id);
+  }
+  // Tudo no mesmo lançamento: o papel novo sai com o pedido inteiro.
+  await supabase.from("pdv_comandas").update({ mesa: `${d.nome.trim().split(" ")[0]} · ${d.tipo === "retirada" ? "RETIRADA" : "ENTREGA"}` }).eq("id", ped.comanda_id);
+  await supabase.from("pdv_comanda_itens").update({ lancamento_id: lanc }).eq("comanda_id", ped.comanda_id);
+
+  const e = d.tipo === "entrega" ? d.endereco : null;
+  const patch: Record<string, unknown> = {
+    nome: d.nome.trim().slice(0, 120),
+    tipo: d.tipo,
+    logradouro: e?.logradouro?.trim() || null, numero: e?.numero?.trim() || null, complemento: e?.complemento?.trim() || null,
+    bairro: e?.bairro?.trim() || null, cidade: e?.cidade?.trim() || null, referencia: e?.referencia?.trim() || null,
+    taxa_entrega: taxa,
+    desconto,
+    desconto_motivo: desconto > 0 ? (d.descontoMotivo || "").trim() || null : null,
+    forma_pagamento: d.formaPagamento || ped.forma_pagamento,
+    troco_para: d.trocoPara && d.trocoPara > 0 ? r2(d.trocoPara) : null,
+    observacao: obsNova || null,
+  };
+  if (d.geo) Object.assign(patch, { distancia_km: d.geo.distanciaKm, lat: d.geo.lat, lng: d.geo.lng, area_id: d.geo.areaId, area_nome: d.geo.areaNome });
+  const mudouOutra = ["tipo", "logradouro", "numero", "complemento", "bairro", "cidade", "referencia", "forma_pagamento", "troco_para"]
+    .some((k) => String((ped as Record<string, unknown>)[k] ?? "") !== String(patch[k] ?? ""))
+    || Math.abs(totalDepois - totalAntes) > 0.009 || obsAntes !== obsNova;
+  if (itensMudaram || mudouOutra) patch.alterado_em = new Date().toISOString();
+  const { error: erroPed } = await supabase.from("delivery_pedidos").update(patch).eq("id", id);
+  if (erroPed) return { ok: false, mensagem: explicarErroSimples(erroPed.message) };
+
+  // Já foi pra cozinha? Papel novo, marcado "PEDIDO ALTERADO".
+  const { data: cfg } = await supabase.from("delivery_config").select("config").limit(1).maybeSingle();
+  const libera = lerLibera((cfg as { config?: unknown } | null)?.config);
+  const naCozinha = ped.status === "em_preparo" || ped.status === "pronto"
+    || (ped.status === "aceito" && (!ped.agendado_para || agendadoLiberado(ped.agendado_para, libera)));
+  if (naCozinha && (itensMudaram || mudouOutra)) {
+    await imprimirComandaDoPedido(supabase, id, itensMudaram || obsAntes !== obsNova ? "ambas" : "entrega");
+  }
+  revalidatePath("/delivery");
+  revalidatePath(`/delivery/${id}`);
+  return { ok: true };
+}
+
+const brlTxt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const explicarErroSimples = (m: string) => (m ? "Não consegui salvar. Confira a internet e tente de novo." : "Não consegui salvar.");
 
 const CARIMBO: Record<string, string> = {
   aceito: "aceito_em", em_preparo: "preparo_em", pronto: "pronto_em",
@@ -286,7 +413,7 @@ export async function calcularEntrega(endereco: {
 // mandado de novo pelo "Enviar status no WhatsApp".
 export async function alterarTelefonePedido(id: string, telefone: string) {
   await exigirAcesso("/delivery");
-  let d = String(telefone ?? "").replace(/D/g, "");
+  let d = String(telefone ?? "").replace(/\D/g, ""); // era /D/: "(51) 9..." nunca passava
   if ((d.length === 12 || d.length === 13) && d.startsWith("55")) d = d.slice(2);
   if (d.length < 10 || d.length > 11) return { ok: false as const, mensagem: "Telefone com DDD, ex.: 51 99999-9999." };
   const supabase = await createClient();

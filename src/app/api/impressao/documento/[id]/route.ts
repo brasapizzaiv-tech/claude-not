@@ -280,7 +280,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if ((imp as { recebe_nfce?: boolean | null } | null)?.recebe_nfce) {
       const { data: ped } = await admin
         .from("delivery_pedidos")
-        .select("id, tipo, numero_turno, agendado_para, criado_em, origem, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, taxa_entrega, desconto, desconto_motivo, forma_pagamento, troco_para, pago, observacao")
+        .select("id, tipo, numero_turno, agendado_para, criado_em, origem, nome, telefone, logradouro, numero, complemento, bairro, cidade, referencia, taxa_entrega, desconto, desconto_motivo, forma_pagamento, troco_para, pago, observacao, alterado_em")
         .eq("comanda_id", itens[0].comanda_id)
         .maybeSingle();
       if (!ped) return new Response("sem pedido de delivery", { status: 404 });
@@ -294,6 +294,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         numero: (pd.numero_turno as number | null) ?? null,
         tipo: pd.tipo === "retirada" ? "retirada" : "entrega",
         agendadoPara: pd.agendado_para ? hhmm(pd.agendado_para as string) : null,
+        alterado: pd.alterado_em ? hhmm(pd.alterado_em as string) : null,
         pedidoEm: dd(pd.criado_em as string),
         origem: ORIG[pd.origem as string] ?? String(pd.origem ?? ""),
         nome: String(pd.nome ?? ""),
@@ -323,7 +324,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const primeiro = itens[0];
     // Pedido de delivery (entrega): QR com o id do pedido pro app do motoboy.
-    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, numero_turno, agendado_para, previsao_em, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
+    const { data: dp } = await admin.from("delivery_pedidos").select("id, tipo, numero_turno, agendado_para, previsao_em, alterado_em, pdv_comandas(numero)").eq("comanda_id", primeiro.comanda_id).maybeSingle();
     const entrega = dp && (dp as { tipo: string }).tipo === "entrega" ? (dp as { id: string }) : null;
     const [{ data: com }, { data: prof }] = await Promise.all([
       admin.from("pdv_comandas").select("numero, mesa").eq("id", primeiro.comanda_id).maybeSingle(),
@@ -350,14 +351,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         qr: entrega && (config as { qrEntrega?: boolean } | null)?.qrEntrega ? `ENTREGA:${entrega.id}` : null,
         // Horário em destaque: agendado (ou a previsão) — a cozinha sabe a ordem.
         destaque: (() => {
-          const p = dp as { tipo?: string; agendado_para?: string | null; previsao_em?: string | null } | null;
+          const p = dp as { tipo?: string; agendado_para?: string | null; previsao_em?: string | null; alterado_em?: string | null } | null;
           const alvo = p?.agendado_para ?? p?.previsao_em ?? null;
-          if (!p || !alvo) return null;
-          const h = new Date(alvo).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+          const hh = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+          // Pedido editado depois de lançado: a cozinha sabe que este papel substitui o outro.
+          const alterado = p?.alterado_em ? `PEDIDO ALTERADO ÀS ${hh(p.alterado_em)}\nVALE ESTE PAPEL\n` : "";
+          if (!p || !alvo) return alterado ? alterado.trim() : null;
+          const h = hh(alvo);
           // AGENDADO × PRA AGORA escrito por extenso: só o horário confundia a
           // cozinha (pedido do Rafael, 27/11/2026).
-          if (p.agendado_para) return `AGENDADO\n${p.tipo === "retirada" ? "RETIRA ÀS" : "ENTREGA ÀS"} ${h}`;
-          return `PRA AGORA\nPREVISÃO ${h}`;
+          if (p.agendado_para) return `${alterado}AGENDADO\n${p.tipo === "retirada" ? "RETIRA ÀS" : "ENTREGA ÀS"} ${h}`;
+          return `${alterado}PRA AGORA\nPREVISÃO ${h}`;
         })(),
         qrRotulo: entrega ? `ENTREGA #${(dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
       },
