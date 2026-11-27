@@ -13,6 +13,7 @@ import { pixConfigurado, criarCobrancaPix, cancelarCobrancaPix, gerarTxid } from
 import { confirmarPixApp, registrarCobrancaApp } from "@/lib/delivery-pix";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
 import { avisarPedido } from "@/lib/whatsapp";
+import { aceiteAutomaticoLigado, aceitarPedidoAuto } from "@/lib/delivery-aceite";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
 import { semCuringa } from "@/lib/format";
 import { foneCandidatos } from "@/lib/telefone";
@@ -381,7 +382,6 @@ export async function enviarPedidoPublico(d: {
   if (cupomId) await admin.from("delivery_pedidos").update({ cupom_id: cupomId }).eq("id", r.id);
   // SEC-08: o aparelho que fez o pedido passa a ver os dados deste telefone.
   await lembrarAparelho(admin, empresaId, fone, r.id);
-  await avisarPedido(r.id, "recebido");
   // Veio pelo link de uma campanha: marca o pedido (resultado da campanha).
   if (d.campanhaId && /^[0-9a-f-]{36}$/i.test(d.campanhaId)) {
     const { data: camp } = await admin.from("wpp_campanhas").select("id").eq("id", d.campanhaId).eq("empresa_id", empresaId).maybeSingle();
@@ -421,6 +421,12 @@ export async function enviarPedidoPublico(d: {
       await admin.from("delivery_pedidos").update({ forma_pagamento: "Pix", pix_status: "erro" }).eq("id", r.id);
     }
   }
+
+  // Aceite automático (Delivery → Config): entra aceito e imprime; Pix online
+  // espera o Pix cair (delivery-pix aceita quando vira pago). Desligado ou
+  // esperando o Pix: o cliente recebe o "pedido recebido" e o painel aceita.
+  const aceitou = !pix && (await aceiteAutomaticoLigado(admin, empresaId)) && (await aceitarPedidoAuto(admin, r.id));
+  if (!aceitou) await avisarPedido(r.id, "recebido");
 
   return { ok: true as const, id: r.id, numero: r.numero, taxa: r.taxa ?? taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, cashbackUsado: r.cashbackUsado ?? 0, pix };
 }

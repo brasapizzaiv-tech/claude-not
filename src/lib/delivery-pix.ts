@@ -16,6 +16,7 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { consultarCobrancaPix, pixBanco } from "@/lib/pix";
 import { registrarErro } from "@/lib/saude";
 import { moedaBR } from "@/lib/format";
+import { aceiteAutomaticoLigado, aceitarPedidoAuto } from "@/lib/delivery-aceite";
 
 type Admin = ReturnType<typeof createAdminClient>;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -130,6 +131,8 @@ export async function confirmarPixApp(db: Admin, pedidoId: string): Promise<{ ok
     .eq("id", p.id).eq("pix_status", "aguardando").eq("pago", false).neq("status", "cancelado").select("id");
   if (virou && virou.length) {
     await lancarPixAppNoCaixa(db, p.id);
+    // Aceite automático: o pedido que esperava o Pix entra aceito e imprime.
+    if (p.status === "pendente" && (await aceiteAutomaticoLigado(db, p.empresa_id))) await aceitarPedidoAuto(db, p.id);
     return { ok: true, pago: true };
   }
 

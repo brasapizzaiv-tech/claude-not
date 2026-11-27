@@ -130,6 +130,14 @@ export default async function DeliveryConfigPage() {
           <span className="text-xs text-texto-suave">— desligue pra fechar na hora (feriado, imprevisto). Ligado, valem os horários acima.</span>
         </label>
 
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="aceitar_auto" defaultChecked={(c.config as { aceitarAuto?: boolean } | null)?.aceitarAuto === true} className="mt-0.5 h-4 w-4" />
+          <span className="text-sm">
+            <span className="font-semibold">Aceitar os pedidos do app sozinho</span>
+            <span className="block text-xs text-texto-suave">O pedido já entra aceito: imprime na cozinha e o cliente recebe o “pedido confirmado”. Pix online só entra quando o Pix cair. Agendado imprime 40 min antes do horário.</span>
+          </span>
+        </label>
+
         <div className="rounded-cartao bg-superficie-suave p-3 text-sm">
           <b>Exemplo:</b> taxa base R$ 4,00 + R$ 1,50/km. Um endereço a 2 km fica <b>R$ 7,00</b>.
         </div>

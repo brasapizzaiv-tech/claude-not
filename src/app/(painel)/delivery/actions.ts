@@ -278,7 +278,7 @@ export async function salvarConfigDelivery(formData: FormData) {
 
   const patch: Record<string, unknown> = {
     id: 1,
-    config: { ...configAtual, horarios },
+    config: { ...configAtual, horarios, aceitarAuto: formData.get("aceitar_auto") === "on" },
     origem_endereco: origemEndereco || null,
     taxa_base: num("taxa_base"),
     preco_km: num("preco_km"),
