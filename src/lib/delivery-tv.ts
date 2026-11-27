@@ -29,7 +29,12 @@ export type DeliveryTv = {
 };
 
 const SP_MS = 3 * 3600 * 1000;
-const ANTECEDENCIA_SAIDA_MIN = 10; // a entrega tem que sair ~10 min antes do horário
+// Atrasado só DEPOIS do horário combinado (agendado ou previsão): marcar antes
+// punha na lista pedido que estava no prazo (27/11/2026).
+const ANTECEDENCIA_SAIDA_MIN = 0;
+// Agendado conta "tempo na cozinha" a partir de 45 min antes do horário (a
+// mesma meta do painel), não desde a hora em que imprimiu (10:30).
+const PREPARO_AGENDADO_MIN = 45;
 
 type Ped = {
   id: string; numero_turno: number | null; nome: string; tipo: string; status: string;
@@ -90,7 +95,11 @@ export async function deliveryTv(empresaId?: string | null, agora = Date.now()):
   const tv = (p: Ped, min: number): PedidoTv => ({ numero: p.numero_turno, nome: p.nome, itens: resumoItens(p), min });
 
   const emPreparo = peds.filter((p) => p.status === "em_preparo");
-  const maior = emPreparo.filter((p) => p.preparo_em).sort((a, b) => Date.parse(a.preparo_em!) - Date.parse(b.preparo_em!))[0];
+  const inicioCozinha = (p: Ped) => {
+    const prep = p.preparo_em ? Date.parse(p.preparo_em) : agora;
+    return p.agendado_para ? Math.max(prep, Date.parse(p.agendado_para) - PREPARO_AGENDADO_MIN * 60000) : prep;
+  };
+  const maior = emPreparo.filter((p) => p.preparo_em && inicioCozinha(p) <= agora).sort((a, b) => inicioCozinha(a) - inicioCozinha(b))[0];
   const prontos = peds.filter((p) => p.status === "pronto" && p.tipo === "entrega" && p.pronto_em).sort((a, b) => Date.parse(a.pronto_em!) - Date.parse(b.pronto_em!));
   const naRua = peds.filter((p) => p.status === "saiu");
 
@@ -121,7 +130,7 @@ export async function deliveryTv(empresaId?: string | null, agora = Date.now()):
     entrega: peds.filter((p) => p.tipo === "entrega").length,
     retirada: peds.filter((p) => p.tipo === "retirada").length,
     emProducao: emPreparo.length,
-    maiorCozinha: maior ? tv(maior, minDesde(maior.preparo_em!)) : null,
+    maiorCozinha: maior ? tv(maior, Math.max(0, Math.floor((agora - inicioCozinha(maior)) / 60000))) : null,
     motoboysNaRua: new Set(naRua.map((p) => p.entregador_id ?? `sem:${p.id}`)).size,
     pedidosNaRua: naRua.length,
     esperaMotoboy: prontos[0] ? tv(prontos[0], minDesde(prontos[0].pronto_em!)) : null,
