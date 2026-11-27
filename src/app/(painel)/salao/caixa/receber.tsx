@@ -15,6 +15,7 @@ import { Icone } from "@/components/icone";
 import { PagarParte, type ParteEscolhida } from "./pagar-parte";
 import { emitirNotaPendenteAgora } from "./pendentes-actions";
 import { emitirNfceComandas, imprimirNfce } from "../fiscal-actions";
+import { ehEmDobro } from "@/lib/item-em-dobro";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -312,6 +313,23 @@ export function ReceberComandas({
   }, [selComandas, fator, excluidos]);
 
   const linhasCarrinho = linhas.filter((l) => carrinho.has(l.key));
+  // Item "em dobro" (chopp, 27/11/2026): o garçom lança 1 copo por vez pela
+  // metade do preço do par. Número ímpar = o copo sozinho paga inteiro: o caixa
+  // lança mais 1 e a conta fecha certa.
+  const dobroImpar = menu
+    .filter((m) => ehEmDobro(m.nome))
+    .map((m) => ({
+      m,
+      copos:
+        linhasCarrinho.filter((l) => l.tipo === "item" && l.nome.split("\n")[0].trim() === m.nome.trim()).reduce((s, l) => s + l.qtd, 0) +
+        extras.filter((e) => e.produtoId === m.id).reduce((s, e) => s + e.qtd, 0),
+    }))
+    .filter((x) => x.copos % 2 === 1);
+  function completarDobro(m: ItemMenu) {
+    setParte(null);
+    setExtras((s) => [...s, { uid: `${m.id}-${Date.now()}`, produtoId: m.id, nome: m.nome, preco: m.preco, qtd: 1 }]);
+    setMsg(null);
+  }
   // Itens sem os 10% e com os 10%: a diferença é o serviço, que aparece
   // separado (o cliente às vezes quer saber só o valor dos 10%) e pode ficar
   // de fora deste pagamento.
@@ -1035,6 +1053,19 @@ export function ReceberComandas({
                 </>
               )}
             </div>
+
+            {/* Item em dobro com número ímpar: o último copo paga inteiro. */}
+            {dobroImpar.map(({ m, copos }) => (
+              <div key={m.id} role="status" className="mt-2 rounded-controle bg-destaque px-3 py-2 text-sm">
+                <p className="font-semibold text-texto">
+                  {m.nome}: {copos} {copos === 1 ? "copo" : "copos"} (número ímpar)
+                </p>
+                <p className="mt-0.5 text-xs text-texto-suave">O copo que ficou sozinho paga inteiro. Lance mais 1 pra fechar o par.</p>
+                <button onClick={() => completarDobro(m)} className="btn-principal mt-2 w-full text-sm">
+                  Lançar mais 1 ({brl(m.preco)})
+                </button>
+              </div>
+            ))}
 
             {/* Inserir Produto avulso */}
             {menu.length > 0 && (
