@@ -87,14 +87,22 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
   }
   linha();
 
-  const par = (rot: string, val: string, forte = false, tam = 11) => {
-    doc.font("Helvetica-Bold").fontSize(tam).text(rot, pad, y, { width: cw / 2 });
-    doc.text(val, pad + cw / 2, y, { width: cw / 2, align: "right" });
-    y = doc.y + 1;
+  // Rótulo à esquerda (pode quebrar) e valor à direita: a próxima linha começa
+  // depois do MAIS ALTO dos dois (o "Desconto (Cupom X)" em 3 linhas ficava
+  // por baixo do TOTAL — 27/11/2026).
+  const par = (rot: string, val: string, _forte = false, tam = 11) => {
+    doc.font("Helvetica-Bold").fontSize(tam);
+    const wVal = Math.min(cw * 0.45, doc.widthOfString(val) + 4);
+    const wRot = cw - wVal - 4;
+    const altRot = doc.heightOfString(rot, { width: wRot });
+    const altVal = doc.heightOfString(val, { width: wVal });
+    doc.text(rot, pad, y, { width: wRot });
+    doc.text(val, pad + cw - wVal, y, { width: wVal, align: "right" });
+    y += Math.max(altRot, altVal) + 1;
   };
   par("Produtos", brl(subtotal));
   if (d.tipo === "entrega") par("Entrega", d.taxa > 0 ? brl(d.taxa) : "GRÁTIS");
-  if (d.desconto > 0) par(d.descontoMotivo ? `Desconto (${d.descontoMotivo})` : "Desconto", `-${brl(d.desconto)}`);
+  if (d.desconto > 0) par(d.descontoMotivo ? (/^cupom/i.test(d.descontoMotivo) ? d.descontoMotivo : `Desconto (${d.descontoMotivo})`) : "Desconto", `-${brl(d.desconto)}`);
   const total = Math.max(0, subtotal + (d.tipo === "entrega" ? d.taxa : 0) - d.desconto);
   y += 2;
   par("TOTAL", `R$ ${brl(total)}`, true, 16);
