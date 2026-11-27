@@ -118,7 +118,8 @@ export async function enviarTexto(telefone: string, texto: string, pedidoId?: st
 //   pedido_confirmado {{1}} nº · {{2}} previsão · {{3}} link
 //   pedido_saiu       {{1}} nº · {{2}} entregador
 //   pedido_finalizado {{1}} nº  (o antigo pedido_entregue ficou em inglês/Marketing na Meta, 27/11/2026)
-export type EventoPedido = "recebido" | "confirmado" | "saiu" | "entregue";
+//   pedido_aguardando_pix {{1}} nome · {{2}} nº · {{3}} total · {{4}} Pix copia e cola · {{5}} link (27/11/2026)
+export type EventoPedido = "recebido" | "pix" | "confirmado" | "saiu" | "entregue";
 
 const hhmmSP = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 
@@ -188,6 +189,22 @@ export async function avisarPedido(pedidoId: string, evento: EventoPedido, opts?
     const primeiroNome = (p.nome || "").trim().split(/\s+/)[0] || "cliente";
     let r: Resultado;
     if (evento === "recebido") r = await enviarTemplate(p.telefone, "pedido_recebido", [primeiroNome, numero, link], p.id);
+    else if (evento === "pix") {
+      // Pix online esperando pagamento: avisa que só entra em produção quando
+      // o Pix cair, com o copia e cola (a página de acompanhar não mostra o QR).
+      const { data: px } = await admin.from("delivery_pedidos").select("pix_copia_cola, taxa_entrega, desconto, comanda_id").eq("id", p.id).maybeSingle();
+      const pp = px as { pix_copia_cola: string | null; taxa_entrega: number | null; desconto: number | null; comanda_id: string | null } | null;
+      let total = 0;
+      if (pp?.comanda_id) {
+        const { data: its } = await admin.from("pdv_comanda_itens").select("qtd, preco_unit").eq("comanda_id", pp.comanda_id);
+        total = ((its as { qtd: number; preco_unit: number }[] | null) ?? []).reduce((s, i) => s + Number(i.qtd) * Number(i.preco_unit), 0);
+      }
+      total = Math.max(0, Math.round((total + Number(pp?.taxa_entrega ?? 0) - Number(pp?.desconto ?? 0)) * 100) / 100);
+      r = pp?.pix_copia_cola
+        ? await enviarTemplate(p.telefone, "pedido_aguardando_pix", [primeiroNome, numero, brlWpp(total), umaLinha(pp.pix_copia_cola, 1000), link], p.id)
+        : { ok: false, erro: "sem Pix" };
+      if (!r.ok) r = await enviarTemplate(p.telefone, "pedido_recebido", [primeiroNome, numero, link], p.id);
+    }
     else if (evento === "confirmado") {
       const quando = p.agendado_para ? `agendado pras ${hhmmSP(p.agendado_para)}` : p.previsao_em ? `${p.tipo === "retirada" ? "pronto" : "chega"} por volta das ${hhmmSP(p.previsao_em)}` : "em breve";
       // Uma mensagem só, com o resumo do pedido (27/11/2026). Sem o modelo

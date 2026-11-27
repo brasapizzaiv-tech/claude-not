@@ -183,25 +183,12 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
           ) : (
             <span className="flex-1 text-center text-xs text-texto-fraco">{p.status === "entregue" ? "Concluído" : "—"}</span>
           )}
-          {/* Escolhe a via: cozinha, via de entrega do caixa ou as duas. */}
-          <select
-            value=""
-            onChange={(e) => { const v = e.target.value as "cozinha" | "entrega" | "ambas" | ""; if (v) imprimir(p, v); }}
-            disabled={proc}
-            aria-label="Reimprimir"
-            title="Reimprimir"
-            className="min-h-11 w-[6.5rem] shrink-0 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs font-semibold text-texto"
-          >
-            <option value="">Imprimir…</option>
-            <option value="cozinha">Cozinha</option>
-            {p.tipo === "entrega" || p.tipo === "retirada" ? <option value="entrega">Via do caixa</option> : null}
-            <option value="ambas">As duas</option>
-          </select>
         </div>
-        {(p.tipo === "entrega" || (st.proximo && p.status !== "pendente")) && (
-          <div className="flex items-center gap-1.5">
+        {/* Linha de baixo: motoboy, mudar etapa e imprimir (o "Aceitar" fica com a linha de cima inteira). */}
+        {(
+          <div className="flex flex-wrap items-center gap-1.5">
             {p.tipo === "entrega" && (
-              <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} aria-label="Motoboy" className="min-h-11 min-w-0 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto">
+              <select value={p.entregador_id ?? ""} onChange={(e) => trocarEntregador(p, e.target.value)} aria-label="Motoboy" className="min-h-11 min-w-[7rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto">
                 <option value="">Motoboy…</option>
                 {entregadores.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
               </select>
@@ -213,12 +200,26 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
                 disabled={proc}
                 title="Pular direto pra outra etapa"
                 aria-label="Mudar etapa"
-                className="min-h-11 min-w-0 flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto"
+                className="min-h-11 min-w-[7rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs text-texto"
               >
                 <option value="">Mudar etapa…</option>
                 {PULAR.filter((k) => k !== p.status).map((k) => <option key={k} value={k}>{ST[k].label}</option>)}
               </select>
             )}
+            {/* Escolhe a via: cozinha, via de entrega do caixa ou as duas. */}
+            <select
+              value=""
+              onChange={(e) => { const v = e.target.value as "cozinha" | "entrega" | "ambas" | ""; if (v) imprimir(p, v); }}
+              disabled={proc}
+              aria-label="Reimprimir"
+              title="Reimprimir"
+              className="min-h-11 min-w-[6.5rem] flex-1 rounded-controle border border-borda-forte bg-painel-cartao px-2 text-xs font-semibold text-texto"
+            >
+              <option value="">Imprimir…</option>
+              <option value="cozinha">Cozinha</option>
+              {p.tipo === "entrega" || p.tipo === "retirada" ? <option value="entrega">Via do caixa</option> : null}
+              <option value="ambas">As duas</option>
+            </select>
           </div>
         )}
       </div>

@@ -426,7 +426,8 @@ export async function enviarPedidoPublico(d: {
   // espera o Pix cair (delivery-pix aceita quando vira pago). Desligado ou
   // esperando o Pix: o cliente recebe o "pedido recebido" e o painel aceita.
   const aceitou = !pix && (await aceiteAutomaticoLigado(admin, empresaId)) && (await aceitarPedidoAuto(admin, r.id));
-  if (!aceitou) await avisarPedido(r.id, "recebido");
+  // Pix online esperando: a mensagem diz que só entra em produção quando o Pix cair.
+  if (!aceitou) await avisarPedido(r.id, pix ? "pix" : "recebido");
 
   return { ok: true as const, id: r.id, numero: r.numero, taxa: r.taxa ?? taxa, desconto: r.desconto ?? 0, total: r.total ?? 0, cashbackUsado: r.cashbackUsado ?? 0, pix };
 }
