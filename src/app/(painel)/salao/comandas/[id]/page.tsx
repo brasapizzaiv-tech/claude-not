@@ -38,7 +38,7 @@ export default async function ComandaPage({
       .select("id, descricao, qtd, preco_unit, lancamento_id, criado_em, pago, valor_pago")
       .eq("comanda_id", id)
       .order("criado_em"),
-    supabase.from("pdv_itens").select("id, nome, categoria, preco, por_kg").eq("ativo", true).eq("disponivel", true).eq("combo", false).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, por_kg").eq("ativo", true).eq("disponivel", true).eq("combo", false).order("ordem", { nullsFirst: false }).order("nome"),
     supabase.from("pdv_config").select("chave, valor"),
     supabase
       .from("pdv_categorias")

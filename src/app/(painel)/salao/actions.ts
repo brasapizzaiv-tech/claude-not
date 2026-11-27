@@ -130,6 +130,28 @@ export async function moverCategoria(formData: FormData) {
   revalidatePath("/salao/cardapio");
 }
 
+// Produto ↑↓ dentro da categoria (0327). Renumera a categoria inteira (1..n)
+// na ordem nova: produto novo (sem ordem) já entra na conta e nada empata.
+export async function moverItem(formData: FormData) {
+  await exigirAcesso("/salao");
+  const supabase = await createClient();
+  const id = formData.get("id") as string;
+  const dir = (formData.get("dir") as string) === "cima" ? -1 : 1;
+  const { data: item } = await supabase.from("pdv_itens").select("categoria").eq("id", id).maybeSingle();
+  if (!item) return;
+  const categoria = (item as { categoria: string | null }).categoria;
+  let q = supabase.from("pdv_itens").select("id").order("ordem", { nullsFirst: false }).order("nome").order("id");
+  q = categoria == null ? q.is("categoria", null) : q.eq("categoria", categoria);
+  const { data: irmaos } = await q;
+  const lista = ((irmaos as { id: string }[]) ?? []).map((x) => x.id);
+  const idx = lista.indexOf(id);
+  const alvo = idx + dir;
+  if (idx < 0 || alvo < 0 || alvo >= lista.length) return;
+  [lista[idx], lista[alvo]] = [lista[alvo], lista[idx]];
+  await Promise.all(lista.map((itemId, i) => supabase.from("pdv_itens").update({ ordem: i + 1 }).eq("id", itemId)));
+  revalidatePath("/salao/cardapio");
+}
+
 export async function excluirCategoria(formData: FormData) {
   await exigirAcesso("/salao");
   const supabase = await createClient();

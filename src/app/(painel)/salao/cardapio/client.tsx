@@ -19,6 +19,7 @@ import {
   salvarPizzasDisponibilidade,
   toggleCategoria,
   moverCategoria,
+  moverItem,
   excluirCategoria,
 } from "../actions";
 import { salvarFotoCardapio, removerFotoCardapio, salvarDetalheCardapio, salvarFatias, adicionarSabor, desativarSabor } from "../../delivery/actions";
@@ -594,10 +595,25 @@ function ItensTabela({
       <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Tabela (role para os lados se precisar)">
         <table className="w-full text-sm">
           <tbody className="divide-y divide-borda">
-            {itens.map((i) => {
+            {itens.map((i, idx) => {
               const temHorario = resumoHorarios(i.horarios);
               return (
                 <tr key={i.id} className={`bg-painel-cartao ${i.ativo ? "" : "opacity-50"}`}>
+                  {/* Ordem do produto na categoria (vale no garçom, PDV e app). */}
+                  <td className="w-8 pl-2">
+                    <div className="flex flex-col">
+                      <form action={moverItem}>
+                        <input type="hidden" name="id" value={i.id} />
+                        <input type="hidden" name="dir" value="cima" />
+                        <Enviar disabled={idx === 0} className="px-1 text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label={`Subir ${i.nome}`}>▲</Enviar>
+                      </form>
+                      <form action={moverItem}>
+                        <input type="hidden" name="id" value={i.id} />
+                        <input type="hidden" name="dir" value="baixo" />
+                        <Enviar disabled={idx === itens.length - 1} className="px-1 text-texto-fraco hover:text-orange-600 disabled:opacity-30" aria-label={`Descer ${i.nome}`}>▼</Enviar>
+                      </form>
+                    </div>
+                  </td>
                   <td className="w-14 py-1.5 pl-3"><Foto url={i.foto_url} tam="h-10 w-10" /></td>
                   <td className="px-2 py-2 font-medium text-texto">
                     {i.nome}

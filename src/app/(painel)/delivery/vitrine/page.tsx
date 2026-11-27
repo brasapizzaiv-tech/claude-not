@@ -22,7 +22,7 @@ export default async function VitrinePage() {
     supabase.from("vitrine_sugestoes").select("id, momento, categoria, item_id").order("ordem").order("criado_em"),
     supabase.from("vitrine_gatilhos").select("chave, ativo, cupom, minutos, validade_min"),
     supabase.from("cupons").select("codigo, tipo, valor, minimo, ativo").order("codigo"),
-    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("delivery", true).order("nome").limit(1000),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco").eq("ativo", true).eq("delivery", true).order("ordem", { nullsFirst: false }).order("nome").limit(1000),
     supabase.from("pdv_categorias").select("nome").order("ordem"),
     supabase.from("vitrine_eventos").select("id", { count: "exact", head: true }).eq("tipo", "abriu").gte("dia", seteDias),
     supabase.from("vitrine_eventos").select("id", { count: "exact", head: true }).eq("tipo", "carrinho").gte("dia", seteDias),

@@ -10,7 +10,7 @@ export const metadata = { title: "PDV" };
 export default async function PdvPage() {
   const supabase = await createClient();
   const [{ data: itensRows }, { data: catRows }] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, por_kg").eq("ativo", true).eq("canal_pdv", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, por_kg").eq("ativo", true).eq("canal_pdv", true).eq("disponivel", true).order("ordem", { nullsFirst: false }).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_pdv").order("ordem"),
   ]);
 

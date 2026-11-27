@@ -43,7 +43,7 @@ export default async function PedirPage() {
     { data: tamanhos }, { data: sabores }, { data: saborPrecos }, { data: bordas }, { data: bordaPrecos },
     { data: grupos }, { data: opcoes }, { data: cfg }, { data: vendidos },
   ] = await Promise.all([
-    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, foto_mini_url, descricao, horarios, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("nome").eq("empresa_id", empresaId),
+    admin.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, foto_url, foto_mini_url, descricao, horarios, combo").eq("ativo", true).eq("delivery", true).eq("disponivel", true).order("ordem", { nullsFirst: false }).order("nome").eq("empresa_id", empresaId),
     admin.from("pdv_categorias").select("nome, ordem, horarios, canal_app, disponivel").order("ordem").eq("empresa_id", empresaId),
     admin.from("pdv_item_grupos").select("item_id").eq("empresa_id", empresaId),
     admin.from("pdv_pizza_tamanhos").select("id, nome, max_sabores, fatias, ordem").order("ordem").eq("empresa_id", empresaId),

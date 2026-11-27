@@ -24,7 +24,7 @@ export default async function GarcomMesaPage({
     { data: gruposItem }, { data: tamanhos }, { data: sabores }, { data: saborPrecos },
     { data: bordas }, { data: bordaPrecos }, { data: grupos }, { data: opcoes },
   ] = await Promise.all([
-    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, por_kg").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("nome"),
+    supabase.from("pdv_itens").select("id, nome, categoria, preco, promo_preco, por_kg").eq("ativo", true).eq("canal_garcom", true).eq("disponivel", true).order("ordem", { nullsFirst: false }).order("nome"),
     supabase.from("pdv_categorias").select("nome, ordem, disponivel, canal_garcom").eq("disponivel", true).order("ordem"),
     supabase.from("pdv_comandas").select("id, numero, valor_buffet").eq("mesa", mesa).eq("status", "aberta").order("numero"),
     supabase.from("pdv_config").select("chave, valor").eq("chave", "qtd_mesas"),
