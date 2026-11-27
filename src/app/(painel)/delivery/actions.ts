@@ -615,12 +615,53 @@ export async function registrarAcertoEntregador(formData: FormData) {
   const data = String(formData.get("data") ?? "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !entregador_id) return;
   const fixo = num("fixo"), teles_valor = num("teles_valor"), teles_qtd = Math.round(num("teles_qtd"));
-  await supabase.from("entregador_acertos").upsert({
-    entregador_id, data, fixo, teles_qtd, teles_valor, total: Math.round((fixo + teles_valor) * 100) / 100,
+  const total = Math.round((fixo + teles_valor) * 100) / 100;
+  // Pago em dinheiro do caixa (padrão): o acerto também tira o valor do caixa
+  // aberto, como a sangria "Fulano motoboy" que se fazia na mão (27/11/2026,
+  // acerto da Luana não descontou). Só no acerto novo: registrar de novo o
+  // mesmo dia não tira duas vezes.
+  const doCaixa = formData.get("pago_caixa") === "1" && total > 0;
+  const { data: jaTinha } = await supabase.from("entregador_acertos").select("entregador_id").eq("entregador_id", entregador_id).eq("data", data).maybeSingle();
+  let caixaId: string | null = null;
+  if (doCaixa && !jaTinha) {
+    const { data: cx } = await supabase.from("pdv_caixas").select("id").eq("status", "aberto").order("aberto_em", { ascending: false }).limit(1).maybeSingle();
+    caixaId = (cx as { id?: string } | null)?.id ?? null;
+    if (!caixaId) throw new Error("O caixa está fechado. Abra o caixa e registre o acerto de novo (ou desmarque “Pago com dinheiro do caixa”).");
+  }
+  const { error } = await supabase.from("entregador_acertos").upsert({
+    entregador_id, data, fixo, teles_qtd, teles_valor, total,
     recebido_dinheiro: num("recebido_dinheiro"), recebido_cartao: num("recebido_cartao"), recebido_pix: num("recebido_pix"),
     obs: String(formData.get("obs") ?? "").trim() || null,
   }, { onConflict: "entregador_id,data" });
+  if (error) throw new Error("O acerto não foi salvo. Confira a internet e tente de novo.");
+  if (caixaId) await sangriaDoAcerto(supabase, caixaId, entregador_id, total);
   revalidatePath("/delivery/entregadores/acerto");
+  revalidatePath("/salao/caixa");
+}
+
+// Saída do caixa do acerto do motoboy: sangria "Fulano motoboy (acerto)" +
+// despesa paga em dinheiro na categoria "Entregadores Delivery" (escolha do
+// Rafael, 27/11/2026). Sem a categoria na empresa, fica só a sangria (aparece
+// em Sangrias pra classificar).
+async function sangriaDoAcerto(supabase: Awaited<ReturnType<typeof createClient>>, caixaId: string, entregadorId: string, total: number) {
+  const { data: boy } = await supabase.from("entregadores").select("nome").eq("id", entregadorId).maybeSingle();
+  const nome = ((boy as { nome?: string } | null)?.nome ?? "Entregador").replace(/\s+boy$/i, "").trim();
+  const { data: mov, error } = await supabase.from("pdv_caixa_mov").insert({
+    caixa_id: caixaId, tipo: "sangria", descricao: `${nome} motoboy (acerto)`, forma_pagamento: "Dinheiro", valor: total,
+  }).select("id").single();
+  const { registrarErro } = await import("@/lib/saude");
+  if (error || !mov) {
+    await registrarErro("delivery:acerto-sangria", `Acerto de ${nome} gravado sem a saída do caixa`, { entregadorId, total });
+    throw new Error(`O acerto de ${nome} foi salvo, mas a saída do caixa não. Faça uma sangria de ${total.toFixed(2).replace(".", ",")} no caixa.`);
+  }
+  const { finDaSangria, lancarSangriaNoFinanceiro } = await import("@/lib/sangria-financeiro");
+  const fin = await finDaSangria();
+  if (!fin) return;
+  const { data: cat } = await supabase.from("dre_categorias").select("id").eq("empresa_id", fin.empresaId).eq("ativo", true).ilike("nome", "Entregadores Delivery").limit(1).maybeSingle();
+  const catId = (cat as { id?: string } | null)?.id;
+  if (!catId) return;
+  const r = await lancarSangriaNoFinanceiro(supabase, fin, mov.id as string, catId);
+  if (!r.ok) await registrarErro("delivery:acerto-financeiro", `Sangria do acerto sem despesa no financeiro: ${r.mensagem}`, { movId: mov.id }, fin.empresaId);
 }
 
 // Botão "Testar envio" da config: manda o modelo hello_world (que toda conta

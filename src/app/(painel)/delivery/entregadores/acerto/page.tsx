@@ -9,6 +9,7 @@ export const metadata = { title: "Acerto dos entregadores · Delivery" };
 export const dynamic = "force-dynamic";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const addDiasIso = (iso: string, n: number) => { const [a, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10); };
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const horaSP = (iso: string) => Number(new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).slice(0, 2));
 
@@ -28,6 +29,11 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
     supabase.from("entregador_acertos").select("entregador_id, total, fixo, teles_qtd, teles_valor, recebido_dinheiro, recebido_cartao, recebido_pix").eq("data", data),
     supabase.from("delivery_areas").select("id, taxa_motoboy, valor"),
   ]);
+  // Saídas do caixa lançadas pelo próprio acerto (descrição "Fulano motoboy (acerto)").
+  const { data: saidas } = await supabase.from("pdv_caixa_mov").select("descricao").eq("tipo", "sangria").like("descricao", "% motoboy (acerto)")
+    .gte("criado_em", `${data}T00:00:00-03:00`).lte("criado_em", `${addDiasIso(data, 1)}T06:00:00-03:00`);
+  const saiuDoCaixa = new Set(((saidas as { descricao: string }[]) ?? []).map((s) => s.descricao.replace(/ motoboy (acerto)$/, "").toLowerCase()));
+  const nomeCurto = (n: string) => n.replace(/s+boy$/i, "").trim().toLowerCase();
   const areaBoy = new Map(((areas ?? []) as { id: string; taxa_motoboy: number | null; valor: number }[]).map((a) => [a.id, Number(a.taxa_motoboy ?? a.valor)]));
   type Ped = { id: string; entregador_id: string; status: string; taxa_entrega: number | null; area_id: string | null; taxa_motoboy: number | null; recebido_forma: string | null; recebido_valor: number | null; saiu_em: string | null; entregue_em: string | null; numero_turno: number | null; pdv_comandas: { numero: number } | { numero: number }[] | null };
   const pedidos = (peds as unknown as Ped[]) ?? [];
@@ -63,7 +69,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
           <Link href={`?data=${addDias(data, 1)}`} className="rounded-controle border border-borda-forte px-2 py-1 text-sm">›</Link>
         </form>
       </div>
-      <p className="mb-4 text-xs text-texto-suave">Fixo = valor do turno marcado no entregador (almoço se entregou antes das 15h, noite se depois); tele fora do turno dele paga só a área. Teles = valor da área de cada entrega; no almoço, quem tem a regra dos fixos tem as primeiras teles grátis (10) cobertas pelo fixo e ganha o valor combinado pelas grátis seguintes; tele cobrada paga a área e não conta. “Recebido” é o que ele trouxe da rua: confira com o caixa antes de acertar.</p>
+      <p className="mb-4 text-xs text-texto-suave">Fixo = valor do turno marcado no entregador (almoço se entregou antes das 15h, noite se depois); tele fora do turno dele paga só a área. Teles = valor da área de cada entrega; no almoço, quem tem a regra dos fixos tem as primeiras teles grátis (10) cobertas pelo fixo e ganha o valor combinado pelas grátis seguintes; tele cobrada paga a área e não conta. “Recebido” é o que ele trouxe da rua: confira com o caixa antes de acertar. Com “Pago com dinheiro do caixa” marcado, o acerto já lança a saída (sangria) no caixa aberto e a despesa em Entregadores Delivery; não precisa fazer a sangria na mão.</p>
 
       {linhas.length === 0 && <p className="py-10 text-center text-texto-suave">Nenhuma entrega concluída nesse dia.</p>}
       <div className="space-y-3">
@@ -96,7 +102,7 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
             </details>
             <div className="mt-3">
               {feito ? (
-                <span className="pilula pilula-ok">✓ Acertado: {brl(Number(feito.total))} ({feito.teles_qtd} teles + fixo {brl(Number(feito.fixo))})</span>
+                <span className="pilula pilula-ok">✓ Acertado: {brl(Number(feito.total))} ({feito.teles_qtd} teles + fixo {brl(Number(feito.fixo))}){saiuDoCaixa.has(nomeCurto(b.nome)) ? " · saiu do caixa" : ""}</span>
               ) : (
                 <form action={registrarAcertoEntregador} className="flex flex-wrap items-center gap-2">
                   <input type="hidden" name="entregador_id" value={b.id} />
@@ -109,6 +115,10 @@ export default async function AcertoPage({ searchParams }: { searchParams: Promi
                   <label className="text-xs text-texto-suave">Fixo (R$)</label>
                   <input name="fixo" defaultValue={fixo} inputMode="decimal" className="w-24 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
                   <input aria-label="obs (opcional)" name="obs" placeholder="obs (opcional)" className="flex-1 rounded-controle border border-borda-forte bg-transparent px-2 py-1 text-sm" />
+                  <label className="flex min-h-11 items-center gap-2 text-sm">
+                    <input type="checkbox" name="pago_caixa" value="1" defaultChecked className="h-4 w-4" />
+                    Pago com dinheiro do caixa
+                  </label>
                   <Enviar className="btn-principal text-sm">Registrar acerto</Enviar>
                 </form>
               )}
