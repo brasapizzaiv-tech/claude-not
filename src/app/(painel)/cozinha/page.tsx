@@ -2,7 +2,8 @@ import type { Viewport } from "next";
 import { filaDeliveryCozinha, filaRodizio } from "./actions";
 import { CozinhaClient } from "./cozinha-client";
 
-export const metadata = { title: "Cozinha" };
+// Manifest próprio: "Instalar app" no tablet abre direto aqui, em tela cheia e deitado.
+export const metadata = { title: "Cozinha", manifest: "/cozinha.webmanifest" };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, userScalable: false };
 export const dynamic = "force-dynamic";
 

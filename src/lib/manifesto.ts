@@ -17,6 +17,10 @@ export type OpcoesManifesto = {
   scope?: string;
   /** App escuro (garçom, entregador) abre com fundo escuro. */
   escuro?: boolean;
+  /** Padrão "standalone" (com a barra do aparelho); tablet da cozinha usa "fullscreen". */
+  display?: "standalone" | "fullscreen";
+  /** Padrão em pé; tablet da cozinha fica deitado. */
+  orientation?: "portrait" | "landscape";
   /** Ícones próprios, quando existirem; senão usa o logo da empresa. */
   icones?: { src: string; sizes: string; type: string; purpose: string }[];
 };
@@ -31,8 +35,8 @@ export async function manifestoDaEmpresa(o: OpcoesManifesto) {
     description: o.descricao,
     start_url: o.startUrl,
     ...(o.scope ? { scope: o.scope } : {}),
-    display: "standalone",
-    orientation: "portrait",
+    display: o.display ?? "standalone",
+    orientation: o.orientation ?? "portrait",
     background_color: o.escuro ? marca.escuro : "#ffffff",
     theme_color: o.escuro ? marca.escuro : marca.primaria,
     icons: o.icones ?? [

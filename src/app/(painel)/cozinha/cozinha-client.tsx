@@ -57,6 +57,9 @@ export function CozinhaClient({ inicial, inicialDelivery }: { inicial: PedidoRod
     return m === "delivery" || m === "rodizio" ? m : "tudo";
   });
   const [som, setSom] = useState(() => typeof window !== "undefined" && lerLocal("cozinha_som") === "1");
+  // Tela cheia: some a barra do navegador. O app instalado já abre assim.
+  const [cheia, setCheia] = useState(() =>
+    typeof window !== "undefined" && (!!document.fullscreenElement || window.matchMedia?.("(display-mode: fullscreen)").matches === true));
   const buscando = useRef(false);
   const vistos = useRef<Set<string> | null>(null);
 
@@ -129,6 +132,15 @@ export function CozinhaClient({ inicial, inicialDelivery }: { inicial: PedidoRod
     }
     vistos.current = new Set([...(vistos.current ?? []), ...ids]);
   }, [cozinha, fila, som, modo]);
+
+  useEffect(() => {
+    const mudou = () => setCheia(!!document.fullscreenElement || window.matchMedia?.("(display-mode: fullscreen)").matches === true);
+    document.addEventListener("fullscreenchange", mudou);
+    return () => document.removeEventListener("fullscreenchange", mudou);
+  }, []);
+  function telaCheia() {
+    document.documentElement.requestFullscreen?.().catch(() => setErro("Este navegador não deixa abrir em tela cheia. Use “Instalar app” no menu ⋮."));
+  }
 
   function escolherModo(m: Modo) { setModo(m); gravarLocal("cozinha_modo", m); }
   function alternarSom() {
@@ -409,6 +421,14 @@ export function CozinhaClient({ inicial, inicialDelivery }: { inicial: PedidoRod
           })}
         </div>
         <span style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 16, color: TV.fraco }}>
+          {!cheia && (
+            <button
+              onClick={telaCheia}
+              style={{ minHeight: 48, padding: "0 14px", borderRadius: 999, border: `2px solid ${TV.borda}`, background: TV.bloco, color: TV.suave, fontSize: 15, fontWeight: 800 }}
+            >
+              <Icone nome="tela" tamanho={16} className="mr-1.5" />Tela cheia
+            </button>
+          )}
           <button
             onClick={alternarSom}
             aria-pressed={som}
