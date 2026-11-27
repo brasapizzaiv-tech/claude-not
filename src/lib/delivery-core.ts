@@ -505,9 +505,11 @@ export async function criarPedidoDeliveryCore(
   }
 
   // Agendado NÃO imprime agora: a cozinha recebe quando o pedido for pra "em preparo".
-  if (opts.status === "aceito" && !d.agendadoPara) {
-    const itemIds = linhas.map((l) => l.itemId).filter(Boolean) as string[];
-    await enfileirarCozinha(db, lancamentoId, itemIds, linhas.some((l) => l.itemId === null));
+  // Cozinha E via do caixa (endereço/valor pro motoboy), igual ao pedido do
+  // app — antes o pedido manual só mandava a cozinha (27/11/2026).
+  // Convênio (Kern) continua só com a cozinha, como antes.
+  if (opts.status === "aceito" && !d.agendadoPara && pedidoId) {
+    await imprimirComandaDoPedido(db, pedidoId, d.origem === "convenio" ? "cozinha" : "ambas");
   }
 
   const subtotalLinhas = r2(linhas.reduce((s, l) => s + l.preco * l.qtd, 0));
