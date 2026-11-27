@@ -39,7 +39,15 @@ export async function sincronizarMarmitas(db: Db, data: string, empresaId?: stri
   };
   for (const g of (gs as { id: string; empresa_id: string; cardapio_fonte: "proteinas" | "carboidratos" | "todos" | "salada"; cardapio_marmita: QualMarmita }[] | null) ?? []) {
     if (g.cardapio_fonte === "salada") { await sincronizarSalada(db, g.id, await saladaConvenio()); continue; }
-    if (g.cardapio_fonte === "todos") { await sincronizarAdicionais(db, g.id, g.cardapio_marmita === "premium" && dow !== 6 ? [] : [...dia.proteinas, ...dia.carboidratos]); continue; }
+    // Adicionais seguem a MESMA marcação da marmita (27/11/2026: o Bolinho de
+    // arroz e a Lentilha, só da Marmita do Dia, apareciam nos adicionais da
+    // Tradicional porque aqui entravam todos os pratos do dia).
+    if (g.cardapio_fonte === "todos") {
+      const daMarmita = new Set(marcas[g.cardapio_marmita].map(norm));
+      const pratos = g.cardapio_marmita === "premium" && dow !== 6 ? [] : [...dia.proteinas, ...dia.carboidratos].filter((n) => daMarmita.has(norm(n)));
+      await sincronizarAdicionais(db, g.id, pratos);
+      continue;
+    }
     // Dia que ninguém marcou ainda: a Marmita do Dia fica como estava (não
     // trava o pedido); Tradicional e Premium seguem o padrão (tudo).
     if (!c.marmitas && g.cardapio_marmita === "dia") continue;
