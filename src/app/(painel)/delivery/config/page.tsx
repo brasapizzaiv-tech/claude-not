@@ -116,6 +116,18 @@ export default async function DeliveryConfigPage() {
           </div>
         </div>
 
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-sm font-semibold" htmlFor="meta_almoco">Meta na TV da cozinha · almoço (marmitas)</label>
+            <input id="meta_almoco" name="meta_almoco" defaultValue={(c.config as { metaTv?: { almoco?: number } } | null)?.metaTv?.almoco ?? ""} inputMode="numeric" placeholder="Ex.: 60" className="campo mt-1 w-full" />
+          </div>
+          <div>
+            <label className="text-sm font-semibold" htmlFor="meta_noite">Meta na TV da cozinha · noite (pizzas)</label>
+            <input id="meta_noite" name="meta_noite" defaultValue={(c.config as { metaTv?: { noite?: number } } | null)?.metaTv?.noite ?? ""} inputMode="numeric" placeholder="Ex.: 40" className="campo mt-1 w-full" />
+          </div>
+          <p className="text-xs text-texto-suave sm:col-span-2">Aparece no painel do delivery que alterna com o cardápio na TV da cozinha. Vazio = sem meta.</p>
+        </div>
+
         <div>
           <label className="text-sm font-semibold">Aviso no app do cliente (opcional)</label>
           <input name="aviso" defaultValue={c.aviso ?? ""} placeholder="Ex.: Sexta e sábado têm rodízio por aqui! 🔥" className="campo mt-1 w-full" />

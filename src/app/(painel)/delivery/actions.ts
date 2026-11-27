@@ -307,7 +307,11 @@ export async function salvarConfigDelivery(formData: FormData) {
 
   const patch: Record<string, unknown> = {
     id: 1,
-    config: { ...configAtual, horarios, aceitarAuto: formData.get("aceitar_auto") === "on" },
+    config: {
+      ...configAtual, horarios, aceitarAuto: formData.get("aceitar_auto") === "on",
+      // Meta do painel do delivery na TV da cozinha (marmitas no almoço, pizzas à noite).
+      metaTv: { almoco: Math.max(0, Math.round(num("meta_almoco"))) || null, noite: Math.max(0, Math.round(num("meta_noite"))) || null },
+    },
     origem_endereco: origemEndereco || null,
     taxa_base: num("taxa_base"),
     preco_km: num("preco_km"),

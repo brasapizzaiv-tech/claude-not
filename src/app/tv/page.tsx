@@ -10,6 +10,9 @@ import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
 import { cameraNoAr, cameraPausada, destinoCamera } from "@/lib/tv-camera";
 import { TvClient } from "./tv-client";
+import { deliveryTv, type DeliveryTv } from "@/lib/delivery-tv";
+import { TvPaginaDelivery } from "@/components/tv-delivery";
+import { empresaAtualId } from "@/lib/empresa";
 
 // TV da cozinha: tela cheia, sem menu. A chave da URL é conferida no servidor
 // antes de renderizar qualquer coisa; sem ela a página nem carrega a fila.
@@ -76,8 +79,9 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   } catch { falhou = true; }
   const temperatura = await temperaturaIvoti();
   const agora = agoraMs();
+  const delivery = await deliveryTv(await empresaAtualId().catch(() => null)).catch(() => null);
 
-  if (modo === "simples") return <TvSimples pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} cardapio={cardapio} ultimaAtividade={ultimaAtividade} apontamentos={apontamentos} feriados={feriados} eventos={eventos} />;
+  if (modo === "simples") return <TvSimples delivery={delivery} pedidos={inicial} agora={agora} semRede={falhou} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} cardapio={cardapio} ultimaAtividade={ultimaAtividade} apontamentos={apontamentos} feriados={feriados} eventos={eventos} />;
 
   // Script em JavaScript "antigo" de propósito (sem let/const/arrow): precisa
   // rodar justamente no navegador que NÃO consegue rodar o resto.
@@ -88,26 +92,31 @@ export default async function TvPage({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: fallback }} />
-      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} cardapioInicial={cardapio} ultimaAtividadeInicial={ultimaAtividade} apontamentosInicial={apontamentos} feriadosInicial={feriados} eventosInicial={eventos} />
+      <TvClient chave={chave} inicial={inicial} agoraInicial={agora} recadosInicial={recados} temperaturaInicial={temperatura} aniversariantesInicial={aniversariantes} cardapioInicial={cardapio} ultimaAtividadeInicial={ultimaAtividade} apontamentosInicial={apontamentos} feriadosInicial={feriados} eventosInicial={eventos} deliveryInicial={delivery} />
     </>
   );
 }
 
 // Modo simples: a mesma tela, sem JavaScript. O tempo de espera e o relógio
 // são calculados no servidor a cada recarga.
-function TvSimples({ pedidos, agora, semRede, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; cardapio: CardapioTv; ultimaAtividade: string | null; apontamentos: ApontamentoTv[]; feriados: Feriado[]; eventos: Evento[] }) {
+function TvSimples({ delivery, pedidos, agora, semRede, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos }: { pedidos: PedidoRodizio[]; agora: number; semRede: boolean; recados: RecadoTv[]; temperatura: number | null; aniversariantes: AniversarianteTv[]; cardapio: CardapioTv; ultimaAtividade: string | null; apontamentos: ApontamentoTv[]; feriados: Feriado[]; eventos: Evento[]; delivery: DeliveryTv | null }) {
   const fila = filaVisivel(pedidos, agora);
   const ultimaMs = ultimaAtividade ? Date.parse(ultimaAtividade) : 0;
   const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
   const { salgadas, doces } = separarColunas(fila);
   const totalPaginas = totalPaginasTv(apontamentos);
-  const pagina = paginaDaRotacao(agora, totalPaginas);
+  const comDelivery = !!delivery?.ativo;
+  const slot = paginaDaRotacao(agora, comDelivery ? totalPaginas * 2 : totalPaginas);
+  const mostraDelivery = comDelivery && slot % 2 === 1;
+  const pagina = comDelivery ? Math.floor(slot / 2) : slot;
   const hora = new Date(agora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 
   return (
     <div style={{ height: "100vh", background: TV.fundo, color: TV.texto, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <meta httpEquiv="refresh" content={String(SIMPLES_INTERVALO_SEG)} />
-      {!mostrarFila ? (
+      {!mostrarFila && mostraDelivery && delivery ? (
+        <TvPaginaDelivery d={delivery} agora={agora} />
+      ) : !mostrarFila ? (
         <TvPaginaCardapio cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar={false} apontamentos={apontamentos} pagina={pagina} feriados={feriados} eventos={eventos} />
       ) : fila.length === 0 ? (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>

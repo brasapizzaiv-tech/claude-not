@@ -1,6 +1,7 @@
 import { aniversariantesMes, apontamentosTv, cardapioTv, chaveTvOk, eventosTv, feriadosTv, filaTv, recadosTv, temperaturaIvoti, ultimaAtividadeRodizio } from "@/lib/rodizio-server";
 import { empresaAtualId } from "@/lib/empresa";
 import { cameraNoAr, destinoCamera } from "@/lib/tv-camera";
+import { deliveryTv } from "@/lib/delivery-tv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,10 +24,12 @@ export async function GET(req: Request) {
     // resto (cardápio, recados, feriados...) vem na consulta completa, a cada
     // 5 min. Antes vinha tudo a cada 3 s — 22 GB por mês só de cardápio.
     if (url.searchParams.get("modo") === "leve") {
-      const [pedidos, ultimaAtividade, cam] = await Promise.all([filaTv(), ultimaAtividadeRodizio(), cameraNoAr()]);
+      const [pedidos, ultimaAtividade, cam, empresaLeve] = await Promise.all([filaTv(), ultimaAtividadeRodizio(), cameraNoAr(), empresaAtualId()]);
       const camera = cam ? destinoCamera(cam, url.searchParams.get("chave") ?? "", "") : null;
+      // Painel do delivery (alterna com o cardápio): muda a cada pedido, vem no leve.
+      const delivery = await deliveryTv(empresaLeve).catch(() => null);
       return Response.json(
-        { ok: true, leve: true, agora: new Date().toISOString(), pedidos, ultimaAtividade, camera },
+        { ok: true, leve: true, agora: new Date().toISOString(), pedidos, ultimaAtividade, camera, delivery },
         { headers: { "Cache-Control": "no-store" } },
       );
     }
@@ -34,10 +37,11 @@ export async function GET(req: Request) {
       filaTv(), recadosTv(), temperaturaIvoti(), aniversariantesMes(), cardapioTv(), ultimaAtividadeRodizio(), apontamentosTv(), feriadosTv(), empresaAtualId(),
     ]);
     const eventos = await eventosTv();
+    const delivery = await deliveryTv(empresaId).catch(() => null);
     // Canal do Realtime em que o banco avisa "mudou" (migration 0207).
     const canal = `tv-rodizio:${empresaId ?? "sem-empresa"}`;
     return Response.json(
-      { ok: true, agora: new Date().toISOString(), pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos, canal },
+      { ok: true, agora: new Date().toISOString(), pedidos, recados, temperatura, aniversariantes, cardapio, ultimaAtividade, apontamentos, feriados, eventos, canal, delivery },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {

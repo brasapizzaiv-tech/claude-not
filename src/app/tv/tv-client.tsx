@@ -17,13 +17,15 @@ import type { Feriado } from "@/lib/feriados";
 import type { Evento } from "@/lib/eventos";
 import { cameraPausada } from "@/lib/tv-camera-regras";
 import { filaVisivel, separarColunas, type PedidoRodizio } from "@/lib/rodizio";
+import { TvPaginaDelivery } from "@/components/tv-delivery";
+import type { DeliveryTv } from "@/lib/delivery-tv";
 
 const LEVE_MS = 30_000;      // consulta de segurança da fila
 const COMPLETO_MS = 300_000; // cardápio, recados, feriados, temperatura...
 
 declare global { interface Window { __tvOk?: boolean } }
 
-export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial, cardapioInicial, ultimaAtividadeInicial, apontamentosInicial = [], feriadosInicial = [], eventosInicial = [] }: { chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[]; cardapioInicial: CardapioTv; ultimaAtividadeInicial: string | null; apontamentosInicial?: ApontamentoTv[]; feriadosInicial?: Feriado[]; eventosInicial?: Evento[] }) {
+export function TvClient({ chave, inicial, agoraInicial, recadosInicial, temperaturaInicial, aniversariantesInicial, cardapioInicial, ultimaAtividadeInicial, apontamentosInicial = [], feriadosInicial = [], eventosInicial = [], deliveryInicial = null }: { deliveryInicial?: DeliveryTv | null; chave: string; inicial: PedidoRodizio[]; agoraInicial: number; recadosInicial: RecadoTv[]; temperaturaInicial: number | null; aniversariantesInicial: AniversarianteTv[]; cardapioInicial: CardapioTv; ultimaAtividadeInicial: string | null; apontamentosInicial?: ApontamentoTv[]; feriadosInicial?: Feriado[]; eventosInicial?: Evento[] }) {
   const [aniversariantes, setAniversariantes] = useState<AniversarianteTv[]>(aniversariantesInicial);
   const [cardapio, setCardapio] = useState<CardapioTv>(cardapioInicial);
   const [ultimaAtividade, setUltimaAtividade] = useState<string | null>(ultimaAtividadeInicial);
@@ -33,6 +35,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   const [feriados, setFeriados] = useState<Feriado[]>(feriadosInicial);
   const [eventos, setEventos] = useState<Evento[]>(eventosInicial);
   const [temperatura, setTemperatura] = useState<number | null>(temperaturaInicial);
+  const [delivery, setDelivery] = useState<DeliveryTv | null>(deliveryInicial);
   const [agora, setAgora] = useState(agoraInicial);
   const [conectado, setConectado] = useState(true);
   const [ultimaOk, setUltimaOk] = useState<number>(0);
@@ -64,6 +67,7 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
           }
           setPedidos(j.pedidos as PedidoRodizio[]);
           setUltimaAtividade(typeof j.ultimaAtividade === "string" ? j.ultimaAtividade : null);
+          if (j.delivery !== undefined) setDelivery((j.delivery as DeliveryTv | null) ?? null);
           if (!j.leve) {
             if (Array.isArray(j.recados)) setRecados(j.recados as RecadoTv[]);
             if (Array.isArray(j.apontamentos)) setApontamentos(j.apontamentos as ApontamentoTv[]);
@@ -158,12 +162,18 @@ export function TvClient({ chave, inicial, agoraInicial, recadosInicial, tempera
   const mostrarFila = fila.length > 0 || (ultimaMs > 0 && agora - ultimaMs < TV_SEM_PEDIDO_MIN * 60000);
   const { salgadas, doces } = separarColunas(fila);
   const totalPaginas = totalPaginasTv(apontamentos);
-  const pagina = paginaDaRotacao(agora, totalPaginas);
+  // Com delivery no turno, a TV alterna: cardápio, delivery, cardápio...
+  const comDelivery = !!delivery?.ativo;
+  const slot = paginaDaRotacao(agora, comDelivery ? totalPaginas * 2 : totalPaginas);
+  const mostraDelivery = comDelivery && slot % 2 === 1;
+  const pagina = comDelivery ? Math.floor(slot / 2) : slot;
   const semRede = !conectado || (ultimaOk > 0 && agora - ultimaOk > 20000);
 
   return (
     <div style={{ height: "100vh", background: TV.fundo, color: TV.texto, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {!mostrarFila ? (
+      {!mostrarFila && mostraDelivery && delivery ? (
+        <TvPaginaDelivery d={delivery} agora={agora} />
+      ) : !mostrarFila ? (
         // Fora do rodízio: tela única — cardápio do dia + hora + saladas + marmitas + aniversários/recados.
         <TvPaginaCardapio key={pagina} cardapio={cardapio} agora={agora} recados={recados} temperatura={temperatura} aniversariantes={aniversariantes} piscar apontamentos={apontamentos} pagina={pagina} feriados={feriados} eventos={eventos} />
       ) : fila.length === 0 ? (
