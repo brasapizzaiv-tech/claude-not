@@ -354,7 +354,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
           const alvo = p?.agendado_para ?? p?.previsao_em ?? null;
           if (!p || !alvo) return null;
           const h = new Date(alvo).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-          return `${p.tipo === "retirada" ? "RETIRA ÀS" : "ENTREGA ÀS"} ${h}`;
+          // AGENDADO × PRA AGORA escrito por extenso: só o horário confundia a
+          // cozinha (pedido do Rafael, 27/11/2026).
+          if (p.agendado_para) return `AGENDADO\n${p.tipo === "retirada" ? "RETIRA ÀS" : "ENTREGA ÀS"} ${h}`;
+          return `PRA AGORA\nPREVISÃO ${h}`;
         })(),
         qrRotulo: entrega ? `ENTREGA #${(dp as { numero_turno?: number | null } | null)?.numero_turno ?? (com?.numero as number) ?? ""} — motoboy: leia no app pra pegar` : null,
       },
