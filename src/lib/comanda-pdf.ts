@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
+import { linhasComSabores } from "@/lib/sabores-linhas";
 
 const MM = 2.834645669;
 
@@ -45,7 +46,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
   // altura estimada
   let h = 130;
   if (c.garcom && d.garcom) h += 14;
-  for (const it of d.itens) h += 30 + ((it.descricao || "").split("\n").length - 1) * 18;
+  for (const it of d.itens) h += 30 + (linhasComSabores(it.descricao || "").length - 1) * 18;
   if (c.agrupar) h += 22 * new Set(d.itens.map((i) => i.categoria || "Outros")).size;
   if (c.precos) h += 26;
   if (c.qtdCat) h += 30;
@@ -85,7 +86,7 @@ export async function gerarComandaPdf(d: ComandaPdfDados, cfg?: ComandaConfig | 
 
   let total = 0;
   const renderItem = (it: ComandaItem) => {
-    const linhas = (it.descricao || "").split("\n");
+    const linhas = linhasComSabores(it.descricao || ""); // um sabor por linha
     const valor = c.precos && it.preco != null ? it.preco * it.qtd : null;
     if (valor != null) total += valor;
     doc.font("Helvetica-Bold").fontSize(fItem);

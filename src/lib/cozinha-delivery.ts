@@ -5,6 +5,7 @@
 // em preparo), com os itens do jeito que saem no papel, e um botão "Pronto".
 // O agendado que ainda não foi liberado (almoço 10:30, noite 18:00) aparece à
 // parte, como "mais tarde", pra cozinha saber o que vem.
+import { linhasComSabores } from "@/lib/sabores-linhas";
 
 export type PedidoCozinha = {
   id: string;
@@ -31,13 +32,15 @@ export const DELIVERY_ALERTA_MIN = 35;
 export type LinhaItem =
   | { tipo: "etapa"; texto: string }
   | { tipo: "escolha"; texto: string }
+  | { tipo: "sabor"; texto: string }
   | { tipo: "obs"; texto: string };
 
 /** Quebra a descrição do item (a mesma da comanda impressa) em partes:
  *  1ª linha = nome; "» Título" = etapa do combo; "- escolha"; "Obs: ...".
  *  Tira o preço das escolhas ("Pudim (+4)") — na cozinha não interessa. */
 export function partesDoItem(descricao: string): { nome: string; sabores: string | null; linhas: LinhaItem[] } {
-  const [primeira = "", ...resto] = String(descricao || "").split("\n");
+  // Sabores já vêm um por linha ("  • A"), como no papel.
+  const [primeira = "", ...resto] = linhasComSabores(descricao);
   const semPreco = (s: string) => s.replace(/\s*\(\+\s*R?\$?\s*[\d.,]+\)\s*$/, "").trim();
   // Pizza avulsa vem numa linha só: "Pizza Grande 35cm — A / B / C".
   let nome = primeira.trim();
@@ -48,7 +51,8 @@ export function partesDoItem(descricao: string): { nome: string; sabores: string
   for (const bruta of resto) {
     const l = bruta.trim();
     if (!l) continue;
-    if (l.startsWith("»")) linhas.push({ tipo: "etapa", texto: l.replace(/^»\s*/, "") });
+    if (l.startsWith("•")) linhas.push({ tipo: "sabor", texto: l.replace(/^•\s*/, "") });
+    else if (l.startsWith("»")) linhas.push({ tipo: "etapa", texto: l.replace(/^»\s*/, "") });
     else if (/^(obs|📝)/i.test(l)) linhas.push({ tipo: "obs", texto: l.replace(/^(📝\s*)?obs\.?:?\s*/i, "") });
     else linhas.push({ tipo: "escolha", texto: semPreco(l.replace(/^[-•]\s*/, "")) });
   }

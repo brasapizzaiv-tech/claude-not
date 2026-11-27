@@ -4,6 +4,7 @@
 // com valor, total, pagamento/troco e o QR que o app do motoboy lê. A comanda
 // da cozinha saiu sem o QR.
 import PDFDocument from "pdfkit";
+import { linhasComSabores } from "@/lib/sabores-linhas";
 import QRCode from "qrcode";
 
 const MM = 2.834645669;
@@ -35,7 +36,7 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
   const pad = 10; // margem maior: o caixa cortava a última letra da direita
   const cw = W - pad * 2;
   let h = 330 + (d.qr ? 110 : 0);
-  for (const it of d.itens) h += 24 + (it.descricao.split("\n").length - 1) * 15;
+  for (const it of d.itens) h += 24 + (linhasComSabores(it.descricao).length - 1) * 15;
   if (d.observacao) h += 30;
   const doc = new PDFDocument({ size: [W, Math.max(h, W + 20)], margin: 0 });
   const chunks: Buffer[] = [];
@@ -71,7 +72,7 @@ export async function gerarViaEntregaPdf(d: ViaEntrega, larguraMm = 80): Promise
 
   let subtotal = 0;
   for (const it of d.itens) {
-    const [nome, ...resto] = it.descricao.split("\n");
+    const [nome, ...resto] = linhasComSabores(it.descricao); // um sabor por linha
     const valor = it.preco * it.qtd;
     subtotal += valor;
     const q = Number.isInteger(it.qtd) ? `${it.qtd}x ` : "";
