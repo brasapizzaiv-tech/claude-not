@@ -29,6 +29,8 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
   const [busca, setBusca] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [obs, setObs] = useState("");
+  // Observação por item (ex.: sem cebola): sai embaixo do item na cozinha.
+  const [obsItem, setObsItem] = useState<Record<string, string>>({});
   const [fase, setFase] = useState<"menu" | "pagar">("menu");
   const [local, setLocal] = useState<"aqui" | "viagem">("aqui");
   const [forma, setForma] = useState(formas[0]?.nome ?? "Dinheiro");
@@ -111,7 +113,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
     setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
   };
 
-  const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd }));
+  const itensParaEnviar = () => cartLista.map((x) => ({ itemId: x.item.id, nome: x.item.nome, preco: x.item.preco, qtd: x.qtd, obs: obsItem[x.item.id]?.trim() || undefined }));
 
   type Pagto = { forma: string; colaboradorId?: string | null; clienteId?: string | null; usarCashback?: boolean };
   // Venda gravada: mostra a tela de concluído e limpa o pedido.
@@ -126,7 +128,7 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
             desconto: "desconto" in r ? r.desconto : 0,
           });
           setDescontoTxt(""); setDescontoPct(false); setFuncionario(false); setItemFuncId(null);
-          setCart({}); setObs(""); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); escolherCliente(null); setBuscaCli("");
+          setCart({}); setObs(""); setObsItem({}); setFase("menu"); setRecebido(""); setForma(formas[0]?.nome ?? "Dinheiro"); setLocal("aqui"); setColabId(""); escolherCliente(null); setBuscaCli("");
   }
 
   // Pinpad: a cobrança já foi aprovada; grava a venda levando o TEF. Quem
@@ -257,9 +259,17 @@ export function PdvClient({ itens, categorias, pixAtivo = false, nfce = { ligado
                 <div className="space-y-1.5">
                   {cartLista.map((x) => (
                     <div key={x.item.id} className="flex items-center justify-between gap-2 rounded-controle border border-borda p-2">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{x.item.nome}{x.item.porKg ? ` · ${fmtKg(x.qtd)}` : ""}</div>
                         <div className="font-numero text-xs font-semibold text-texto-suave">{brl(x.item.preco * x.qtd)}</div>
+                        <input
+                          aria-label={`Observação de ${x.item.nome}`}
+                          value={obsItem[x.item.id] ?? ""}
+                          onChange={(e) => setObsItem((o) => ({ ...o, [x.item.id]: e.target.value }))}
+                          maxLength={200}
+                          placeholder="Observação (ex.: sem cebola)"
+                          className="campo mt-1.5 w-full text-xs"
+                        />
                       </div>
                       <div className="flex items-center gap-2">
                         {x.item.porKg ? (

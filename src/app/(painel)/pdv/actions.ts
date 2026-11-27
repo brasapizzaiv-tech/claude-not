@@ -11,7 +11,7 @@ import { debitarVale, ligarBaixaAoMov, obsDaBaixa } from "@/lib/vale-presente-se
 import { normalizarCodigo } from "@/lib/vale-presente";
 import { descontoValido } from "@/lib/desconto-pdv";
 
-type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number };
+type ItemVenda = { itemId: string; nome: string; preco: number; qtd: number; obs?: string };
 
 // Finaliza uma venda de balcão: cria a comanda "Balcão" + itens + manda pra
 // cozinha (reaproveita o garçom) e, se veio pagamento, cobra o valor cheio

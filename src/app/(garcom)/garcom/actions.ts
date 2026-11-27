@@ -83,13 +83,13 @@ export async function lancarPedidoGarcomLinhas(
 // é resolvido no servidor pelo mesmo motor (com promoção), como nos outros fluxos.
 export async function lancarPedidoGarcom(
   mesa: string,
-  itens: { itemId: string; nome: string; preco: number; qtd: number }[],
+  itens: { itemId: string; nome: string; preco: number; qtd: number; obs?: string }[],
   observacao?: string,
   comandaId?: string,
 ) {
   const linhas: LinhaPedido[] = itens
     .filter((i) => i.qtd > 0 && i.itemId)
-    .map((i) => ({ kind: "item" as const, itemId: i.itemId, qtd: i.qtd }));
+    .map((i) => ({ kind: "item" as const, itemId: i.itemId, qtd: i.qtd, obs: (i.obs || "").trim().slice(0, 200) || undefined }));
   if (!mesa || linhas.length === 0) return { ok: false as const, mensagem: "Carrinho vazio." };
   return lancarPedidoGarcomLinhas(mesa, linhas, observacao, comandaId);
 }
