@@ -431,8 +431,8 @@ export function Board({ pedidos, entregadores, boys = [], origemMapa, googleKey 
           <button type="button" onClick={() => mudarVisao(visao === "mapa" ? "lista" : "mapa")} className="btn-secundario text-sm">
             {visao === "mapa" ? "Ver em lista" : "Ver no mapa"}
           </button>
-          <Link href="/delivery/novo" className="btn-principal text-sm">
-            <Icone nome="novo" tamanho={16} /> Pedido por telefone
+          <Link href="/delivery/novo" className="btn-principal text-sm" title="Tecla rápida: F9">
+            <Icone nome="novo" tamanho={16} /> Pedido por telefone <kbd className="rounded-[6px] border border-current/40 px-1 font-numero text-[11px] opacity-70">F9</kbd>
           </Link>
           <details className="relative">
             <summary className="btn-secundario w-[46px] cursor-pointer list-none !px-0" aria-label="Ajustes do delivery">

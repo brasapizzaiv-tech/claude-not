@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/sidebar";
 import { CoresDaEmpresa } from "@/components/cores-da-empresa";
 import { Dialogos } from "@/components/dialogo";
 import { Ajudante } from "@/components/ajudante";
+import { AtalhosTeclado } from "@/components/atalhos-teclado";
 import { lerMarca } from "@/lib/marca";
 import { NomeEmpresaProvider } from "@/components/nome-empresa";
 import { empresaAtual } from "@/lib/empresa";
@@ -83,6 +84,7 @@ export default async function PainelLayout({
       </a>
       <CoresDaEmpresa />
       <Dialogos />
+      <AtalhosTeclado />
       <Sidebar
         nome={profile?.nome ?? user.email ?? "Usuário"}
         papel={admin ? "dono" : "funcionário"}

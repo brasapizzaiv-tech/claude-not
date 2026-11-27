@@ -7,6 +7,7 @@ import { PERMISSOES_CLIENTES, empresaTem, podeAcessar, type ModuloKey, type Modu
 import { Icone, type NomeIcone } from "@/components/icone";
 import { TEMA_PADRAO, type Tema } from "@/lib/tema";
 import { SeletorTema } from "@/components/seletor-tema";
+import { teclaDe } from "@/lib/atalhos";
 
 // Menu lateral — barra estreita só de ícones (72 px).
 //
@@ -376,6 +377,7 @@ export function Sidebar({
             </span>
             <span className="truncate">{it.label}</span>
             {!!it.aviso && <Badge n={it.aviso} />}
+            {teclaDe(it.href) && <kbd className="ml-auto shrink-0 rounded-[6px] border border-borda px-1.5 font-numero text-[11px] font-semibold text-texto-fraco" title={`Tecla rápida: ${teclaDe(it.href)}`}>{teclaDe(it.href)}</kbd>}
           </>
         );
         return it.external ? (
