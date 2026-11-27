@@ -72,6 +72,8 @@ export function NovoPedido({
 
   function addLinha(l: CartLine) { setCart((c) => [...c, l]); }
   function setQtd(uid: string, q: number) { setCart((c) => c.map((l) => (l.uid === uid ? { ...l, qtd: q } : l)).filter((l) => l.qtd > 0)); }
+  // Observação por item (sai embaixo do item na comanda da cozinha).
+  function setObsLinha(uid: string, v: string) { setCart((c) => c.map((l) => (l.uid === uid ? { ...l, payload: { ...l.payload, obs: v || undefined } } : l))); }
 
   function clicarItem(i: Item) {
     if (comComplSet.has(i.id) && gruposDe(i.id).length) { setComboItem(i); return; }
@@ -224,8 +226,17 @@ export function NovoPedido({
                 {cart.map((l) => (
                   <div key={l.uid} className="flex items-start justify-between gap-2 rounded-controle border border-borda p-2">
                     <div className="min-w-0 flex-1">
-                      <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao}</div>
+                      {/* A observação aparece (e se edita) no campo de baixo, não no texto. */}
+                      <div className="whitespace-pre-line text-sm font-medium leading-tight">{l.descricao.replace(/\nObs: [\s\S]*$/, "")}</div>
                       <div className="text-xs text-ok-texto">{brl(l.preco * l.qtd)}</div>
+                      <input
+                        aria-label={`Observação de ${l.descricao.split("\n")[0]}`}
+                        value={l.payload.obs ?? ""}
+                        onChange={(e) => setObsLinha(l.uid, e.target.value)}
+                        maxLength={200}
+                        placeholder="Observação deste item (ex.: sem cebola)"
+                        className="campo mt-1.5 w-full text-xs"
+                      />
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => setQtd(l.uid, l.qtd - 1)} className="h-6 w-6 rounded border border-borda-forte">{l.qtd === 1 ? <Icone nome="lixeira" tamanho={13} titulo="Tirar do pedido" /> : "−"}</button>
@@ -293,8 +304,8 @@ export function NovoPedido({
         </div>
       </div>
 
-      {pzOpen && <PizzaModal pizza={pizza} onClose={() => setPzOpen(false)} onAdd={(l) => { addLinha(l); setPzOpen(false); }} />}
-      {comboItem && <ComboModal item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
+      {pzOpen && <PizzaModal comObs pizza={pizza} onClose={() => setPzOpen(false)} onAdd={(l) => { addLinha(l); setPzOpen(false); }} />}
+      {comboItem && <ComboModal comObs item={comboItem} grupos={gruposDe(comboItem.id)} opcoesDe={opcoesDe} onClose={() => setComboItem(null)} onAdd={(l) => { addLinha(l); setComboItem(null); }} />}
     </div>
   );
 }
