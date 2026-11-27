@@ -1,6 +1,7 @@
 "use server";
 
 import { exigirAcesso } from "@/lib/permissoes-server";
+import { imprimirAgendadoSeLiberado } from "@/lib/delivery-agendados";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { codigoDaForma, tipoDe } from "@/lib/formas-pagamento";
@@ -30,6 +31,8 @@ export async function criarPedidoDelivery(d: DadosPedidoDelivery) {
     // Lançado pelo painel já nasce aceito: o cliente recebe o "confirmado" com
     // o resumo (antes não ia nada — pedido da Nelsi, 27/11/2026).
     await avisarPedido(r.id, "confirmado");
+    // Agendado lançado depois da liberação do turno: imprime na hora.
+    await imprimirAgendadoSeLiberado(supabase, r.id);
     revalidatePath("/delivery");
   }
   return r;
@@ -99,6 +102,10 @@ export async function definirStatusDelivery(id: string, status: string, extra?: 
   }
   if (status === "em_preparo" && ped?.agendado_para) {
     await imprimirComandaDoPedido(supabase, id);
+  }
+  // Agendado aceito depois da liberação do turno (10:30 / 18:00): sai na hora.
+  if (status === "aceito" && ped?.status === "pendente" && ped?.agendado_para) {
+    await imprimirAgendadoSeLiberado(supabase, id);
   }
 
   // WhatsApp pro cliente (só com a API configurada; nunca trava o status).
