@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatusLoja } from "./status-loja";
 import { lerConfigHorarios } from "@/lib/delivery-horarios";
+import { lerTempos, tempoDoTipo } from "@/lib/delivery-tempos";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
 import { empresaAtualId } from "@/lib/empresa";
 import { AvisoSaude } from "@/components/aviso-saude";
@@ -28,7 +29,7 @@ export default async function DeliveryPage() {
       .order("criado_em", { ascending: false })
       .limit(120),
     supabase.from("entregadores").select("id, nome, ultima_lat, ultima_lng, ultima_pos_em").eq("ativo", true).order("nome"),
-    supabase.from("delivery_config").select("origem_lat, origem_lng, aberto, config").maybeSingle(),
+    supabase.from("delivery_config").select("origem_lat, origem_lng, aberto, config, tempo_preparo_min").maybeSingle(),
   ]);
   // DEL-12: entregue e não recebido de DIA ANTERIOR sumia de todas as telas
   // (a lista e a trava do fechamento só olham o dia). Fica num aviso aqui até alguém receber.
@@ -72,6 +73,7 @@ export default async function DeliveryPage() {
   const t0 = ((agoraT as { turno: string; turno_data: string }[] | null) ?? [])[0];
   const turnoAtual = t0 ? `${t0.turno_data}|${t0.turno}` : null;
 
+  const tempos = lerTempos(cfgMapa as { tempo_preparo_min?: number; config?: unknown } | null);
   const pedidos: PedidoBoard[] = linhas.map((l) => {
     const c = Array.isArray(l.pdv_comandas) ? l.pdv_comandas[0] : l.pdv_comandas;
     const itens = itensDe.get(l.comanda_id ?? "") ?? [];
@@ -80,6 +82,7 @@ export default async function DeliveryPage() {
       // Nº do delivery por turno (migration 0237); pedido antigo cai no da comanda.
       numero: (l as { numero_turno?: number | null }).numero_turno ?? c?.numero ?? null,
       itens,
+      tempoPadrao: tempoDoTipo(tempos, l.tipo),
       subtotal: Math.round(itens.reduce((s, i) => s + i.qtd * i.preco, 0) * 100) / 100,
       entregadorNome: l.entregador_id ? entrMap.get(l.entregador_id) ?? null : null,
     };
@@ -97,7 +100,7 @@ export default async function DeliveryPage() {
       turnoAtual={turnoAtual}
       aviso={<>
         <AvisoSaude empresaId={await empresaAtualId()} />
-        <StatusLoja horarios={lerConfigHorarios((cfgMapa as { config?: unknown } | null)?.config)} aberto={(cfgMapa as { aberto?: boolean } | null)?.aberto !== false} />
+        <StatusLoja horarios={lerConfigHorarios((cfgMapa as { config?: unknown } | null)?.config)} aberto={(cfgMapa as { aberto?: boolean } | null)?.aberto !== false} tempos={tempos} />
         {semReceber.length > 0 && (
           <div role="alert" className="cartao mb-3 p-4">
             <p className="font-semibold text-urgente-texto">{semReceber.length === 1 ? "1 pedido entregue em outro dia ainda não foi recebido" : `${semReceber.length} pedidos entregues em outros dias ainda não foram recebidos`}</p>

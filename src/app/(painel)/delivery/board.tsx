@@ -11,6 +11,7 @@ import { definirStatusDelivery, definirEntregador, reimprimirDelivery } from "./
 import { createClient } from "@/lib/supabase/client";
 import { META_DELIVERY_MIN, pedidoAtrasado } from "@/lib/delivery-atraso";
 import { ListaPedidos } from "./lista";
+import { opcoesCom } from "@/lib/delivery-tempos";
 
 // Alerta sonoro de pedido novo (WebAudio, sem arquivo). O navegador só toca
 // depois de um clique na página — por isso o botão de som no topo.
@@ -28,13 +29,14 @@ function tocarAlerta() {
     });
   } catch { /* sem áudio */ }
 }
-const TEMPOS_ACEITE = [30, 40, 50, 60, 75, 90];
 
 const MapaPedidos = dynamic(() => import("./mapa").then((m) => m.MapaPedidos), { ssr: false });
 const MapaPedidosGoogle = dynamic(() => import("./mapa-google").then((m) => m.MapaPedidosGoogle), { ssr: false });
 
 export type PedidoBoard = {
   id: string;
+  /** Tempo do topo do Delivery pro tipo deste pedido (começo do seletor do Aceitar). */
+  tempoPadrao?: number;
   numero: number | null;
   nome: string;
   telefone: string | null;
@@ -118,7 +120,8 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
   imprimir: (p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") => void;
 }) {
   const st = ST[p.status] ?? ST.pendente;
-  const [tempo, setTempo] = useState(40);
+  // Começa no tempo do topo do Delivery (retirada ou entrega).
+  const [tempo, setTempo] = useState(p.tempoPadrao ?? 40);
   async function recusar() {
     const motivo = await perguntar("Motivo pra recusar/cancelar este pedido (o cliente vai ver):", "", { perigo: true, okTexto: "Cancelar o pedido", obrigatorio: true });
     if (motivo && motivo.trim()) avancar({ ...p, status: "__cancelar" } as PedidoBoard, { motivo: motivo.trim() });
@@ -172,7 +175,7 @@ function CardPedido({ p, nowMs, proc, entregadores, atrasado, avancar, irPara, t
             <>
               {!p.agendado_para && (
                 <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} title="Tempo prometido" aria-label="Tempo prometido" className="min-h-11 shrink-0 rounded-controle border border-borda-forte bg-painel-cartao px-1.5 text-xs text-texto">
-                  {TEMPOS_ACEITE.map((t) => <option key={t} value={t}>{t} min</option>)}
+                  {opcoesCom(p.tempoPadrao ?? 40).map((t) => <option key={t} value={t}>{t} min</option>)}
                 </select>
               )}
               <button onClick={() => avancar(p, { tempoMin: p.agendado_para ? undefined : tempo })} disabled={proc} className="btn-principal min-h-11 min-w-0 flex-1 whitespace-nowrap px-2 text-sm">Aceitar</button>

@@ -6,6 +6,7 @@ import { Icone } from "@/components/icone";
 import { perguntar } from "@/components/dialogo";
 import { minutosDoPedido, pedidoAtrasado } from "@/lib/delivery-atraso";
 import type { EntregadorOpt, PedidoBoard } from "./board";
+import { opcoesCom } from "@/lib/delivery-tempos";
 
 // Lista de pedidos do delivery com o painel do pedido ao lado (layout novo,
 // out/2026 — docs/referencia-layout/pedidos-delivery.html).
@@ -182,7 +183,7 @@ function PainelPedido({ p, nowMs, proc, entregadores, avancar, irPara, trocarEnt
   trocarEntregador: (p: PedidoBoard, id: string) => void;
   imprimir: (p: PedidoBoard, qual: "cozinha" | "entrega" | "ambas") => void;
 }) {
-  const [tempo, setTempo] = useState(40);
+  const [tempo, setTempo] = useState(p.tempoPadrao ?? 40);
   const atrasado = pedidoAtrasado(p, nowMs);
   const min = minutosDoPedido(p, nowMs);
   const prox = proxima(p);
@@ -264,7 +265,7 @@ function PainelPedido({ p, nowMs, proc, entregadores, avancar, irPara, trocarEnt
         <label className="flex items-center justify-between gap-2 text-[13px] text-painel-foco-suave">
           Tempo prometido ao cliente
           <select value={tempo} onChange={(e) => setTempo(Number(e.target.value))} className="min-h-11 rounded-controle border border-painel-foco-linha bg-transparent px-2 text-sm text-painel-foco-texto">
-            {[30, 40, 50, 60, 75, 90].map((t) => <option key={t} value={t}>{t} min</option>)}
+            {opcoesCom(p.tempoPadrao ?? 40).map((t) => <option key={t} value={t}>{t} min</option>)}
           </select>
         </label>
       )}

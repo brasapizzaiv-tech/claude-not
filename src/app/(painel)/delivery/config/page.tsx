@@ -110,9 +110,9 @@ export default async function DeliveryConfigPage() {
             <p className="mt-1 text-xs text-texto-suave">0 = sem limite. Avisa se o endereço passar disso.</p>
           </div>
           <div>
-            <label className="text-sm font-semibold">Tempo de preparo (min)</label>
+            <label className="text-sm font-semibold">Tempo de entrega (min)</label>
             <input name="tempo_preparo_min" defaultValue={c.tempo_preparo_min ?? 40} inputMode="numeric" className="campo mt-1 w-full" />
-            <p className="mt-1 text-xs text-texto-suave">Usado pra calcular a previsão de entrega.</p>
+            <p className="mt-1 text-xs text-texto-suave">Previsão que o cliente vê. O de retirada e este mudam rápido no topo da tela do Delivery.</p>
           </div>
         </div>
 

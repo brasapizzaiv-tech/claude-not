@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { lerTempos } from "@/lib/delivery-tempos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaAtualId } from "@/lib/empresa";
 import { disponivelAgora, type Horarios } from "@/lib/disponibilidade";
@@ -157,7 +158,7 @@ export default async function PedirPage() {
       }}
       aberto={horario.livre}
       horario={horario}
-      tempoPreparo={Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40)}
+      tempos={lerTempos(cfg as { tempo_preparo_min?: number; config?: unknown } | null)}
       taxaBase={Number((cfg as { taxa_base?: number } | null)?.taxa_base ?? 0)}
       aviso={((cfg as { aviso?: string | null } | null)?.aviso || "").trim() || null}
       maisVendidos={maisVendidos}

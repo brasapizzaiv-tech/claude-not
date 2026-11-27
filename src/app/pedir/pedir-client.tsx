@@ -51,7 +51,7 @@ export type HorarioPedir = {
 };
 
 export function PedirClient({
-  itens, categorias, comComplemento, pizza, complementos, aberto, tempoPreparo, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0, formas = FORMAS_PADRAO.app,
+  itens, categorias, comComplemento, pizza, complementos, aberto, tempos, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0, formas = FORMAS_PADRAO.app,
   vitrine = VITRINE_VAZIA,
 }: {
   itens: Item[];
@@ -60,7 +60,8 @@ export function PedirClient({
   pizza: PizzaData;
   complementos: { grupos: Grupo[]; opcoes: Opcao[] };
   aberto: boolean;
-  tempoPreparo: number;
+  /** Tempo prometido (topo do Delivery): retirada e entrega separados. */
+  tempos: { entrega: number; retirada: number };
   taxaBase?: number;
   aviso: string | null;
   maisVendidos: string[];
@@ -474,7 +475,7 @@ export function PedirClient({
           <h1 className="text-2xl font-bold">Pedido enviado!</h1>
           <p className="mt-2 text-texto-suave">
             {feito.numero ? <>Seu pedido é o <b>nº {feito.numero}</b>. </> : null}
-            O restaurante vai confirmar em instantes — tempo estimado de preparo: ~{tempoPreparo} min.
+            O restaurante vai confirmar em instantes — {tipo === "retirada" ? `fica pronto pra retirar em ~${tempos.retirada} min.` : `tempo estimado de entrega: ~${tempos.entrega} min.`}
           </p>
           {feito.pix && !pixPago && (
             <div className="cartao mx-auto mt-6 max-w-sm p-5">
@@ -628,8 +629,8 @@ export function PedirClient({
 
           <h2 className="mb-2 font-numero text-base font-bold text-texto">Como você quer receber?</h2>
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <button onClick={() => setTipo("entrega")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "entrega" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={15} /> Entrega</span></button>
-            <button onClick={() => setTipo("retirada")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "retirada" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={15} /> Retirar no balcão</span></button>
+            <button onClick={() => setTipo("entrega")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "entrega" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={15} /> Entrega</span><span className="block text-xs font-medium">~{tempos.entrega} min</span></button>
+            <button onClick={() => setTipo("retirada")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "retirada" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={15} /> Retirar no balcão</span><span className="block text-xs font-medium">pronto em ~{tempos.retirada} min</span></button>
           </div>
 
           {tipo === "entrega" && (
@@ -726,7 +727,7 @@ export function PedirClient({
   const destaque = maisVendidos.map((id) => itemDe.get(id)).filter(Boolean) as Item[];
   const novidades = pizza.sabores.filter((s) => s.novo);
   const linhaInfo = [
-    `entrega em ~${tempoPreparo} min`,
+    `entrega ~${tempos.entrega} · retirada ~${tempos.retirada} min`,
     taxaBase > 0 ? `taxa a partir de ${brl(taxaBase)}` : "retirada sem taxa",
     aberto && horario.fechaEm ? `aberto até ${horario.fechaEm}` : null,
   ].filter(Boolean).join(" · ");

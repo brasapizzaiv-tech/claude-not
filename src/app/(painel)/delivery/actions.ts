@@ -17,6 +17,7 @@ import { contaDoMotoboy, formasDoMotoboy, pedidosComMotoboy } from "@/lib/caixa-
 import { FORMA_PIX_APP } from "@/lib/delivery-pix";
 import { foneDigitos } from "@/lib/telefone";
 import { perfilDaSessao } from "@/lib/sessao";
+import { lerTempos } from "@/lib/delivery-tempos";
 
 export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -311,6 +312,24 @@ export async function definirDeliveryAberto(aberto: boolean) {
   return { ok: true as const };
 }
 
+// Tempos de retirada/entrega no topo do Delivery (como no sistema antigo):
+// valem pros pedidos NOVOS e pro que o app mostra ao cliente.
+export async function definirTemposDelivery(entrega: number, retirada: number) {
+  await exigirAcesso("/delivery");
+  const e = Math.round(Number(entrega)), r = Math.round(Number(retirada));
+  if (!(e > 0 && e <= 240 && r > 0 && r <= 240)) return { ok: false as const, mensagem: "Tempo inválido." };
+  const supabase = await createClient();
+  const { data: atual } = await supabase.from("delivery_config").select("config").eq("id", 1).maybeSingle();
+  const config = { ...(((atual as { config?: Record<string, unknown> | null } | null)?.config ?? {}) as Record<string, unknown>), tempos: { entrega: e, retirada: r } };
+  const { data, error } = await supabase.from("delivery_config")
+    .update({ config, tempo_preparo_min: e, atualizado_em: new Date().toISOString() }).eq("id", 1).select("id");
+  if (error || !data?.length) return { ok: false as const, mensagem: "Não consegui salvar. Confira a internet e tente de novo." };
+  revalidatePath("/delivery");
+  revalidatePath("/delivery/config");
+  revalidatePath("/pedir");
+  return { ok: true as const };
+}
+
 export async function salvarConfigDelivery(formData: FormData) {
   await exigirAcesso("/delivery");
   const supabase = await createClient();
@@ -345,6 +364,8 @@ export async function salvarConfigDelivery(formData: FormData) {
       ...configAtual, horarios, aceitarAuto: formData.get("aceitar_auto") === "on",
       // Meta do painel do delivery na TV da cozinha (marmitas no almoço, pizzas à noite).
       metaTv: { almoco: Math.max(0, Math.round(num("meta_almoco"))) || null, noite: Math.max(0, Math.round(num("meta_noite"))) || null },
+      // O "tempo de preparo" da Config é o de ENTREGA; a retirada segue a do topo do Delivery.
+      tempos: { ...lerTempos({ tempo_preparo_min: Math.round(num("tempo_preparo_min")) || 40, config: configAtual }), entrega: Math.round(num("tempo_preparo_min")) || 40 },
     },
     origem_endereco: origemEndereco || null,
     taxa_base: num("taxa_base"),

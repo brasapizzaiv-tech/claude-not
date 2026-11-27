@@ -9,6 +9,7 @@ import { nomesDosSabores } from "@/lib/pizza-sabores";
 import { fmtKg } from "@/lib/peso-kg";
 import { precoComEtapas, problemaDasEscolhas } from "@/lib/combo-preco";
 import { moedaBR } from "@/lib/format";
+import { lerTempos, tempoDoTipo } from "@/lib/delivery-tempos";
 
 // Aceita tanto o client do servidor (cookies/RLS) quanto o admin client.
 // Tipagem estrutural mínima pra os dois passarem.
@@ -436,9 +437,10 @@ export async function criarPedidoDeliveryCore(
   // cardápio, o acesso é com a chave administrativa e não passa pelas regras
   // do banco — então a empresa entra escrita. Quando vem do painel, o banco
   // já filtra e o mesmo filtro só confirma.
-  const cfgQuery = db.from("delivery_config").select("tempo_preparo_min");
+  const cfgQuery = db.from("delivery_config").select("tempo_preparo_min, config");
   const { data: cfg } = await (empresaId ? cfgQuery.eq("empresa_id", empresaId) : cfgQuery).maybeSingle();
-  const preparoMin = Number((cfg as { tempo_preparo_min?: number } | null)?.tempo_preparo_min ?? 40) || 40;
+  // Tempo do topo do Delivery: retirada e entrega separados (27/11/2026).
+  const preparoMin = tempoDoTipo(lerTempos(cfg as { tempo_preparo_min?: number; config?: unknown } | null), d.tipo);
   // Agendado: a previsão É o horário marcado.
   const previsaoEm = d.agendadoPara ? new Date(d.agendadoPara).toISOString() : new Date(Date.now() + preparoMin * 60000).toISOString();
 
