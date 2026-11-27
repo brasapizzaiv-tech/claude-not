@@ -80,7 +80,7 @@ export const MODULOS: {
   { key: "mural", label: "Mural do escritório", icon: "aparelho", rotas: ["/mural"] },
   { key: "feriados", label: "Feriados e eventos", icon: "agenda", rotas: ["/feriados"] },
   { key: "lembretes", label: "Lembretes pra equipe", icon: "sino", rotas: ["/lembretes"] },
-  { key: "rodizio", label: "Quadro do rodízio (cozinha)", icon: "pizza", rotas: ["/cozinha"] },
+  { key: "rodizio", label: "Tablet da cozinha (delivery e rodízio)", icon: "pizza", rotas: ["/cozinha"] },
   // Fichas técnicas: receitas e custo dos pratos (0320). A chefe no celular não vê custo.
   { key: "fichas", label: "Fichas técnicas (custo dos pratos)", icon: "caderno", rotas: ["/fichas-tecnicas"] },
 ];

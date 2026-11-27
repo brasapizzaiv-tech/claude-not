@@ -3,7 +3,7 @@
 Quem vê cada tela depende das permissões do usuário (tela "Usuários e permissões"):
 - **Salão / PDV**: Mesas e comandas, Caixa (e todas as telas dele), Cardápio e config, Notas fiscais (NFC-e), Cancelados e Balança do buffet.
 - **PDV (balcão)**: PDV balcão.
-- **Quadro do rodízio (cozinha)**: Quadro do rodízio, Rodízio · relatório e Recados da TV.
+- **Tablet da cozinha (delivery e rodízio)**: Tablet da cozinha, Rodízio · relatório e Recados da TV.
 - **Etiquetas**: Etiquetas de validade.
 - **Reservas**: Reservas. **Recepção (reservas no celular)**: só a tela de reservas de hoje no celular (quem só tem essa permissão já entra direto nela).
 - **Central de Impressões**: Central de impressões e Downloads.
@@ -231,9 +231,14 @@ Auditoria das comandas excluídas e itens cancelados: o quê, motivo, valor, que
 
 ---
 
-## Quadro do rodízio (tablet) (/cozinha)
+## Tablet da cozinha (/cozinha)
 
-Fila dos pedidos do rodízio que o garçom lança. Em cada pedido: "No forno", depois "✓ Pronto"; ou cancelar ("Cancelar o pedido"). Atualiza sozinho. "Este pedido já mudou de status." = outra tela já mexeu.
+Tela do tablet da cozinha, em tela cheia. No topo, escolha o que este tablet mostra: "Tudo", "Delivery" ou "Rodízio" (o tablet lembra). "Ligar som" toca um aviso quando chega pedido novo.
+
+- **Delivery:** cada pedido que já foi pra cozinha aparece num cartão com o número, ENTREGA ou RETIRADA, a hora ("Entrega às"/"Retira às" no agendado, "Previsão" no pedido pra agora) e os itens do jeito que saem no papel (etapas da marmita, sabores da pizza, observações em destaque). Quando ficar pronto, toque "✓ Pronto": o pedido passa a Pronto no Delivery e, se for retirada, o cliente recebe o aviso no WhatsApp. Tocou errado? "Toquei errado: voltar" aparece por 2 minutos. Cartão com contorno vermelho = passou da hora. "Mais tarde" lista os agendados que ainda não foram liberados pra cozinha (almoço 10:30, noite 18:00). Pedidos do convênio (Kern) não aparecem: saem por etiqueta.
+- **Rodízio:** fila das pizzas que o garçom lança. Em cada pedido: "No forno", depois "✓ Pronto"; ou cancelar ("Cancelar o pedido").
+
+Atualiza sozinho. "Este pedido já mudou de etapa/status." = outra tela já mexeu.
 
 ## Rodízio · relatório (/cozinha/relatorio)
 

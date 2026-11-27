@@ -192,7 +192,7 @@ export function Sidebar({
       key: "cozinha", label: "Cozinha", icon: "panela",
       itens: [
         ...so(has("salao"), { href: "/salao/balanca", label: "Balança do buffet", icon: "balanca" }),
-        ...so(has("rodizio"), { href: "/cozinha", label: "Quadro do rodízio (tablet)", icon: "pizza" }),
+        ...so(has("rodizio"), { href: "/cozinha", label: "Tablet da cozinha", icon: "pizza" }),
         ...so(has("rodizio"), { href: "/cozinha/relatorio", label: "Rodízio · relatório", icon: "grafico" }),
         ...so(has("rodizio"), { href: "/cozinha/recados", label: "Recados da TV", icon: "tv" }),
         ...so(has("etiquetas"), { href: "/etiquetas", label: "Etiquetas de validade", icon: "etiqueta" }),

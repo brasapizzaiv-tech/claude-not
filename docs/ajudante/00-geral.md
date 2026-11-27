@@ -13,7 +13,7 @@ O painel é o sistema do restaurante usado no computador do escritório e do cai
 ## O que fica em cada grupo
 
 - **Operação:** "Mesas e comandas", "Caixa", "Garçom (celular)", "PDV balcão", "Delivery", "Cardápio e config", "Notas fiscais (NFC-e)" e "Cancelados".
-- **Cozinha:** "Balança do buffet", "Quadro do rodízio (tablet)", "Rodízio · relatório", "Recados da TV", "Etiquetas de validade" e "Fichas técnicas".
+- **Cozinha:** "Balança do buffet", "Tablet da cozinha", "Rodízio · relatório", "Recados da TV", "Etiquetas de validade" e "Fichas técnicas".
 - **Estoque e compras:** "Produtos", "Contagem de estoque", "Cotações", "Conferência", "Notas de entrada", "Fornecedores" e "Pedidos da equipe".
 - **Equipe:** "Mural do escritório", "Feriados e eventos", "Lembretes", "Colaboradores", "Semana e 10%", "Assiduidade", "Relatórios de ponto", "Folgas", "Compras internas", "Checklists de hoje", "Revisar checklists" e "Modelos de checklist".
 - **Financeiro:** "Movimentações", "Fechamento de caixa", "CMV / Consumo", "Contas a pagar", "Orçamento", "Conciliação bancária", "Fatura do cartão", "Vendas", "Produtos vendidos", "Buffet: livre × quilo", "DRE" e "Cofre".
