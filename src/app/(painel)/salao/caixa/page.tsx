@@ -323,7 +323,7 @@ export default async function CaixaPage({
         </div>
       </div>
 
-      <AvisoSaude empresaId={await empresaAtualId()} className="mb-4" sem={["whatsapp", "certificado", "rotina:avisos-manha", "rotina:entrega-limpar", "rotina:whatsapp-disparos", "rotina:delivery-pix"]} />
+      <AvisoSaude empresaId={await empresaAtualId()} className="mb-4" sem={["whatsapp", "certificado", "rotina:avisos-manha", "rotina:entrega-limpar", "rotina:whatsapp-disparos", "rotina:delivery-pix", "rotina:delivery-agendados"]} />
 
       <NotasPendentes lista={pendentes} />
 

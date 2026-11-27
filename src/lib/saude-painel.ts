@@ -68,6 +68,7 @@ const ROTINAS: { chave: string; nome: string; atraso: number; de: ModuloKey[] }[
   { chave: "rotina:fiscal-conferir", nome: "Conferência das NFC-e na Focus", atraso: 75 * MIN, de: VENDA },
   { chave: "rotina:whatsapp-disparos", nome: "Campanhas e gatilhos do WhatsApp", atraso: 20 * MIN, de: VENDA },
   { chave: "rotina:delivery-pix", nome: "Pix do app de pedidos (confere e lança no caixa)", atraso: 20 * MIN, de: ["delivery"] },
+  { chave: "rotina:delivery-agendados", nome: "Pedidos agendados vão pra cozinha na hora", atraso: 20 * MIN, de: ["delivery"] },
   { chave: "rotina:avisos-manha", nome: "Resumo da manhã no celular da equipe", atraso: 26 * HORA, de: ["colaboradores"] },
   { chave: "rotina:entrega-limpar", nome: "Limpeza das posições dos entregadores", atraso: 26 * HORA, de: ["delivery"] },
 ];

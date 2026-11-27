@@ -83,6 +83,8 @@ export async function updateSession(request: NextRequest) {
     path === "/api/fiscal/conferir" ||
     // Pix do app de pedidos (de 5 em 5 min, DEL-02): a rota confere o CRON_SECRET.
     path === "/api/delivery/pix" ||
+    // Agendados vão pra cozinha na hora certa (5/5 min): a rota confere o CRON_SECRET.
+    path === "/api/delivery/agendados" ||
     // Sinal de vida do agente TEF: quem valida é o token do agente. Fora daqui o
     // POST caía no login e o sinal nunca chegava (PAG-05: tef_status sempre vazio).
     path.startsWith("/api/tef/") ||

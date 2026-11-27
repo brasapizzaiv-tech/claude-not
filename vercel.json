@@ -36,6 +36,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/delivery/agendados",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/fiscal/conferir",
       "schedule": "10,40 * * * *"
     },
