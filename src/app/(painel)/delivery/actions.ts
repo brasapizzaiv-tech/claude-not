@@ -18,6 +18,7 @@ import { FORMA_PIX_APP } from "@/lib/delivery-pix";
 import { foneDigitos } from "@/lib/telefone";
 import { perfilDaSessao } from "@/lib/sessao";
 import { lerTempos } from "@/lib/delivery-tempos";
+import { fimDoTurno } from "@/lib/delivery-so-retirada";
 
 export type { LinhaPedido, DadosPedidoDelivery } from "@/lib/delivery-core";
 
@@ -436,6 +437,20 @@ export async function definirDeliveryAberto(aberto: boolean) {
   if (error || !data?.length) return { ok: false as const, mensagem: "Não consegui mudar. Confira a internet e tente de novo." };
   revalidatePath("/delivery");
   revalidatePath("/delivery/config");
+  return { ok: true as const };
+}
+
+// "Só retirada" no topo do Delivery (sem motoboy): o app deixa de oferecer
+// entrega até o fim do turno (28/11/2026). ligar=false volta na hora.
+export async function definirSoRetirada(ligar: boolean) {
+  await exigirAcesso("/delivery");
+  const supabase = await createClient();
+  const { data: atual } = await supabase.from("delivery_config").select("config").eq("id", 1).maybeSingle();
+  const config = { ...(((atual as { config?: Record<string, unknown> | null } | null)?.config ?? {}) as Record<string, unknown>), soRetiradaAte: ligar ? fimDoTurno() : null };
+  const { data, error } = await supabase.from("delivery_config").update({ config, atualizado_em: new Date().toISOString() }).eq("id", 1).select("id");
+  if (error || !data?.length) return { ok: false as const, mensagem: "Não consegui mudar. Confira a internet e tente de novo." };
+  revalidatePath("/delivery");
+  revalidatePath("/pedir");
   return { ok: true as const };
 }
 

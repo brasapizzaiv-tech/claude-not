@@ -11,10 +11,11 @@ import { useRouter } from "next/navigation";
 import { estadoDelivery, type ConfigHorarios } from "@/lib/delivery-horarios";
 import { BotaoAcao } from "@/components/enviar";
 import { confirmar, avisar } from "@/components/dialogo";
-import { definirDeliveryAberto, definirTemposDelivery } from "./actions";
+import { definirDeliveryAberto, definirSoRetirada, definirTemposDelivery } from "./actions";
+import { hhmmSP } from "@/lib/delivery-so-retirada";
 import { opcoesCom, type TemposDelivery } from "@/lib/delivery-tempos";
 
-export function StatusLoja({ horarios, aberto, tempos }: { horarios: ConfigHorarios; aberto: boolean; tempos: TemposDelivery }) {
+export function StatusLoja({ horarios, aberto, tempos, soRetiradaAte = null }: { horarios: ConfigHorarios; aberto: boolean; tempos: TemposDelivery; soRetiradaAte?: string | null }) {
   const router = useRouter();
   const [t, setT] = useState(tempos);
   const [salvando, setSalvando] = useState(false);
@@ -71,6 +72,19 @@ export function StatusLoja({ horarios, aberto, tempos }: { horarios: ConfigHorar
           </label>
         ))}
       </div>
+      {/* Sem motoboy: o app oferece só retirada até o fim do turno (28/11/2026). */}
+      {soRetiradaAte && <span className="pilula-urgente px-3 py-1 text-sm font-bold">SÓ RETIRADA até {hhmmSP(soRetiradaAte)}</span>}
+      <BotaoAcao
+        className={`${soRetiradaAte ? "btn-principal" : "btn-secundario"} min-h-11 px-4 text-sm`}
+        aoClicar={async () => {
+          if (!soRetiradaAte && !(await confirmar("Deixar só retirada?", { detalhe: "O app para de oferecer entrega (o cliente só consegue pedir pra retirar no balcão) até o fim deste turno. Depois volta sozinho.", okTexto: "Só retirada" }))) return;
+          const r = await definirSoRetirada(!soRetiradaAte);
+          if (!r.ok) return avisar(r.mensagem ?? "Não consegui mudar. Tente de novo.");
+          router.refresh();
+        }}
+      >
+        {soRetiradaAte ? "Voltar a entregar" : "Só retirada (sem motoboy)"}
+      </BotaoAcao>
       <BotaoAcao
         className={`${aberto ? "btn-secundario" : "btn-principal"} min-h-11 px-4 text-sm`}
         aoClicar={async () => {

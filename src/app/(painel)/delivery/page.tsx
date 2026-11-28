@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatusLoja } from "./status-loja";
+import { soRetiradaAte } from "@/lib/delivery-so-retirada";
 import { lerConfigHorarios } from "@/lib/delivery-horarios";
 import { lerTempos, tempoDoTipo } from "@/lib/delivery-tempos";
 import { Board, type PedidoBoard, type EntregadorOpt } from "./board";
@@ -100,7 +101,7 @@ export default async function DeliveryPage() {
       turnoAtual={turnoAtual}
       aviso={<>
         <AvisoSaude empresaId={await empresaAtualId()} />
-        <StatusLoja horarios={lerConfigHorarios((cfgMapa as { config?: unknown } | null)?.config)} aberto={(cfgMapa as { aberto?: boolean } | null)?.aberto !== false} tempos={tempos} />
+        <StatusLoja horarios={lerConfigHorarios((cfgMapa as { config?: unknown } | null)?.config)} aberto={(cfgMapa as { aberto?: boolean } | null)?.aberto !== false} tempos={tempos} soRetiradaAte={soRetiradaAte((cfgMapa as { config?: unknown } | null)?.config)} />
         {semReceber.length > 0 && (
           <div role="alert" className="cartao mb-3 p-4">
             <p className="font-semibold text-urgente-texto">{semReceber.length === 1 ? "1 pedido entregue em outro dia ainda não foi recebido" : `${semReceber.length} pedidos entregues em outros dias ainda não foram recebidos`}</p>

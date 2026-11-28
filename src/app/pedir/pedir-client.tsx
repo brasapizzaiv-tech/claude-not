@@ -52,7 +52,7 @@ export type HorarioPedir = {
 
 export function PedirClient({
   itens, categorias, comComplemento, pizza, complementos, aberto, tempos, aviso, maisVendidos, pixAtivo, horario, taxaBase = 0, formas = FORMAS_PADRAO.app,
-  vitrine = VITRINE_VAZIA,
+  vitrine = VITRINE_VAZIA, soRetiradaAte = null,
 }: {
   itens: Item[];
   categorias: string[];
@@ -69,6 +69,8 @@ export function PedirClient({
   formas?: FormaOpcao[];
   horario: HorarioPedir;
   vitrine?: VitrineApp;
+  /** Sem motoboy agora: só retirada até esta hora (ISO). */
+  soRetiradaAte?: string | null;
 }) {
   const [proc, start] = useTransition();
   const [fase, setFase] = useState<"menu" | "checkout" | "historico">("menu");
@@ -81,7 +83,7 @@ export function PedirClient({
   const [telefone, setTelefone] = useState("");
   const [lembrado, setLembrado] = useState<string | null>(null); // "Endereço da última vez preenchido"
   const foneBuscado = useRef("");
-  const [tipo, setTipo] = useState<"entrega" | "retirada">("entrega");
+  const [tipo, setTipo] = useState<"entrega" | "retirada">(soRetiradaAte ? "retirada" : "entrega");
   const [end, setEnd] = useState({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "Ivoti", referencia: "", cep: "" });
   const [taxa, setTaxa] = useState<number | null>(null);
   const [calcMsg, setCalcMsg] = useState<string | null>(null);
@@ -629,7 +631,7 @@ export function PedirClient({
 
           <h2 className="mb-2 font-numero text-base font-bold text-texto">Como você quer receber?</h2>
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <button onClick={() => setTipo("entrega")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "entrega" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={15} /> Entrega</span><span className="block text-xs font-medium">~{tempos.entrega} min</span></button>
+            <button onClick={() => setTipo("entrega")} disabled={!!soRetiradaAte} className={`min-h-11 rounded-controle py-2.5 font-semibold disabled:opacity-50 ${tipo === "entrega" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="entrega" tamanho={15} /> Entrega</span><span className="block text-xs font-medium">{soRetiradaAte ? "sem entrega agora" : `~${tempos.entrega} min`}</span></button>
             <button onClick={() => setTipo("retirada")} className={`min-h-11 rounded-controle py-2.5 font-semibold ${tipo === "retirada" ? "bg-destaque text-texto-marca-pilula shadow-[inset_0_0_0_2px_var(--marca-primaria)]" : "bg-painel-cartao text-texto-suave shadow-controle"}`}><span className="inline-flex items-center justify-center gap-1.5"><Icone nome="loja" tamanho={15} /> Retirar no balcão</span><span className="block text-xs font-medium">pronto em ~{tempos.retirada} min</span></button>
           </div>
 

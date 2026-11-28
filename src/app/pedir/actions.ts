@@ -12,6 +12,7 @@ import { lerConfigPizzas, pizzasAgora } from "@/lib/pizzas-horario";
 import { pixConfigurado, criarCobrancaPix, cancelarCobrancaPix, gerarTxid } from "@/lib/pix";
 import { confirmarPixApp, registrarCobrancaApp } from "@/lib/delivery-pix";
 import { estadoDelivery, lerConfigHorarios, slotsAgendamento } from "@/lib/delivery-horarios";
+import { entregaBloqueada } from "@/lib/delivery-so-retirada";
 import { avisarPedido } from "@/lib/whatsapp";
 import { aceiteAutomaticoLigado, aceitarPedidoAuto } from "@/lib/delivery-aceite";
 import { hojeSP } from "@/lib/etiqueta-vencimentos";
@@ -233,6 +234,11 @@ export async function enviarPedidoPublico(d: {
     if (!estado.livre) {
       return { ok: false as const, mensagem: estado.proximaAbertura ? `Estamos fechados agora — abrimos ${estado.proximaAbertura.texto}. Você pode agendar!` : "Estamos fechados agora." };
     }
+  }
+
+  // Sem motoboy ("Só retirada" no topo do Delivery): entrega não entra.
+  if (d.tipo === "entrega" && entregaBloqueada((cfg as { config?: unknown } | null)?.config, agendadoPara, agoraMs)) {
+    return { ok: false as const, mensagem: "Agora estamos só com retirada no balcão. Troque pra Retirar no balcão e envie de novo." };
   }
 
   // Pizza fora do horário das pizzas (ou desligadas) não entra.
